@@ -18,7 +18,8 @@
   "scripts": {
     "build": "npm run-script rollup && npm run-script terser",
     "rollup": "rollup -c",
-    "terser": "terser dist/magnus.js -o dist/magnus.min.js -c -m --keep-classnames --comments"
+    "terser": "terser dist/magnus.js -o dist/magnus.min.js -c -m --keep-classnames --comments",
+    "watch": "rollup -c --watch.clearScreen"
   },
-  "version": "0.1.0"
+  "version": "0.2.0"
 }
