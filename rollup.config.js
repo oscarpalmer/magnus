@@ -15,7 +15,7 @@ module.exports = {
     banner: header.join('\n'),
     file: './dist/magnus.js',
     format: 'iife',
-    name: 'magnus',
+    name: 'Magnus',
   },
   plugins: [typescript()],
   watch: {
