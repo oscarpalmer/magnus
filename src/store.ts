@@ -1,11 +1,28 @@
-export default class Store {
-  private readonly elements: Map<string, Set<HTMLElement>>;
+interface Action {
+  callback: Function
+  elements: Set<HTMLElement>
+  type: string
+}
 
-  readonly actions: Map<string, Function>;
+export class Store {
+  private readonly actions: Map<string, Action>;
+  private readonly elements: Map<string, Set<HTMLElement>>;
 
   constructor () {
     this.actions = new Map();
     this.elements = new Map();
+  }
+
+  addAction (key: string, element: HTMLElement): void {
+    const action: Action|undefined = this.actions.get(key);
+
+    if (action == null) {
+      return;
+    }
+
+    action.elements.add(element);
+
+    element.addEventListener(action.type, action.callback as EventListenerOrEventListenerObject);
   }
 
   addElement (key: string, element: HTMLElement): void {
@@ -16,12 +33,42 @@ export default class Store {
     }
   }
 
+  createAction (key: string, type: string, callback: Function): void {
+    if (!this.actions.has(key)) {
+      this.actions.set(key, {
+        callback,
+        elements: new Set(),
+        type,
+      });
+    }
+  }
+
   getElements (key: string): HTMLElement[] {
     const elements: Set<HTMLElement>|undefined = this.elements.get(key);
 
     return elements != null
       ? Array.from(elements)
       : [];
+  }
+
+  hasAction (key: string): boolean {
+    return this.actions.has(key);
+  }
+
+  removeAction (key: string, element: HTMLElement): void {
+    const action: Action|undefined = this.actions.get(key);
+
+    if (action == null) {
+      return;
+    }
+
+    element.removeEventListener(action.type, action.callback as EventListenerOrEventListenerObject);
+
+    action.elements.delete(element);
+
+    if (action.elements.size === 0) {
+      this.actions.delete(key);
+    }
   }
 
   removeElement (key: string, element: HTMLElement): void {

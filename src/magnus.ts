@@ -1,17 +1,20 @@
-import Observer from './observer';
-import Store from './store';
+import { Controller, ControllerConstructor } from './controller';
+import { DocumentObserver } from './observer/document.observer';
+import { IObserver } from './observer/observer';
 
 export default class Magnus {
-  private readonly observer: Observer;
-  private readonly store: Store;
+  static Controller = Controller;
+
+  private readonly controllers: Map<string, ControllerConstructor>;
+  private readonly observer: IObserver;
 
   constructor () {
-    this.store = new Store();
-    this.observer = new Observer('magnus', document.documentElement, this.store);
+    this.controllers = new Map();
+    this.observer = new DocumentObserver(this.controllers);
   }
 
-  get actions (): Map<string, Function> {
-    return this.store.actions;
+  add (name: string, controller: ControllerConstructor): void {
+    this.controllers.set(name, controller);
   }
 
   start (): void {
@@ -21,9 +24,5 @@ export default class Magnus {
 
   stop (): void {
     this.observer.disconnect();
-  }
-
-  targets (key: string): HTMLElement[] {
-    return this.store.getElements(key);
   }
 }
