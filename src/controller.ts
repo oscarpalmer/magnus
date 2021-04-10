@@ -2,7 +2,7 @@ import { ControllerObserver } from './observer/controller.observer';
 import { IObserver } from './observer/observer';
 import { Store } from './store';
 
-export type ControllerConstructor = new(...params: any[]) => Controller;
+export type ControllerConstructor = new(identifier: string, element: HTMLElement) => Controller;
 
 export class Controller {
   private readonly observer: IObserver;
@@ -20,7 +20,11 @@ export class Controller {
 
     this.observer.observe();
     this.observer.handleNodes(this.element.childNodes, true);
+
+    this.connect();
   }
+
+  connect (): void {}
 
   elements (name: string): HTMLElement[] {
     return this.store.getElements(name);
