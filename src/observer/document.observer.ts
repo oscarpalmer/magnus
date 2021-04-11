@@ -14,7 +14,7 @@ export class DocumentObserver extends Observer {
     const newValue: string = element.getAttribute(attributeName) ?? '';
 
     if (attributeName === Observer.CONTROLLER_ATTRIBUTE && newValue !== oldValue) {
-      this.handleControllerChanges(element, attributeName, newValue, oldValue);
+      this.handleChanges(element, attributeName, newValue, oldValue);
     }
   }
 
@@ -29,7 +29,7 @@ export class DocumentObserver extends Observer {
     this.toggleAttributes(element, attributeParts, added);
   }
 
-  private addControllerToElement (element: HTMLElement, identifier: string): void {
+  private addController (element: HTMLElement, identifier: string): void {
     if (this.controllers.has(identifier) && (element as any)[identifier] == null) {
       const StoredController: ControllerConstructor|undefined = this.controllers.get(identifier);
 
@@ -39,7 +39,7 @@ export class DocumentObserver extends Observer {
     }
   }
 
-  private handleControllerChanges (element: HTMLElement, attributeName: string, newValue: string, oldValue: string): void {
+  private handleChanges (element: HTMLElement, attributeName: string, newValue: string, oldValue: string): void {
     const identifiers: string[][] = this.getAttributes(oldValue, newValue);
 
     for (let index = 0; index < identifiers.length; index += 1) {
@@ -47,15 +47,14 @@ export class DocumentObserver extends Observer {
     }
   }
 
-  private removeControllerFromElement (element: HTMLElement, identifier: string): void {
+  private removeController (element: HTMLElement, identifier: string): void {
     const controller: Controller = (element as any)[identifier];
 
     if (controller == null) {
       return;
     }
 
-    // @ts-expect-error
-    controller.observer.disconnect();
+    controller.context.observer.disconnect();
 
     // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
     delete (element as any)[identifier];
@@ -64,9 +63,9 @@ export class DocumentObserver extends Observer {
   private toggleAttributes (element: HTMLElement, identifiers: string[], added: boolean): void {
     for (const identifier of identifiers) {
       if (added) {
-        this.addControllerToElement(element, identifier);
+        this.addController(element, identifier);
       } else {
-        this.removeControllerFromElement(element, identifier);
+        this.removeController(element, identifier);
       }
     }
   }

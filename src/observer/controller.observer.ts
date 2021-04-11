@@ -26,25 +26,22 @@ export class ControllerObserver extends Observer {
       ? this.handleAction
       : this.handleTarget;
 
-    this.handleAttributeChanges(element, oldValue, newValue, callback);
+    this.handleChanges(element, oldValue, newValue, callback);
   }
 
   protected handleElement (element: HTMLElement, added: true): void {
-    if (element.hasAttribute(this.attributeAction)) {
-      this.handleAttribute(element, this.attributeAction, '', !added);
-    }
-
-    if (element.hasAttribute(this.attributeTarget)) {
-      this.handleAttribute(element, this.attributeTarget, '', !added);
-    }
+    [this.attributeAction, this.attributeTarget]
+      .forEach((attribute: string) => {
+        this.handleAttribute(element, attribute, '', !added);
+      });
   }
 
   private handleAction (element: HTMLElement, action: string, added: true): void {
-    if (this.controller.context.store.hasAction(action)) {
+    if (this.controller.context.store.actions.has(action)) {
       if (added) {
-        this.controller.context.store.addAction(action, element);
+        this.controller.context.store.actions.add(action, element);
       } else {
-        this.controller.context.store.removeAction(action, element);
+        this.controller.context.store.actions.remove(action, element);
       }
 
       return;
@@ -63,13 +60,13 @@ export class ControllerObserver extends Observer {
     const callback: any = (this.controller as any)[parts[1]];
 
     if (typeof callback === 'function') {
-      this.controller.context.store.createAction(action, parts[0], callback.bind(this.controller));
+      this.controller.context.store.actions.create(action, parts[0], callback.bind(this.controller));
 
-      this.controller.context.store.addAction(action, element);
+      this.controller.context.store.actions.add(action, element);
     }
   }
 
-  private handleAttributeChanges (element: HTMLElement, oldValue: string, newValue: string, callback: Function): void {
+  private handleChanges (element: HTMLElement, oldValue: string, newValue: string, callback: Function): void {
     const attributes: string[][] = this.getAttributes(oldValue, newValue);
 
     for (let index = 0; index < attributes.length; index += 1) {
@@ -79,9 +76,9 @@ export class ControllerObserver extends Observer {
 
   private handleTarget (element: HTMLElement, target: string, added: boolean): void {
     if (added) {
-      this.controller.context.store.addTarget(target, element);
+      this.controller.context.store.targets.add(target, element);
     } else {
-      this.controller.context.store.removeTarget(target, element);
+      this.controller.context.store.targets.remove(target, element);
     }
   }
 

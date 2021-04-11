@@ -1,6 +1,6 @@
 import { ControllerObserver } from './observer/controller.observer';
 import { IObserver } from './observer/observer';
-import { Store } from './store';
+import { Store } from './store/store';
 
 interface Context {
   observer: IObserver
@@ -36,6 +36,6 @@ export class Controller {
   }
 
   targets (name: string): HTMLElement[] {
-    return this.context.store.getTargets(name);
+    return this.context.store.targets.get(name);
   }
 }

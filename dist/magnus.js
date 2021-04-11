@@ -1,5 +1,5 @@
 /*!
- * Magnus, v0.6.0
+ * Magnus, v0.7.0
  * https://github.com/oscarpalmer/magnus
  * (c) Oscar Palmér, 2021, MIT @license
  */
@@ -103,23 +103,21 @@
             const callback = attributeName === this.attributeAction
                 ? this.handleAction
                 : this.handleTarget;
-            this.handleAttributeChanges(element, oldValue, newValue, callback);
+            this.handleChanges(element, oldValue, newValue, callback);
         }
         handleElement(element, added) {
-            if (element.hasAttribute(this.attributeAction)) {
-                this.handleAttribute(element, this.attributeAction, '', !added);
-            }
-            if (element.hasAttribute(this.attributeTarget)) {
-                this.handleAttribute(element, this.attributeTarget, '', !added);
-            }
+            [this.attributeAction, this.attributeTarget]
+                .forEach((attribute) => {
+                this.handleAttribute(element, attribute, '', !added);
+            });
         }
         handleAction(element, action, added) {
-            if (this.controller.context.store.hasAction(action)) {
+            if (this.controller.context.store.actions.has(action)) {
                 if (added) {
-                    this.controller.context.store.addAction(action, element);
+                    this.controller.context.store.actions.add(action, element);
                 }
                 else {
-                    this.controller.context.store.removeAction(action, element);
+                    this.controller.context.store.actions.remove(action, element);
                 }
                 return;
             }
@@ -132,11 +130,11 @@
             }
             const callback = this.controller[parts[1]];
             if (typeof callback === 'function') {
-                this.controller.context.store.createAction(action, parts[0], callback.bind(this.controller));
-                this.controller.context.store.addAction(action, element);
+                this.controller.context.store.actions.create(action, parts[0], callback.bind(this.controller));
+                this.controller.context.store.actions.add(action, element);
             }
         }
-        handleAttributeChanges(element, oldValue, newValue, callback) {
+        handleChanges(element, oldValue, newValue, callback) {
             const attributes = this.getAttributes(oldValue, newValue);
             for (let index = 0; index < attributes.length; index += 1) {
                 this.toggleAttributes(element, attributes[index], callback, index === 0);
@@ -144,10 +142,10 @@
         }
         handleTarget(element, target, added) {
             if (added) {
-                this.controller.context.store.addTarget(target, element);
+                this.controller.context.store.targets.add(target, element);
             }
             else {
-                this.controller.context.store.removeTarget(target, element);
+                this.controller.context.store.targets.remove(target, element);
             }
         }
         toggleAttributes(element, attributes, callback, added) {
@@ -157,63 +155,76 @@
         }
     }
 
-    class Store {
+    class ActionStore {
         constructor() {
             this.actions = new Map();
-            this.targets = new Map();
         }
-        addAction(key, element) {
-            const action = this.actions.get(key);
+        add(name, element) {
+            const action = this.actions.get(name);
             if (action == null) {
                 return;
             }
             action.elements.add(element);
             element.addEventListener(action.type, action.callback);
         }
-        addTarget(key, element) {
-            var _a, _b;
-            if (this.targets.has(key)) {
-                (_a = this.targets.get(key)) === null || _a === void 0 ? void 0 : _a.add(element);
-            }
-            else {
-                (_b = this.targets.set(key, new Set()).get(key)) === null || _b === void 0 ? void 0 : _b.add(element);
-            }
-        }
-        createAction(key, type, callback) {
-            if (!this.actions.has(key)) {
-                this.actions.set(key, {
+        create(name, type, callback) {
+            if (!this.actions.has(name)) {
+                this.actions.set(name, {
                     callback,
                     elements: new Set(),
                     type,
                 });
             }
         }
-        getTargets(key) {
-            var _a;
-            return Array.from((_a = this.targets.get(key)) !== null && _a !== void 0 ? _a : []);
+        has(name) {
+            return this.actions.has(name);
         }
-        hasAction(key) {
-            return this.actions.has(key);
-        }
-        removeAction(key, element) {
-            const action = this.actions.get(key);
+        remove(name, element) {
+            const action = this.actions.get(name);
             if (action == null) {
                 return;
             }
-            element.removeEventListener(action.type, action.callback);
             action.elements.delete(element);
+            element.removeEventListener(action.type, action.callback);
             if (action.elements.size === 0) {
-                this.actions.delete(key);
+                this.actions.delete(name);
             }
         }
-        removeTarget(key, element) {
+    }
+
+    class TargetStore {
+        constructor() {
+            this.targets = new Map();
+        }
+        add(name, element) {
             var _a, _b;
-            if (this.targets.has(key)) {
-                (_a = this.targets.get(key)) === null || _a === void 0 ? void 0 : _a.delete(element);
-                if (((_b = this.targets.get(key)) === null || _b === void 0 ? void 0 : _b.size) === 0) {
-                    this.targets.delete(key);
-                }
+            if (this.targets.has(name)) {
+                (_a = this.targets.get(name)) === null || _a === void 0 ? void 0 : _a.add(element);
             }
+            else {
+                (_b = this.targets.set(name, new Set()).get(name)) === null || _b === void 0 ? void 0 : _b.add(element);
+            }
+        }
+        get(name) {
+            var _a;
+            return Array.from((_a = this.targets.get(name)) !== null && _a !== void 0 ? _a : []);
+        }
+        remove(name, element) {
+            const targets = this.targets.get(name);
+            if (targets == null) {
+                return;
+            }
+            targets.delete(element);
+            if (targets.size === 0) {
+                this.targets.delete(name);
+            }
+        }
+    }
+
+    class Store {
+        constructor() {
+            this.actions = new ActionStore();
+            this.targets = new TargetStore();
         }
     }
 
@@ -234,7 +245,7 @@
             return this.targets(name)[0];
         }
         targets(name) {
-            return this.context.store.getTargets(name);
+            return this.context.store.targets.get(name);
         }
     }
 
@@ -247,7 +258,7 @@
             var _a;
             const newValue = (_a = element.getAttribute(attributeName)) !== null && _a !== void 0 ? _a : '';
             if (attributeName === Observer.CONTROLLER_ATTRIBUTE && newValue !== oldValue) {
-                this.handleControllerChanges(element, attributeName, newValue, oldValue);
+                this.handleChanges(element, attributeName, newValue, oldValue);
             }
         }
         handleElement(element, added) {
@@ -259,7 +270,7 @@
             const attributeParts = attributeValue.split(' ');
             this.toggleAttributes(element, attributeParts, added);
         }
-        addControllerToElement(element, identifier) {
+        addController(element, identifier) {
             if (this.controllers.has(identifier) && element[identifier] == null) {
                 const StoredController = this.controllers.get(identifier);
                 if (StoredController != null) {
@@ -267,29 +278,28 @@
                 }
             }
         }
-        handleControllerChanges(element, attributeName, newValue, oldValue) {
+        handleChanges(element, attributeName, newValue, oldValue) {
             const identifiers = this.getAttributes(oldValue, newValue);
             for (let index = 0; index < identifiers.length; index += 1) {
                 this.toggleAttributes(element, identifiers[index], index === 0);
             }
         }
-        removeControllerFromElement(element, identifier) {
+        removeController(element, identifier) {
             const controller = element[identifier];
             if (controller == null) {
                 return;
             }
-            // @ts-expect-error
-            controller.observer.disconnect();
+            controller.context.observer.disconnect();
             // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
             delete element[identifier];
         }
         toggleAttributes(element, identifiers, added) {
             for (const identifier of identifiers) {
                 if (added) {
-                    this.addControllerToElement(element, identifier);
+                    this.addController(element, identifier);
                 }
                 else {
-                    this.removeControllerFromElement(element, identifier);
+                    this.removeController(element, identifier);
                 }
             }
         }
