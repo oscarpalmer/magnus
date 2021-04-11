@@ -1,10 +1,13 @@
 /*!
- * Magnus, v0.5.0
+ * Magnus, v0.6.0
  * https://github.com/oscarpalmer/magnus
  * (c) Oscar Palmér, 2021, MIT @license
  */
-var Magnus = (function () {
-    'use strict';
+(function (global, factory) {
+    typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
+    typeof define === 'function' && define.amd ? define(factory) :
+    (global = typeof globalThis !== 'undefined' ? globalThis : global || self, global.Magnus = factory());
+}(this, (function () { 'use strict';
 
     class Observer {
         constructor(identifier, element) {
@@ -83,10 +86,9 @@ var Magnus = (function () {
     Observer.MUTATION_RECORD_CHILDLIST = 'childList';
 
     class ControllerObserver extends Observer {
-        constructor(controller, store) {
+        constructor(controller) {
             super(controller.identifier, controller.element);
             this.controller = controller;
-            this.store = store;
         }
         handleAttribute(element, attributeName, oldValue, removedElement) {
             var _a;
@@ -112,12 +114,12 @@ var Magnus = (function () {
             }
         }
         handleAction(element, action, added) {
-            if (this.store.hasAction(action)) {
+            if (this.controller.context.store.hasAction(action)) {
                 if (added) {
-                    this.store.addAction(action, element);
+                    this.controller.context.store.addAction(action, element);
                 }
                 else {
-                    this.store.removeAction(action, element);
+                    this.controller.context.store.removeAction(action, element);
                 }
                 return;
             }
@@ -130,8 +132,8 @@ var Magnus = (function () {
             }
             const callback = this.controller[parts[1]];
             if (typeof callback === 'function') {
-                this.store.createAction(action, parts[0], callback.bind(this.controller));
-                this.store.addAction(action, element);
+                this.controller.context.store.createAction(action, parts[0], callback.bind(this.controller));
+                this.controller.context.store.addAction(action, element);
             }
         }
         handleAttributeChanges(element, oldValue, newValue, callback) {
@@ -142,10 +144,10 @@ var Magnus = (function () {
         }
         handleTarget(element, target, added) {
             if (added) {
-                this.store.addElement(target, element);
+                this.controller.context.store.addTarget(target, element);
             }
             else {
-                this.store.removeElement(target, element);
+                this.controller.context.store.removeTarget(target, element);
             }
         }
         toggleAttributes(element, attributes, callback, added) {
@@ -158,7 +160,7 @@ var Magnus = (function () {
     class Store {
         constructor() {
             this.actions = new Map();
-            this.elements = new Map();
+            this.targets = new Map();
         }
         addAction(key, element) {
             const action = this.actions.get(key);
@@ -168,13 +170,13 @@ var Magnus = (function () {
             action.elements.add(element);
             element.addEventListener(action.type, action.callback);
         }
-        addElement(key, element) {
+        addTarget(key, element) {
             var _a, _b;
-            if (this.elements.has(key)) {
-                (_a = this.elements.get(key)) === null || _a === void 0 ? void 0 : _a.add(element);
+            if (this.targets.has(key)) {
+                (_a = this.targets.get(key)) === null || _a === void 0 ? void 0 : _a.add(element);
             }
             else {
-                (_b = this.elements.set(key, new Set()).get(key)) === null || _b === void 0 ? void 0 : _b.add(element);
+                (_b = this.targets.set(key, new Set()).get(key)) === null || _b === void 0 ? void 0 : _b.add(element);
             }
         }
         createAction(key, type, callback) {
@@ -186,11 +188,9 @@ var Magnus = (function () {
                 });
             }
         }
-        getElements(key) {
-            const elements = this.elements.get(key);
-            return elements != null
-                ? Array.from(elements)
-                : [];
+        getTargets(key) {
+            var _a;
+            return Array.from((_a = this.targets.get(key)) !== null && _a !== void 0 ? _a : []);
         }
         hasAction(key) {
             return this.actions.has(key);
@@ -206,12 +206,12 @@ var Magnus = (function () {
                 this.actions.delete(key);
             }
         }
-        removeElement(key, element) {
+        removeTarget(key, element) {
             var _a, _b;
-            if (this.elements.has(key)) {
-                (_a = this.elements.get(key)) === null || _a === void 0 ? void 0 : _a.delete(element);
-                if (((_b = this.elements.get(key)) === null || _b === void 0 ? void 0 : _b.size) === 0) {
-                    this.elements.delete(key);
+            if (this.targets.has(key)) {
+                (_a = this.targets.get(key)) === null || _a === void 0 ? void 0 : _a.delete(element);
+                if (((_b = this.targets.get(key)) === null || _b === void 0 ? void 0 : _b.size) === 0) {
+                    this.targets.delete(key);
                 }
             }
         }
@@ -221,15 +221,20 @@ var Magnus = (function () {
         constructor(identifier, element) {
             this.identifier = identifier;
             this.element = element;
-            this.store = new Store();
-            this.observer = new ControllerObserver(this, this.store);
-            this.observer.observe();
-            this.observer.handleNodes(this.element.childNodes, true);
+            this.context = {
+                observer: new ControllerObserver(this),
+                store: new Store(),
+            };
+            this.context.observer.observe();
+            this.context.observer.handleNodes(this.element.childNodes, true);
             this.connect();
         }
         connect() { }
-        elements(name) {
-            return this.store.getElements(name);
+        target(name) {
+            return this.targets(name)[0];
+        }
+        targets(name) {
+            return this.context.store.getTargets(name);
         }
     }
 
@@ -310,4 +315,4 @@ var Magnus = (function () {
 
     return Magnus;
 
-}());
+})));

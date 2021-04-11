@@ -2,12 +2,15 @@ import { ControllerObserver } from './observer/controller.observer';
 import { IObserver } from './observer/observer';
 import { Store } from './store';
 
+interface Context {
+  observer: IObserver
+  store: Store
+}
+
 export type ControllerConstructor = new(identifier: string, element: HTMLElement) => Controller;
 
 export class Controller {
-  private readonly observer: IObserver;
-  private readonly store: Store;
-
+  readonly context: Context;
   readonly element: HTMLElement;
   readonly identifier: string;
 
@@ -15,18 +18,24 @@ export class Controller {
     this.identifier = identifier;
     this.element = element;
 
-    this.store = new Store();
-    this.observer = new ControllerObserver(this, this.store);
+    this.context = {
+      observer: new ControllerObserver(this),
+      store: new Store(),
+    };
 
-    this.observer.observe();
-    this.observer.handleNodes(this.element.childNodes, true);
+    this.context.observer.observe();
+    this.context.observer.handleNodes(this.element.childNodes, true);
 
     this.connect();
   }
 
   connect (): void {}
 
-  elements (name: string): HTMLElement[] {
-    return this.store.getElements(name);
+  target (name: string): HTMLElement {
+    return this.targets(name)[0];
+  }
+
+  targets (name: string): HTMLElement[] {
+    return this.context.store.getTargets(name);
   }
 }

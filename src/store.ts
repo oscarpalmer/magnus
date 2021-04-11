@@ -6,11 +6,11 @@ interface Action {
 
 export class Store {
   private readonly actions: Map<string, Action>;
-  private readonly elements: Map<string, Set<HTMLElement>>;
+  private readonly targets: Map<string, Set<HTMLElement>>;
 
   constructor () {
     this.actions = new Map();
-    this.elements = new Map();
+    this.targets = new Map();
   }
 
   addAction (key: string, element: HTMLElement): void {
@@ -25,11 +25,11 @@ export class Store {
     element.addEventListener(action.type, action.callback as EventListenerOrEventListenerObject);
   }
 
-  addElement (key: string, element: HTMLElement): void {
-    if (this.elements.has(key)) {
-      this.elements.get(key)?.add(element);
+  addTarget (key: string, element: HTMLElement): void {
+    if (this.targets.has(key)) {
+      this.targets.get(key)?.add(element);
     } else {
-      this.elements.set(key, new Set()).get(key)?.add(element);
+      this.targets.set(key, new Set()).get(key)?.add(element);
     }
   }
 
@@ -43,12 +43,8 @@ export class Store {
     }
   }
 
-  getElements (key: string): HTMLElement[] {
-    const elements: Set<HTMLElement>|undefined = this.elements.get(key);
-
-    return elements != null
-      ? Array.from(elements)
-      : [];
+  getTargets (key: string): HTMLElement[] {
+    return Array.from(this.targets.get(key) ?? []);
   }
 
   hasAction (key: string): boolean {
@@ -71,12 +67,12 @@ export class Store {
     }
   }
 
-  removeElement (key: string, element: HTMLElement): void {
-    if (this.elements.has(key)) {
-      this.elements.get(key)?.delete(element);
+  removeTarget (key: string, element: HTMLElement): void {
+    if (this.targets.has(key)) {
+      this.targets.get(key)?.delete(element);
 
-      if (this.elements.get(key)?.size === 0) {
-        this.elements.delete(key);
+      if (this.targets.get(key)?.size === 0) {
+        this.targets.delete(key);
       }
     }
   }

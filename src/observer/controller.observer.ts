@@ -1,16 +1,13 @@
 import { Controller } from '../controller';
-import { Store } from '../store';
 import { Observer } from './observer';
 
 export class ControllerObserver extends Observer {
   private readonly controller: Controller;
-  private readonly store: Store;
 
-  constructor (controller: Controller, store: Store) {
+  constructor (controller: Controller) {
     super(controller.identifier, controller.element);
 
     this.controller = controller;
-    this.store = store;
   }
 
   protected handleAttribute (element: HTMLElement, attributeName: string, oldValue: string, removedElement?: boolean): void {
@@ -43,11 +40,11 @@ export class ControllerObserver extends Observer {
   }
 
   private handleAction (element: HTMLElement, action: string, added: true): void {
-    if (this.store.hasAction(action)) {
+    if (this.controller.context.store.hasAction(action)) {
       if (added) {
-        this.store.addAction(action, element);
+        this.controller.context.store.addAction(action, element);
       } else {
-        this.store.removeAction(action, element);
+        this.controller.context.store.removeAction(action, element);
       }
 
       return;
@@ -66,9 +63,9 @@ export class ControllerObserver extends Observer {
     const callback: any = (this.controller as any)[parts[1]];
 
     if (typeof callback === 'function') {
-      this.store.createAction(action, parts[0], callback.bind(this.controller));
+      this.controller.context.store.createAction(action, parts[0], callback.bind(this.controller));
 
-      this.store.addAction(action, element);
+      this.controller.context.store.addAction(action, element);
     }
   }
 
@@ -82,9 +79,9 @@ export class ControllerObserver extends Observer {
 
   private handleTarget (element: HTMLElement, target: string, added: boolean): void {
     if (added) {
-      this.store.addElement(target, element);
+      this.controller.context.store.addTarget(target, element);
     } else {
-      this.store.removeElement(target, element);
+      this.controller.context.store.removeTarget(target, element);
     }
   }
 

@@ -14,7 +14,7 @@ module.exports = {
   output: {
     banner: header.join('\n'),
     file: './dist/magnus.js',
-    format: 'iife',
+    format: 'umd',
     name: 'Magnus',
   },
   plugins: [typescript()],
