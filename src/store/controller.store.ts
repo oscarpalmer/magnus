@@ -34,7 +34,7 @@ export class ControllerStore {
     });
   }
 
-  get (identifier: string): any[] {
+  get (identifier: string): Controller[] {
     const blob: ControllerBlob|undefined = this.store.get(identifier);
 
     if (blob == null) {

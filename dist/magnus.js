@@ -1,5 +1,5 @@
 /*!
- * Magnus, v0.10.0
+ * Magnus, v0.11.0
  * https://github.com/oscarpalmer/magnus
  * (c) Oscar Palmér, 2021, MIT @license
  */
@@ -169,6 +169,9 @@
         }
         add(name, controller) {
             this.store.create(name, controller);
+        }
+        get(name) {
+            return this.store.get(name);
         }
         start() {
             this.observer.observe();
