@@ -1,10 +1,8 @@
-import { Controller, ControllerConstructor } from './controller';
+import { ControllerConstructor } from './controller';
 import { DocumentObserver } from './observer/document.observer';
 import { IObserver } from './observer/observer';
 
-export class Magnus {
-  static Controller = Controller;
-
+export class Application {
   private readonly controllers: Map<string, ControllerConstructor>;
   private readonly observer: IObserver;
 

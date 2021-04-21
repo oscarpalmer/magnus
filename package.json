@@ -34,6 +34,6 @@
     "terser": "terser dist/magnus.js -o dist/magnus.min.js -c -m --keep-classnames --comments",
     "watch": "rollup -c --watch.clearScreen"
   },
-  "types": "types/index.d.ts",
-  "version": "0.8.0"
+  "types": "src/types.d.ts",
+  "version": "0.9.0"
 }

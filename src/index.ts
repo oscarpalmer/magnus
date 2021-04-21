@@ -1,2 +1,4 @@
-import { Magnus } from './magnus';
-export default Magnus;
+import { Application } from './application';
+import { Controller } from './controller';
+
+export default { Application, Controller };

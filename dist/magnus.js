@@ -1,5 +1,5 @@
 /*!
- * Magnus, v0.8.0
+ * Magnus, v0.9.0
  * https://github.com/oscarpalmer/magnus
  * (c) Oscar Palmér, 2021, MIT @license
  */
@@ -84,6 +84,79 @@
         subtree: true,
     };
     Observer.MUTATION_RECORD_CHILDLIST = 'childList';
+
+    class DocumentObserver extends Observer {
+        constructor(controllers) {
+            super('magnus', document.documentElement);
+            this.controllers = controllers;
+        }
+        handleAttribute(element, attributeName, oldValue) {
+            var _a;
+            const newValue = (_a = element.getAttribute(attributeName)) !== null && _a !== void 0 ? _a : '';
+            if (attributeName === Observer.CONTROLLER_ATTRIBUTE && newValue !== oldValue) {
+                this.handleChanges(element, attributeName, newValue, oldValue);
+            }
+        }
+        handleElement(element, added) {
+            var _a;
+            if (!element.hasAttribute(Observer.CONTROLLER_ATTRIBUTE)) {
+                return;
+            }
+            const attributeValue = (_a = element.getAttribute(Observer.CONTROLLER_ATTRIBUTE)) !== null && _a !== void 0 ? _a : '';
+            const attributeParts = attributeValue.split(' ');
+            this.toggleAttributes(element, attributeParts, added);
+        }
+        addController(element, identifier) {
+            if (this.controllers.has(identifier) && element[identifier] == null) {
+                const StoredController = this.controllers.get(identifier);
+                if (StoredController != null) {
+                    element[identifier] = new StoredController(identifier, element);
+                }
+            }
+        }
+        handleChanges(element, attributeName, newValue, oldValue) {
+            const identifiers = this.getAttributes(oldValue, newValue);
+            for (let index = 0; index < identifiers.length; index += 1) {
+                this.toggleAttributes(element, identifiers[index], index === 0);
+            }
+        }
+        removeController(element, identifier) {
+            const controller = element[identifier];
+            if (controller == null) {
+                return;
+            }
+            controller.context.observer.disconnect();
+            // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+            delete element[identifier];
+        }
+        toggleAttributes(element, identifiers, added) {
+            for (const identifier of identifiers) {
+                if (added) {
+                    this.addController(element, identifier);
+                }
+                else {
+                    this.removeController(element, identifier);
+                }
+            }
+        }
+    }
+
+    class Application {
+        constructor() {
+            this.controllers = new Map();
+            this.observer = new DocumentObserver(this.controllers);
+        }
+        add(name, controller) {
+            this.controllers.set(name, controller);
+        }
+        start() {
+            this.observer.observe();
+            this.observer.handleNodes(document.documentElement.childNodes, true);
+        }
+        stop() {
+            this.observer.disconnect();
+        }
+    }
 
     class ControllerObserver extends Observer {
         constructor(controller) {
@@ -249,80 +322,8 @@
         }
     }
 
-    class DocumentObserver extends Observer {
-        constructor(controllers) {
-            super('magnus', document.documentElement);
-            this.controllers = controllers;
-        }
-        handleAttribute(element, attributeName, oldValue) {
-            var _a;
-            const newValue = (_a = element.getAttribute(attributeName)) !== null && _a !== void 0 ? _a : '';
-            if (attributeName === Observer.CONTROLLER_ATTRIBUTE && newValue !== oldValue) {
-                this.handleChanges(element, attributeName, newValue, oldValue);
-            }
-        }
-        handleElement(element, added) {
-            var _a;
-            if (!element.hasAttribute(Observer.CONTROLLER_ATTRIBUTE)) {
-                return;
-            }
-            const attributeValue = (_a = element.getAttribute(Observer.CONTROLLER_ATTRIBUTE)) !== null && _a !== void 0 ? _a : '';
-            const attributeParts = attributeValue.split(' ');
-            this.toggleAttributes(element, attributeParts, added);
-        }
-        addController(element, identifier) {
-            if (this.controllers.has(identifier) && element[identifier] == null) {
-                const StoredController = this.controllers.get(identifier);
-                if (StoredController != null) {
-                    element[identifier] = new StoredController(identifier, element);
-                }
-            }
-        }
-        handleChanges(element, attributeName, newValue, oldValue) {
-            const identifiers = this.getAttributes(oldValue, newValue);
-            for (let index = 0; index < identifiers.length; index += 1) {
-                this.toggleAttributes(element, identifiers[index], index === 0);
-            }
-        }
-        removeController(element, identifier) {
-            const controller = element[identifier];
-            if (controller == null) {
-                return;
-            }
-            controller.context.observer.disconnect();
-            // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-            delete element[identifier];
-        }
-        toggleAttributes(element, identifiers, added) {
-            for (const identifier of identifiers) {
-                if (added) {
-                    this.addController(element, identifier);
-                }
-                else {
-                    this.removeController(element, identifier);
-                }
-            }
-        }
-    }
+    var index = { Application, Controller };
 
-    class Magnus {
-        constructor() {
-            this.controllers = new Map();
-            this.observer = new DocumentObserver(this.controllers);
-        }
-        add(name, controller) {
-            this.controllers.set(name, controller);
-        }
-        start() {
-            this.observer.observe();
-            this.observer.handleNodes(document.documentElement.childNodes, true);
-        }
-        stop() {
-            this.observer.disconnect();
-        }
-    }
-    Magnus.Controller = Controller;
-
-    return Magnus;
+    return index;
 
 })));

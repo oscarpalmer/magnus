@@ -1,3 +1,2 @@
-export * from './magnus';
-export * from './controller';
-export as namespace Magnus;
+export { Application } from './application';
+export { Controller } from './controller';
