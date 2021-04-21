@@ -1,3 +1,2 @@
-import Magnus from './magnus';
-
+import { Magnus } from './magnus';
 export default Magnus;

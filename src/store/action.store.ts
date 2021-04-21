@@ -1,4 +1,4 @@
-interface Action {
+export interface Action {
   callback: Function
   elements: Set<HTMLElement>
   type: string

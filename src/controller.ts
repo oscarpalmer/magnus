@@ -2,7 +2,7 @@ import { ControllerObserver } from './observer/controller.observer';
 import { IObserver } from './observer/observer';
 import { Store } from './store/store';
 
-interface Context {
+export interface Context {
   observer: IObserver
   store: Store
 }

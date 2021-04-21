@@ -2,7 +2,7 @@ import { Controller, ControllerConstructor } from './controller';
 import { DocumentObserver } from './observer/document.observer';
 import { IObserver } from './observer/observer';
 
-export default class Magnus {
+export class Magnus {
   static Controller = Controller;
 
   private readonly controllers: Map<string, ControllerConstructor>;
