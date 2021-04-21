@@ -31,7 +31,11 @@ export class Controller {
 
   connect (): void {}
 
-  target (name: string): HTMLElement {
+  hasTarget (name: string): boolean {
+    return this.context.store.targets.has(name);
+  }
+
+  target (name: string): HTMLElement|undefined {
     return this.targets(name)[0];
   }
 

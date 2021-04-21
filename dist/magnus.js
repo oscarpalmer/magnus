@@ -1,5 +1,5 @@
 /*!
- * Magnus, v0.9.0
+ * Magnus, v0.10.0
  * https://github.com/oscarpalmer/magnus
  * (c) Oscar Palmér, 2021, MIT @license
  */
@@ -8,6 +8,44 @@
     typeof define === 'function' && define.amd ? define(factory) :
     (global = typeof globalThis !== 'undefined' ? globalThis : global || self, global.Magnus = factory());
 }(this, (function () { 'use strict';
+
+    class ControllerStore {
+        constructor() {
+            this.store = new Map();
+        }
+        add(identifier, element) {
+            const blob = this.store.get(identifier);
+            if (blob == null) {
+                return;
+            }
+            // eslint-disable-next-line new-cap
+            const instance = new blob.controller(identifier, element);
+            element[identifier] = instance;
+            blob.instances.set(element, instance);
+        }
+        create(identifier, controller) {
+            this.store.set(identifier, {
+                controller,
+                instances: new Map(),
+            });
+        }
+        get(identifier) {
+            const blob = this.store.get(identifier);
+            if (blob == null) {
+                return [];
+            }
+            return Array.from(blob.instances.values());
+        }
+        remove(identifier, element) {
+            const blob = this.store.get(identifier);
+            if (blob == null || !blob.instances.has(element)) {
+                return;
+            }
+            // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+            delete element[identifier];
+            blob.instances.delete(element);
+        }
+    }
 
     class Observer {
         constructor(identifier, element) {
@@ -86,9 +124,9 @@
     Observer.MUTATION_RECORD_CHILDLIST = 'childList';
 
     class DocumentObserver extends Observer {
-        constructor(controllers) {
+        constructor(store) {
             super('magnus', document.documentElement);
-            this.controllers = controllers;
+            this.store = store;
         }
         handleAttribute(element, attributeName, oldValue) {
             var _a;
@@ -106,36 +144,19 @@
             const attributeParts = attributeValue.split(' ');
             this.toggleAttributes(element, attributeParts, added);
         }
-        addController(element, identifier) {
-            if (this.controllers.has(identifier) && element[identifier] == null) {
-                const StoredController = this.controllers.get(identifier);
-                if (StoredController != null) {
-                    element[identifier] = new StoredController(identifier, element);
-                }
-            }
-        }
         handleChanges(element, attributeName, newValue, oldValue) {
             const identifiers = this.getAttributes(oldValue, newValue);
             for (let index = 0; index < identifiers.length; index += 1) {
                 this.toggleAttributes(element, identifiers[index], index === 0);
             }
         }
-        removeController(element, identifier) {
-            const controller = element[identifier];
-            if (controller == null) {
-                return;
-            }
-            controller.context.observer.disconnect();
-            // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-            delete element[identifier];
-        }
         toggleAttributes(element, identifiers, added) {
             for (const identifier of identifiers) {
                 if (added) {
-                    this.addController(element, identifier);
+                    this.store.add(identifier, element);
                 }
                 else {
-                    this.removeController(element, identifier);
+                    this.store.remove(identifier, element);
                 }
             }
         }
@@ -143,11 +164,11 @@
 
     class Application {
         constructor() {
-            this.controllers = new Map();
-            this.observer = new DocumentObserver(this.controllers);
+            this.store = new ControllerStore();
+            this.observer = new DocumentObserver(this.store);
         }
         add(name, controller) {
-            this.controllers.set(name, controller);
+            this.store.create(name, controller);
         }
         start() {
             this.observer.observe();
@@ -282,6 +303,10 @@
             var _a;
             return Array.from((_a = this.targets.get(name)) !== null && _a !== void 0 ? _a : []);
         }
+        has(name) {
+            const targets = this.targets.get(name);
+            return targets != null && targets.size > 0;
+        }
         remove(name, element) {
             const targets = this.targets.get(name);
             if (targets == null) {
@@ -314,6 +339,9 @@
             this.connect();
         }
         connect() { }
+        hasTarget(name) {
+            return this.context.store.targets.has(name);
+        }
         target(name) {
             return this.targets(name)[0];
         }

@@ -1,13 +1,13 @@
-import { Controller, ControllerConstructor } from '../controller';
+import { ControllerStore } from '../store/controller.store';
 import { Observer } from './observer';
 
 export class DocumentObserver extends Observer {
-  private readonly controllers: Map<string, ControllerConstructor>;
+  private readonly store: ControllerStore;
 
-  constructor (controllers: Map<string, ControllerConstructor>) {
+  constructor (store: ControllerStore) {
     super('magnus', document.documentElement);
 
-    this.controllers = controllers;
+    this.store = store;
   }
 
   protected handleAttribute (element: HTMLElement, attributeName: string, oldValue: string): void {
@@ -29,16 +29,6 @@ export class DocumentObserver extends Observer {
     this.toggleAttributes(element, attributeParts, added);
   }
 
-  private addController (element: HTMLElement, identifier: string): void {
-    if (this.controllers.has(identifier) && (element as any)[identifier] == null) {
-      const StoredController: ControllerConstructor|undefined = this.controllers.get(identifier);
-
-      if (StoredController != null) {
-        (element as any)[identifier] = new StoredController(identifier, element);
-      }
-    }
-  }
-
   private handleChanges (element: HTMLElement, attributeName: string, newValue: string, oldValue: string): void {
     const identifiers: string[][] = this.getAttributes(oldValue, newValue);
 
@@ -47,25 +37,12 @@ export class DocumentObserver extends Observer {
     }
   }
 
-  private removeController (element: HTMLElement, identifier: string): void {
-    const controller: Controller = (element as any)[identifier];
-
-    if (controller == null) {
-      return;
-    }
-
-    controller.context.observer.disconnect();
-
-    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-    delete (element as any)[identifier];
-  }
-
   private toggleAttributes (element: HTMLElement, identifiers: string[], added: boolean): void {
     for (const identifier of identifiers) {
       if (added) {
-        this.addController(element, identifier);
+        this.store.add(identifier, element);
       } else {
-        this.removeController(element, identifier);
+        this.store.remove(identifier, element);
       }
     }
   }

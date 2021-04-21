@@ -1,18 +1,19 @@
+import { ControllerStore } from './store/controller.store';
 import { ControllerConstructor } from './controller';
 import { DocumentObserver } from './observer/document.observer';
 import { IObserver } from './observer/observer';
 
 export class Application {
-  private readonly controllers: Map<string, ControllerConstructor>;
   private readonly observer: IObserver;
+  private readonly store: ControllerStore;
 
   constructor () {
-    this.controllers = new Map();
-    this.observer = new DocumentObserver(this.controllers);
+    this.store = new ControllerStore();
+    this.observer = new DocumentObserver(this.store);
   }
 
   add (name: string, controller: ControllerConstructor): void {
-    this.controllers.set(name, controller);
+    this.store.create(name, controller);
   }
 
   start (): void {

@@ -17,6 +17,12 @@ export class TargetStore {
     return Array.from(this.targets.get(name) ?? []);
   }
 
+  has (name: string): boolean {
+    const targets: Set<HTMLElement>|undefined = this.targets.get(name);
+
+    return targets != null && targets.size > 0;
+  }
+
   remove (name: string, element: HTMLElement): void {
     const targets: Set<HTMLElement>|undefined = this.targets.get(name);
 
