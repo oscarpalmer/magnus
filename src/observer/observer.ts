@@ -5,8 +5,6 @@ export interface IObserver {
 }
 
 export abstract class Observer implements IObserver {
-  protected static readonly CONTROLLER_ATTRIBUTE = 'data-controller';
-
   protected static readonly MUTATION_OBSERVER_OPTIONS: MutationObserverInit = {
     attributeOldValue: true,
     attributes: true,
@@ -14,23 +12,16 @@ export abstract class Observer implements IObserver {
     subtree: true,
   };
 
-  protected static readonly MUTATION_RECORD_CHILDLIST = 'childList';
+  protected static readonly MUTATION_RECORD_CHILDLIST: string = 'childList';
 
-  protected readonly attributeAction: string;
-  protected readonly attributeTarget: string;
   protected readonly element: HTMLElement;
-  protected readonly identifier: string;
   protected readonly mutationObserver: MutationObserver;
-  protected readonly mutationOptions: MutationObserverInit;
+  protected readonly mutationObserverOptions: MutationObserverInit;
 
-  constructor (identifier: string, element: HTMLElement) {
-    this.identifier = identifier;
+  constructor (element: HTMLElement) {
     this.element = element;
 
-    this.attributeAction = `data-${this.identifier}-action`;
-    this.attributeTarget = `data-${this.identifier}-target`;
-
-    this.mutationOptions = this.getOptions();
+    this.mutationObserverOptions = this.getOptions();
 
     this.mutationObserver = new MutationObserver(this.observeMutations.bind(this));
   }
@@ -40,18 +31,18 @@ export abstract class Observer implements IObserver {
   }
 
   handleNodes (nodes: NodeList, added: boolean): void {
-    if (nodes != null && nodes.length > 0) {
-      for (const node of nodes) {
-        if (node.nodeType === Node.ELEMENT_NODE) {
-          this.handleElement(node as HTMLElement, added);
-          this.handleNodes(node.childNodes, added);
-        }
+    for (const node of (nodes ?? [])) {
+      if (node.nodeType === Node.ELEMENT_NODE) {
+        this.handleElement(node as HTMLElement, added);
+        this.handleNodes(node.childNodes, added);
       }
     }
   }
 
   observe (): void {
-    this.mutationObserver.observe(this.element, Observer.MUTATION_OBSERVER_OPTIONS);
+    this.mutationObserver.observe(this.element, this.mutationObserverOptions);
+
+    this.handleNodes(this.element.childNodes, true);
   }
 
   protected getAttributes (oldAttribute: string, newAttribute: string): string[][] {
@@ -76,26 +67,11 @@ export abstract class Observer implements IObserver {
     return [addedValues, removedValues];
   }
 
-  protected abstract handleAttribute (element: HTMLElement, attributeName: string, oldValue: string): void;
+  protected abstract getOptions (): MutationObserverInit;
+
+  protected abstract handleAttribute (element: HTMLElement, attributeName: string, oldValue: string, removedElement?: boolean): void;
 
   protected abstract handleElement (element: HTMLElement, added: boolean): void;
-
-  private getOptions (): MutationObserverInit {
-    const options: MutationObserverInit = Observer.MUTATION_OBSERVER_OPTIONS;
-
-    if (this.element === document.documentElement) {
-      options.attributeFilter = [Observer.CONTROLLER_ATTRIBUTE];
-
-      return options;
-    }
-
-    options.attributeFilter = [
-      this.attributeAction,
-      this.attributeTarget,
-    ];
-
-    return options;
-  }
 
   protected observeMutations (entries: MutationRecord[]): void {
     for (const entry of entries) {

@@ -8,7 +8,7 @@ export class Application {
   private readonly store: ControllerStore;
 
   constructor () {
-    this.store = new ControllerStore();
+    this.store = new ControllerStore(this);
     this.observer = new DocumentObserver(this.store);
   }
 
@@ -22,7 +22,6 @@ export class Application {
 
   start (): void {
     this.observer.observe();
-    this.observer.handleNodes(document.documentElement.childNodes, true);
   }
 
   stop (): void {

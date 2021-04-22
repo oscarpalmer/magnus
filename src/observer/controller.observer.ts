@@ -2,12 +2,28 @@ import { Controller } from '../controller';
 import { Observer } from './observer';
 
 export class ControllerObserver extends Observer {
+  private readonly attributeAction: string;
+  private readonly attributeTarget: string;
   private readonly controller: Controller;
 
   constructor (controller: Controller) {
-    super(controller.identifier, controller.element);
+    super(controller.element);
+
+    this.attributeAction = `data-${controller.identifier}-action`;
+    this.attributeTarget = `data-${controller.identifier}-target`;
 
     this.controller = controller;
+  }
+
+  protected getOptions (): MutationObserverInit {
+    const options: MutationObserverInit = Object.assign({}, Observer.MUTATION_OBSERVER_OPTIONS);
+
+    options.attributeFilter = [
+      this.attributeAction,
+      this.attributeTarget,
+    ];
+
+    return options;
   }
 
   protected handleAttribute (element: HTMLElement, attributeName: string, oldValue: string, removedElement?: boolean): void {
@@ -30,19 +46,14 @@ export class ControllerObserver extends Observer {
   }
 
   protected handleElement (element: HTMLElement, added: true): void {
-    [this.attributeAction, this.attributeTarget]
-      .forEach((attribute: string) => {
-        this.handleAttribute(element, attribute, '', !added);
-      });
+    [this.attributeAction, this.attributeTarget].forEach((attribute: string) => {
+      this.handleAttribute(element, attribute, '', !added);
+    });
   }
 
   private handleAction (element: HTMLElement, action: string, added: true): void {
     if (this.controller.context.store.actions.has(action)) {
-      if (added) {
-        this.controller.context.store.actions.add(action, element);
-      } else {
-        this.controller.context.store.actions.remove(action, element);
-      }
+      this.controller.context.store.actions[added ? 'add' : 'remove'](action, element);
 
       return;
     }
@@ -57,7 +68,7 @@ export class ControllerObserver extends Observer {
       return;
     }
 
-    const callback: any = (this.controller as any)[parts[1]];
+    const callback: Function|undefined = (this.controller as any)[parts[1]];
 
     if (typeof callback === 'function') {
       this.controller.context.store.actions.create(action, parts[0], callback.bind(this.controller));
@@ -67,24 +78,16 @@ export class ControllerObserver extends Observer {
   }
 
   private handleChanges (element: HTMLElement, oldValue: string, newValue: string, callback: Function): void {
-    const attributes: string[][] = this.getAttributes(oldValue, newValue);
+    this.getAttributes(oldValue, newValue).forEach((attributes: string[], index: number) => {
+      const added: boolean = index === 0;
 
-    for (let index = 0; index < attributes.length; index += 1) {
-      this.toggleAttributes(element, attributes[index], callback, index === 0);
-    }
+      for (const attribute of attributes) {
+        callback.call(this, element, attribute, added);
+      }
+    });
   }
 
   private handleTarget (element: HTMLElement, target: string, added: boolean): void {
-    if (added) {
-      this.controller.context.store.targets.add(target, element);
-    } else {
-      this.controller.context.store.targets.remove(target, element);
-    }
-  }
-
-  private toggleAttributes (element: HTMLElement, attributes: string[], callback: Function, added: boolean): void {
-    for (const attribute of attributes) {
-      callback.call(this, element, attribute, added);
-    }
+    this.controller.context.store.targets[added ? 'add' : 'remove'](target, element);
   }
 }

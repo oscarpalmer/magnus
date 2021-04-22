@@ -2,48 +2,52 @@ import { ControllerStore } from '../store/controller.store';
 import { Observer } from './observer';
 
 export class DocumentObserver extends Observer {
+  private static readonly CONTROLLER_ATTRIBUTE: string = 'data-controller';
+
   private readonly store: ControllerStore;
 
   constructor (store: ControllerStore) {
-    super('magnus', document.documentElement);
+    super(document.documentElement);
 
     this.store = store;
   }
 
-  protected handleAttribute (element: HTMLElement, attributeName: string, oldValue: string): void {
-    const newValue: string = element.getAttribute(attributeName) ?? '';
+  protected getOptions (): MutationObserverInit {
+    const options: MutationObserverInit = Object.assign({}, Observer.MUTATION_OBSERVER_OPTIONS);
 
-    if (attributeName === Observer.CONTROLLER_ATTRIBUTE && newValue !== oldValue) {
-      this.handleChanges(element, attributeName, newValue, oldValue);
-    }
+    options.attributeFilter = [DocumentObserver.CONTROLLER_ATTRIBUTE];
+
+    return options;
   }
 
-  protected handleElement (element: HTMLElement, added: true): void {
-    if (!element.hasAttribute(Observer.CONTROLLER_ATTRIBUTE)) {
+  protected handleAttribute (element: HTMLElement, attributeName: string, oldValue: string, removedElement?: boolean): void {
+    let newValue: string = element.getAttribute(attributeName) ?? '';
+
+    if (newValue === oldValue) {
       return;
     }
 
-    const attributeValue: string = element.getAttribute(Observer.CONTROLLER_ATTRIBUTE) ?? '';
-    const attributeParts: string[] = attributeValue.split(' ');
+    if (removedElement === true) {
+      oldValue = newValue;
+      newValue = '';
+    }
 
-    this.toggleAttributes(element, attributeParts, added);
+    this.handleChanges(element, newValue, oldValue);
   }
 
-  private handleChanges (element: HTMLElement, attributeName: string, newValue: string, oldValue: string): void {
-    const identifiers: string[][] = this.getAttributes(oldValue, newValue);
-
-    for (let index = 0; index < identifiers.length; index += 1) {
-      this.toggleAttributes(element, identifiers[index], index === 0);
+  protected handleElement (element: HTMLElement, added: true): void {
+    if (element.hasAttribute(DocumentObserver.CONTROLLER_ATTRIBUTE)) {
+      this.handleAttribute(element, DocumentObserver.CONTROLLER_ATTRIBUTE, '', !added);
     }
   }
 
-  private toggleAttributes (element: HTMLElement, identifiers: string[], added: boolean): void {
-    for (const identifier of identifiers) {
-      if (added) {
-        this.store.add(identifier, element);
-      } else {
-        this.store.remove(identifier, element);
+  private handleChanges (element: HTMLElement, newValue: string, oldValue: string): void {
+    this.getAttributes(oldValue, newValue).forEach((attributes: string[], index: number) => {
+      const added: boolean = index === 0;
+
+      for (const attribute of attributes) {
+        this.store[added ? 'add' : 'remove'](attribute, element);
       }
-    }
+    });
   }
 }

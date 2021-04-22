@@ -1,3 +1,4 @@
+import { Application } from '../application';
 import { Controller, ControllerConstructor } from '../controller';
 
 export interface ControllerBlob {
@@ -6,9 +7,12 @@ export interface ControllerBlob {
 }
 
 export class ControllerStore {
+  private readonly application: Application;
   private readonly store: Map<string, ControllerBlob>;
 
-  constructor () {
+  constructor (application: Application) {
+    this.application = application;
+
     this.store = new Map();
   }
 
@@ -20,7 +24,7 @@ export class ControllerStore {
     }
 
     // eslint-disable-next-line new-cap
-    const instance: Controller = new blob.controller(identifier, element);
+    const instance: Controller = new blob.controller(this.application, identifier, element);
 
     (element as any)[identifier] = instance;
 
@@ -28,20 +32,16 @@ export class ControllerStore {
   }
 
   create (identifier: string, controller: ControllerConstructor): void {
-    this.store.set(identifier, {
-      controller,
-      instances: new Map(),
-    });
+    if (!this.store.has(identifier)) {
+      this.store.set(identifier, {
+        controller,
+        instances: new Map(),
+      });
+    }
   }
 
   get (identifier: string): Controller[] {
-    const blob: ControllerBlob|undefined = this.store.get(identifier);
-
-    if (blob == null) {
-      return [];
-    }
-
-    return Array.from(blob.instances.values());
+    return Array.from(this.store.get(identifier)?.instances.values() ?? []);
   }
 
   remove (identifier: string, element: HTMLElement): void {

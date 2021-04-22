@@ -1,5 +1,5 @@
 /*!
- * Magnus, v0.11.0
+ * Magnus, v0.12.0
  * https://github.com/oscarpalmer/magnus
  * (c) Oscar Palmér, 2021, MIT @license
  */
@@ -10,7 +10,8 @@
 }(this, (function () { 'use strict';
 
     class ControllerStore {
-        constructor() {
+        constructor(application) {
+            this.application = application;
             this.store = new Map();
         }
         add(identifier, element) {
@@ -19,22 +20,21 @@
                 return;
             }
             // eslint-disable-next-line new-cap
-            const instance = new blob.controller(identifier, element);
+            const instance = new blob.controller(this.application, identifier, element);
             element[identifier] = instance;
             blob.instances.set(element, instance);
         }
         create(identifier, controller) {
-            this.store.set(identifier, {
-                controller,
-                instances: new Map(),
-            });
+            if (!this.store.has(identifier)) {
+                this.store.set(identifier, {
+                    controller,
+                    instances: new Map(),
+                });
+            }
         }
         get(identifier) {
-            const blob = this.store.get(identifier);
-            if (blob == null) {
-                return [];
-            }
-            return Array.from(blob.instances.values());
+            var _a, _b;
+            return Array.from((_b = (_a = this.store.get(identifier)) === null || _a === void 0 ? void 0 : _a.instances.values()) !== null && _b !== void 0 ? _b : []);
         }
         remove(identifier, element) {
             const blob = this.store.get(identifier);
@@ -48,29 +48,25 @@
     }
 
     class Observer {
-        constructor(identifier, element) {
-            this.identifier = identifier;
+        constructor(element) {
             this.element = element;
-            this.attributeAction = `data-${this.identifier}-action`;
-            this.attributeTarget = `data-${this.identifier}-target`;
-            this.mutationOptions = this.getOptions();
+            this.mutationObserverOptions = this.getOptions();
             this.mutationObserver = new MutationObserver(this.observeMutations.bind(this));
         }
         disconnect() {
             this.mutationObserver.disconnect();
         }
         handleNodes(nodes, added) {
-            if (nodes != null && nodes.length > 0) {
-                for (const node of nodes) {
-                    if (node.nodeType === Node.ELEMENT_NODE) {
-                        this.handleElement(node, added);
-                        this.handleNodes(node.childNodes, added);
-                    }
+            for (const node of (nodes !== null && nodes !== void 0 ? nodes : [])) {
+                if (node.nodeType === Node.ELEMENT_NODE) {
+                    this.handleElement(node, added);
+                    this.handleNodes(node.childNodes, added);
                 }
             }
         }
         observe() {
-            this.mutationObserver.observe(this.element, Observer.MUTATION_OBSERVER_OPTIONS);
+            this.mutationObserver.observe(this.element, this.mutationObserverOptions);
+            this.handleNodes(this.element.childNodes, true);
         }
         getAttributes(oldAttribute, newAttribute) {
             const oldAttributeValues = oldAttribute.split(' ');
@@ -89,18 +85,6 @@
             }
             return [addedValues, removedValues];
         }
-        getOptions() {
-            const options = Observer.MUTATION_OBSERVER_OPTIONS;
-            if (this.element === document.documentElement) {
-                options.attributeFilter = [Observer.CONTROLLER_ATTRIBUTE];
-                return options;
-            }
-            options.attributeFilter = [
-                this.attributeAction,
-                this.attributeTarget,
-            ];
-            return options;
-        }
         observeMutations(entries) {
             var _a, _b;
             for (const entry of entries) {
@@ -114,7 +98,6 @@
             }
         }
     }
-    Observer.CONTROLLER_ATTRIBUTE = 'data-controller';
     Observer.MUTATION_OBSERVER_OPTIONS = {
         attributeOldValue: true,
         attributes: true,
@@ -125,46 +108,45 @@
 
     class DocumentObserver extends Observer {
         constructor(store) {
-            super('magnus', document.documentElement);
+            super(document.documentElement);
             this.store = store;
         }
-        handleAttribute(element, attributeName, oldValue) {
-            var _a;
-            const newValue = (_a = element.getAttribute(attributeName)) !== null && _a !== void 0 ? _a : '';
-            if (attributeName === Observer.CONTROLLER_ATTRIBUTE && newValue !== oldValue) {
-                this.handleChanges(element, attributeName, newValue, oldValue);
-            }
+        getOptions() {
+            const options = Object.assign({}, Observer.MUTATION_OBSERVER_OPTIONS);
+            options.attributeFilter = [DocumentObserver.CONTROLLER_ATTRIBUTE];
+            return options;
         }
-        handleElement(element, added) {
+        handleAttribute(element, attributeName, oldValue, removedElement) {
             var _a;
-            if (!element.hasAttribute(Observer.CONTROLLER_ATTRIBUTE)) {
+            let newValue = (_a = element.getAttribute(attributeName)) !== null && _a !== void 0 ? _a : '';
+            if (newValue === oldValue) {
                 return;
             }
-            const attributeValue = (_a = element.getAttribute(Observer.CONTROLLER_ATTRIBUTE)) !== null && _a !== void 0 ? _a : '';
-            const attributeParts = attributeValue.split(' ');
-            this.toggleAttributes(element, attributeParts, added);
+            if (removedElement === true) {
+                oldValue = newValue;
+                newValue = '';
+            }
+            this.handleChanges(element, newValue, oldValue);
         }
-        handleChanges(element, attributeName, newValue, oldValue) {
-            const identifiers = this.getAttributes(oldValue, newValue);
-            for (let index = 0; index < identifiers.length; index += 1) {
-                this.toggleAttributes(element, identifiers[index], index === 0);
+        handleElement(element, added) {
+            if (element.hasAttribute(DocumentObserver.CONTROLLER_ATTRIBUTE)) {
+                this.handleAttribute(element, DocumentObserver.CONTROLLER_ATTRIBUTE, '', !added);
             }
         }
-        toggleAttributes(element, identifiers, added) {
-            for (const identifier of identifiers) {
-                if (added) {
-                    this.store.add(identifier, element);
+        handleChanges(element, newValue, oldValue) {
+            this.getAttributes(oldValue, newValue).forEach((attributes, index) => {
+                const added = index === 0;
+                for (const attribute of attributes) {
+                    this.store[added ? 'add' : 'remove'](attribute, element);
                 }
-                else {
-                    this.store.remove(identifier, element);
-                }
-            }
+            });
         }
     }
+    DocumentObserver.CONTROLLER_ATTRIBUTE = 'data-controller';
 
     class Application {
         constructor() {
-            this.store = new ControllerStore();
+            this.store = new ControllerStore(this);
             this.observer = new DocumentObserver(this.store);
         }
         add(name, controller) {
@@ -175,7 +157,6 @@
         }
         start() {
             this.observer.observe();
-            this.observer.handleNodes(document.documentElement.childNodes, true);
         }
         stop() {
             this.observer.disconnect();
@@ -184,8 +165,18 @@
 
     class ControllerObserver extends Observer {
         constructor(controller) {
-            super(controller.identifier, controller.element);
+            super(controller.element);
+            this.attributeAction = `data-${controller.identifier}-action`;
+            this.attributeTarget = `data-${controller.identifier}-target`;
             this.controller = controller;
+        }
+        getOptions() {
+            const options = Object.assign({}, Observer.MUTATION_OBSERVER_OPTIONS);
+            options.attributeFilter = [
+                this.attributeAction,
+                this.attributeTarget,
+            ];
+            return options;
         }
         handleAttribute(element, attributeName, oldValue, removedElement) {
             var _a;
@@ -203,19 +194,13 @@
             this.handleChanges(element, oldValue, newValue, callback);
         }
         handleElement(element, added) {
-            [this.attributeAction, this.attributeTarget]
-                .forEach((attribute) => {
+            [this.attributeAction, this.attributeTarget].forEach((attribute) => {
                 this.handleAttribute(element, attribute, '', !added);
             });
         }
         handleAction(element, action, added) {
             if (this.controller.context.store.actions.has(action)) {
-                if (added) {
-                    this.controller.context.store.actions.add(action, element);
-                }
-                else {
-                    this.controller.context.store.actions.remove(action, element);
-                }
+                this.controller.context.store.actions[added ? 'add' : 'remove'](action, element);
                 return;
             }
             if (!added) {
@@ -232,23 +217,15 @@
             }
         }
         handleChanges(element, oldValue, newValue, callback) {
-            const attributes = this.getAttributes(oldValue, newValue);
-            for (let index = 0; index < attributes.length; index += 1) {
-                this.toggleAttributes(element, attributes[index], callback, index === 0);
-            }
+            this.getAttributes(oldValue, newValue).forEach((attributes, index) => {
+                const added = index === 0;
+                for (const attribute of attributes) {
+                    callback.call(this, element, attribute, added);
+                }
+            });
         }
         handleTarget(element, target, added) {
-            if (added) {
-                this.controller.context.store.targets.add(target, element);
-            }
-            else {
-                this.controller.context.store.targets.remove(target, element);
-            }
-        }
-        toggleAttributes(element, attributes, callback, added) {
-            for (const attribute of attributes) {
-                callback.call(this, element, attribute, added);
-            }
+            this.controller.context.store.targets[added ? 'add' : 'remove'](target, element);
         }
     }
 
@@ -307,8 +284,8 @@
             return Array.from((_a = this.targets.get(name)) !== null && _a !== void 0 ? _a : []);
         }
         has(name) {
-            const targets = this.targets.get(name);
-            return targets != null && targets.size > 0;
+            var _a, _b;
+            return ((_b = (_a = this.targets.get(name)) === null || _a === void 0 ? void 0 : _a.size) !== null && _b !== void 0 ? _b : 0) > 0;
         }
         remove(name, element) {
             const targets = this.targets.get(name);
@@ -330,15 +307,15 @@
     }
 
     class Controller {
-        constructor(identifier, element) {
+        constructor(application, identifier, element) {
             this.identifier = identifier;
             this.element = element;
             this.context = {
+                application,
                 observer: new ControllerObserver(this),
                 store: new Store(),
             };
             this.context.observer.observe();
-            this.context.observer.handleNodes(this.element.childNodes, true);
             this.connect();
         }
         connect() { }
