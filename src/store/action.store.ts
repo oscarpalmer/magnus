@@ -1,6 +1,6 @@
 export interface Action {
   callback: Function
-  elements: Set<HTMLElement>
+  elements: Set<Element>
   type: string
 }
 
@@ -11,7 +11,7 @@ export class ActionStore {
     this.actions = new Map();
   }
 
-  add (name: string, element: HTMLElement): void {
+  add (name: string, element: Element): void {
     const action: Action|undefined = this.actions.get(name);
 
     if (action == null) {
@@ -21,6 +21,16 @@ export class ActionStore {
     action.elements.add(element);
 
     element.addEventListener(action.type, action.callback as EventListenerOrEventListenerObject);
+  }
+
+  clear (): void {
+    this.actions.forEach((action: Action, name: string) => {
+      action.elements.forEach((element: Element) => {
+        element.removeEventListener(action.type, action.callback as EventListenerOrEventListenerObject);
+      });
+
+      action.elements.clear();
+    });
   }
 
   create (name: string, type: string, callback: Function): void {
@@ -37,7 +47,7 @@ export class ActionStore {
     return this.actions.has(name);
   }
 
-  remove (name: string, element: HTMLElement): void {
+  remove (name: string, element: Element): void {
     const action: Action|undefined = this.actions.get(name);
 
     if (action == null) {

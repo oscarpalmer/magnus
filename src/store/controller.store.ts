@@ -1,55 +1,63 @@
 import { Application } from '../application';
+import { Context } from '../context';
 import { Controller, ControllerConstructor } from '../controller';
 
 export interface ControllerBlob {
-  controller: ControllerConstructor
-  instances: Map<HTMLElement, Controller>
+  controllerConstructor: ControllerConstructor
+  instances: Map<Element, Controller>
 }
 
 export class ControllerStore {
-  private readonly application: Application;
-  private readonly store: Map<string, ControllerBlob>;
+  private readonly controllers: Map<string, ControllerBlob>;
 
-  constructor (application: Application) {
-    this.application = application;
-
-    this.store = new Map();
+  constructor (private readonly application: Application) {
+    this.controllers = new Map();
   }
 
-  add (identifier: string, element: HTMLElement): void {
-    const blob: ControllerBlob|undefined = this.store.get(identifier);
+  add (identifier: string, element: Element): void {
+    const blob: ControllerBlob|undefined = this.controllers.get(identifier);
 
     if (blob == null) {
       return;
     }
 
-    // eslint-disable-next-line new-cap
-    const instance: Controller = new blob.controller(this.application, identifier, element);
+    const context = new Context(this.application, identifier, element, blob.controllerConstructor);
 
-    (element as any)[identifier] = instance;
+    (element as any)[identifier] = context.controller;
 
-    blob.instances.set(element, instance);
+    blob.instances.set(element, context.controller);
   }
 
-  create (identifier: string, controller: ControllerConstructor): void {
-    if (!this.store.has(identifier)) {
-      this.store.set(identifier, {
-        controller,
+  create (identifier: string, controllerConstructor: ControllerConstructor): void {
+    if (!this.controllers.has(identifier)) {
+      this.controllers.set(identifier, {
+        controllerConstructor,
         instances: new Map(),
       });
     }
   }
 
   get (identifier: string): Controller[] {
-    return Array.from(this.store.get(identifier)?.instances.values() ?? []);
+    return Array.from(this.controllers.get(identifier)?.instances.values() ?? []);
   }
 
-  remove (identifier: string, element: HTMLElement): void {
-    const blob: ControllerBlob|undefined = this.store.get(identifier);
+  remove (identifier: string, element: Element): void {
+    const blob: ControllerBlob|undefined = this.controllers.get(identifier);
 
-    if (blob == null || !blob.instances.has(element)) {
+    if (blob == null) {
       return;
     }
+
+    const instance: Controller|undefined = blob.instances.get(element);
+
+    if (instance == null) {
+      return;
+    }
+
+    instance.context.observer.stop();
+
+    instance.context.store.actions.clear();
+    instance.context.store.targets.clear();
 
     // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
     delete (element as any)[identifier];

@@ -1,11 +1,11 @@
 export class TargetStore {
-  private readonly targets: Map<string, Set<HTMLElement>>;
+  private readonly targets: Map<string, Set<Element>>;
 
   constructor () {
     this.targets = new Map();
   }
 
-  add (name: string, element: HTMLElement): void {
+  add (name: string, element: Element): void {
     if (this.targets.has(name)) {
       this.targets.get(name)?.add(element);
     } else {
@@ -13,16 +13,22 @@ export class TargetStore {
     }
   }
 
-  get (name: string): HTMLElement[] {
+  clear (): void {
+    this.targets.forEach((elements: Set<Element>, name: string) => {
+      elements.clear();
+    });
+  }
+
+  get (name: string): Element[] {
     return Array.from(this.targets.get(name) ?? []);
   }
 
   has (name: string): boolean {
-    return (this.targets.get(name)?.size ?? 0) > 0;
+    return this.targets.has(name);
   }
 
-  remove (name: string, element: HTMLElement): void {
-    const targets: Set<HTMLElement>|undefined = this.targets.get(name);
+  remove (name: string, element: Element): void {
+    const targets: Set<Element>|undefined = this.targets.get(name);
 
     if (targets == null) {
       return;

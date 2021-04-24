@@ -1,5 +1,5 @@
 /*!
- * Magnus, v0.12.0
+ * Magnus, v0.13.0
  * https://github.com/oscarpalmer/magnus
  * (c) Oscar Palmér, 2021, MIT @license
  */
@@ -9,64 +9,18 @@
     (global = typeof globalThis !== 'undefined' ? globalThis : global || self, global.Magnus = factory());
 }(this, (function () { 'use strict';
 
-    class ControllerStore {
-        constructor(application) {
-            this.application = application;
-            this.store = new Map();
-        }
-        add(identifier, element) {
-            const blob = this.store.get(identifier);
-            if (blob == null) {
-                return;
-            }
-            // eslint-disable-next-line new-cap
-            const instance = new blob.controller(this.application, identifier, element);
-            element[identifier] = instance;
-            blob.instances.set(element, instance);
-        }
-        create(identifier, controller) {
-            if (!this.store.has(identifier)) {
-                this.store.set(identifier, {
-                    controller,
-                    instances: new Map(),
-                });
-            }
-        }
-        get(identifier) {
-            var _a, _b;
-            return Array.from((_b = (_a = this.store.get(identifier)) === null || _a === void 0 ? void 0 : _a.instances.values()) !== null && _b !== void 0 ? _b : []);
-        }
-        remove(identifier, element) {
-            const blob = this.store.get(identifier);
-            if (blob == null || !blob.instances.has(element)) {
-                return;
-            }
-            // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-            delete element[identifier];
-            blob.instances.delete(element);
-        }
-    }
-
     class Observer {
         constructor(element) {
             this.element = element;
-            this.mutationObserverOptions = this.getOptions();
-            this.mutationObserver = new MutationObserver(this.observeMutations.bind(this));
+            this.options = this.getOptions();
+            this.observer = new MutationObserver(this.observe.bind(this));
         }
-        disconnect() {
-            this.mutationObserver.disconnect();
-        }
-        handleNodes(nodes, added) {
-            for (const node of (nodes !== null && nodes !== void 0 ? nodes : [])) {
-                if (node.nodeType === Node.ELEMENT_NODE) {
-                    this.handleElement(node, added);
-                    this.handleNodes(node.childNodes, added);
-                }
-            }
-        }
-        observe() {
-            this.mutationObserver.observe(this.element, this.mutationObserverOptions);
+        start() {
+            this.observer.observe(this.element, this.options);
             this.handleNodes(this.element.childNodes, true);
+        }
+        stop() {
+            this.observer.disconnect();
         }
         getAttributes(oldAttribute, newAttribute) {
             const oldAttributeValues = oldAttribute.split(' ');
@@ -85,10 +39,18 @@
             }
             return [addedValues, removedValues];
         }
-        observeMutations(entries) {
+        handleNodes(nodes, added) {
+            for (const node of (nodes !== null && nodes !== void 0 ? nodes : [])) {
+                if (node.nodeType === Node.ELEMENT_NODE) {
+                    this.handleElement(node, added);
+                    this.handleNodes(node.childNodes, added);
+                }
+            }
+        }
+        observe(entries) {
             var _a, _b;
             for (const entry of entries) {
-                if (entry.type === Observer.MUTATION_RECORD_CHILDLIST) {
+                if (entry.type === Observer.CHILDLIST) {
                     this.handleNodes(entry.addedNodes, true);
                     this.handleNodes(entry.removedNodes, false);
                 }
@@ -98,80 +60,23 @@
             }
         }
     }
-    Observer.MUTATION_OBSERVER_OPTIONS = {
+    Observer.CHILDLIST = 'childList';
+    Observer.OPTIONS = {
         attributeOldValue: true,
         attributes: true,
         childList: true,
         subtree: true,
     };
-    Observer.MUTATION_RECORD_CHILDLIST = 'childList';
-
-    class DocumentObserver extends Observer {
-        constructor(store) {
-            super(document.documentElement);
-            this.store = store;
-        }
-        getOptions() {
-            const options = Object.assign({}, Observer.MUTATION_OBSERVER_OPTIONS);
-            options.attributeFilter = [DocumentObserver.CONTROLLER_ATTRIBUTE];
-            return options;
-        }
-        handleAttribute(element, attributeName, oldValue, removedElement) {
-            var _a;
-            let newValue = (_a = element.getAttribute(attributeName)) !== null && _a !== void 0 ? _a : '';
-            if (newValue === oldValue) {
-                return;
-            }
-            if (removedElement === true) {
-                oldValue = newValue;
-                newValue = '';
-            }
-            this.handleChanges(element, newValue, oldValue);
-        }
-        handleElement(element, added) {
-            if (element.hasAttribute(DocumentObserver.CONTROLLER_ATTRIBUTE)) {
-                this.handleAttribute(element, DocumentObserver.CONTROLLER_ATTRIBUTE, '', !added);
-            }
-        }
-        handleChanges(element, newValue, oldValue) {
-            this.getAttributes(oldValue, newValue).forEach((attributes, index) => {
-                const added = index === 0;
-                for (const attribute of attributes) {
-                    this.store[added ? 'add' : 'remove'](attribute, element);
-                }
-            });
-        }
-    }
-    DocumentObserver.CONTROLLER_ATTRIBUTE = 'data-controller';
-
-    class Application {
-        constructor() {
-            this.store = new ControllerStore(this);
-            this.observer = new DocumentObserver(this.store);
-        }
-        add(name, controller) {
-            this.store.create(name, controller);
-        }
-        get(name) {
-            return this.store.get(name);
-        }
-        start() {
-            this.observer.observe();
-        }
-        stop() {
-            this.observer.disconnect();
-        }
-    }
 
     class ControllerObserver extends Observer {
-        constructor(controller) {
-            super(controller.element);
-            this.attributeAction = `data-${controller.identifier}-action`;
-            this.attributeTarget = `data-${controller.identifier}-target`;
-            this.controller = controller;
+        constructor(context) {
+            super(context.element);
+            this.context = context;
+            this.attributeAction = `data-${context.identifier}-action`;
+            this.attributeTarget = `data-${context.identifier}-target`;
         }
         getOptions() {
-            const options = Object.assign({}, Observer.MUTATION_OBSERVER_OPTIONS);
+            const options = Object.assign({}, Observer.OPTIONS);
             options.attributeFilter = [
                 this.attributeAction,
                 this.attributeTarget,
@@ -199,8 +104,8 @@
             });
         }
         handleAction(element, action, added) {
-            if (this.controller.context.store.actions.has(action)) {
-                this.controller.context.store.actions[added ? 'add' : 'remove'](action, element);
+            if (this.context.store.actions.has(action)) {
+                this.context.store.actions[added ? 'add' : 'remove'](action, element);
                 return;
             }
             if (!added) {
@@ -210,10 +115,10 @@
             if (parts.length < 2) {
                 return;
             }
-            const callback = this.controller[parts[1]];
+            const callback = this.context.controller[parts[1]];
             if (typeof callback === 'function') {
-                this.controller.context.store.actions.create(action, parts[0], callback.bind(this.controller));
-                this.controller.context.store.actions.add(action, element);
+                this.context.store.actions.create(action, parts[0], callback.bind(this.context.controller));
+                this.context.store.actions.add(action, element);
             }
         }
         handleChanges(element, oldValue, newValue, callback) {
@@ -225,7 +130,7 @@
             });
         }
         handleTarget(element, target, added) {
-            this.controller.context.store.targets[added ? 'add' : 'remove'](target, element);
+            this.context.store.targets[added ? 'add' : 'remove'](target, element);
         }
     }
 
@@ -240,6 +145,14 @@
             }
             action.elements.add(element);
             element.addEventListener(action.type, action.callback);
+        }
+        clear() {
+            this.actions.forEach((action, name) => {
+                action.elements.forEach((element) => {
+                    element.removeEventListener(action.type, action.callback);
+                });
+                action.elements.clear();
+            });
         }
         create(name, type, callback) {
             if (!this.actions.has(name)) {
@@ -279,13 +192,17 @@
                 (_b = this.targets.set(name, new Set()).get(name)) === null || _b === void 0 ? void 0 : _b.add(element);
             }
         }
+        clear() {
+            this.targets.forEach((elements, name) => {
+                elements.clear();
+            });
+        }
         get(name) {
             var _a;
             return Array.from((_a = this.targets.get(name)) !== null && _a !== void 0 ? _a : []);
         }
         has(name) {
-            var _a, _b;
-            return ((_b = (_a = this.targets.get(name)) === null || _a === void 0 ? void 0 : _a.size) !== null && _b !== void 0 ? _b : 0) > 0;
+            return this.targets.has(name);
         }
         remove(name, element) {
             const targets = this.targets.get(name);
@@ -306,24 +223,139 @@
         }
     }
 
-    class Controller {
-        constructor(application, identifier, element) {
+    class Context {
+        constructor(application, identifier, element, ControllerConstructor) {
+            this.application = application;
             this.identifier = identifier;
             this.element = element;
-            this.context = {
-                application,
-                observer: new ControllerObserver(this),
-                store: new Store(),
-            };
-            this.context.observer.observe();
-            this.connect();
+            this.store = new Store();
+            this.observer = new ControllerObserver(this);
+            this.controller = new ControllerConstructor(this);
+            this.observer.start();
+            this.controller.connect();
+        }
+        findElement(selector) {
+            return this.element.querySelector(selector);
+        }
+        findElements(selector) {
+            return Array.from(this.element.querySelectorAll(selector));
+        }
+    }
+
+    class ControllerStore {
+        constructor(application) {
+            this.application = application;
+            this.controllers = new Map();
+        }
+        add(identifier, element) {
+            const blob = this.controllers.get(identifier);
+            if (blob == null) {
+                return;
+            }
+            const context = new Context(this.application, identifier, element, blob.controllerConstructor);
+            element[identifier] = context.controller;
+            blob.instances.set(element, context.controller);
+        }
+        create(identifier, controllerConstructor) {
+            if (!this.controllers.has(identifier)) {
+                this.controllers.set(identifier, {
+                    controllerConstructor,
+                    instances: new Map(),
+                });
+            }
+        }
+        get(identifier) {
+            var _a, _b;
+            return Array.from((_b = (_a = this.controllers.get(identifier)) === null || _a === void 0 ? void 0 : _a.instances.values()) !== null && _b !== void 0 ? _b : []);
+        }
+        remove(identifier, element) {
+            const blob = this.controllers.get(identifier);
+            if (blob == null) {
+                return;
+            }
+            const instance = blob.instances.get(element);
+            if (instance == null) {
+                return;
+            }
+            instance.context.observer.stop();
+            instance.context.store.actions.clear();
+            instance.context.store.targets.clear();
+            // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+            delete element[identifier];
+            blob.instances.delete(element);
+        }
+    }
+
+    class DocumentObserver extends Observer {
+        constructor(controllers) {
+            super(document.documentElement);
+            this.controllers = controllers;
+        }
+        getOptions() {
+            const options = Object.assign({}, Observer.OPTIONS);
+            options.attributeFilter = [DocumentObserver.ATTRIBUTE];
+            return options;
+        }
+        handleAttribute(element, attributeName, oldValue, removedElement) {
+            var _a;
+            let newValue = (_a = element.getAttribute(attributeName)) !== null && _a !== void 0 ? _a : '';
+            if (newValue === oldValue) {
+                return;
+            }
+            if (removedElement === true) {
+                oldValue = newValue;
+                newValue = '';
+            }
+            this.handleChanges(element, newValue, oldValue);
+        }
+        handleElement(element, added) {
+            if (element.hasAttribute(DocumentObserver.ATTRIBUTE)) {
+                this.handleAttribute(element, DocumentObserver.ATTRIBUTE, '', !added);
+            }
+        }
+        handleChanges(element, newValue, oldValue) {
+            this.getAttributes(oldValue, newValue).forEach((attributes, index) => {
+                const added = index === 0;
+                for (const attribute of attributes) {
+                    this.controllers[added ? 'add' : 'remove'](attribute, element);
+                }
+            });
+        }
+    }
+    DocumentObserver.ATTRIBUTE = 'data-controller';
+
+    class Application {
+        constructor() {
+            this.controllers = new ControllerStore(this);
+            this.observer = new DocumentObserver(this.controllers);
+        }
+        add(name, controller) {
+            this.controllers.create(name, controller);
+        }
+        start() {
+            this.observer.start();
+        }
+        stop() {
+            this.observer.stop();
+        }
+    }
+
+    class Controller {
+        constructor(context) {
+            this.context = context;
+        }
+        get element() {
+            return this.context.element;
+        }
+        get identifier() {
+            return this.context.identifier;
         }
         connect() { }
         hasTarget(name) {
             return this.context.store.targets.has(name);
         }
         target(name) {
-            return this.targets(name)[0];
+            return this.context.store.targets.get(name)[0];
         }
         targets(name) {
             return this.context.store.targets.get(name);

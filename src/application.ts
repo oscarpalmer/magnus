@@ -1,30 +1,26 @@
 import { ControllerStore } from './store/controller.store';
-import { Controller, ControllerConstructor } from './controller';
+import { ControllerConstructor } from './controller';
 import { DocumentObserver } from './observer/document.observer';
 import { IObserver } from './observer/observer';
 
 export class Application {
+  private readonly controllers: ControllerStore;
   private readonly observer: IObserver;
-  private readonly store: ControllerStore;
 
   constructor () {
-    this.store = new ControllerStore(this);
-    this.observer = new DocumentObserver(this.store);
+    this.controllers = new ControllerStore(this);
+    this.observer = new DocumentObserver(this.controllers);
   }
 
   add (name: string, controller: ControllerConstructor): void {
-    this.store.create(name, controller);
-  }
-
-  get (name: string): Controller[] {
-    return this.store.get(name);
+    this.controllers.create(name, controller);
   }
 
   start (): void {
-    this.observer.observe();
+    this.observer.start();
   }
 
   stop (): void {
-    this.observer.disconnect();
+    this.observer.stop();
   }
 }

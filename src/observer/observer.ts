@@ -1,48 +1,35 @@
 export interface IObserver {
-  disconnect: () => void
-  handleNodes: (nodes: NodeList, added: boolean) => void
-  observe: () => void
+  start: () => void
+  stop: () => void
 }
 
 export abstract class Observer implements IObserver {
-  protected static readonly MUTATION_OBSERVER_OPTIONS: MutationObserverInit = {
+  protected static readonly CHILDLIST: string = 'childList';
+
+  protected static readonly OPTIONS: MutationObserverInit = {
     attributeOldValue: true,
     attributes: true,
     childList: true,
     subtree: true,
   };
 
-  protected static readonly MUTATION_RECORD_CHILDLIST: string = 'childList';
+  protected readonly observer: MutationObserver;
+  protected readonly options: MutationObserverInit;
 
-  protected readonly element: HTMLElement;
-  protected readonly mutationObserver: MutationObserver;
-  protected readonly mutationObserverOptions: MutationObserverInit;
+  constructor (protected readonly element: Element) {
+    this.options = this.getOptions();
 
-  constructor (element: HTMLElement) {
-    this.element = element;
-
-    this.mutationObserverOptions = this.getOptions();
-
-    this.mutationObserver = new MutationObserver(this.observeMutations.bind(this));
+    this.observer = new MutationObserver(this.observe.bind(this));
   }
 
-  disconnect (): void {
-    this.mutationObserver.disconnect();
-  }
-
-  handleNodes (nodes: NodeList, added: boolean): void {
-    for (const node of (nodes ?? [])) {
-      if (node.nodeType === Node.ELEMENT_NODE) {
-        this.handleElement(node as HTMLElement, added);
-        this.handleNodes(node.childNodes, added);
-      }
-    }
-  }
-
-  observe (): void {
-    this.mutationObserver.observe(this.element, this.mutationObserverOptions);
+  start (): void {
+    this.observer.observe(this.element, this.options);
 
     this.handleNodes(this.element.childNodes, true);
+  }
+
+  stop (): void {
+    this.observer.disconnect();
   }
 
   protected getAttributes (oldAttribute: string, newAttribute: string): string[][] {
@@ -69,17 +56,26 @@ export abstract class Observer implements IObserver {
 
   protected abstract getOptions (): MutationObserverInit;
 
-  protected abstract handleAttribute (element: HTMLElement, attributeName: string, oldValue: string, removedElement?: boolean): void;
+  protected abstract handleAttribute (element: Element, attributeName: string, oldValue: string, removedElement?: boolean): void;
 
-  protected abstract handleElement (element: HTMLElement, added: boolean): void;
+  protected abstract handleElement (element: Element, added: boolean): void;
 
-  protected observeMutations (entries: MutationRecord[]): void {
+  private handleNodes (nodes: NodeList, added: boolean): void {
+    for (const node of (nodes ?? [])) {
+      if (node.nodeType === Node.ELEMENT_NODE) {
+        this.handleElement(node as Element, added);
+        this.handleNodes(node.childNodes, added);
+      }
+    }
+  }
+
+  private observe (entries: MutationRecord[]): void {
     for (const entry of entries) {
-      if (entry.type === Observer.MUTATION_RECORD_CHILDLIST) {
+      if (entry.type === Observer.CHILDLIST) {
         this.handleNodes(entry.addedNodes, true);
         this.handleNodes(entry.removedNodes, false);
       } else {
-        this.handleAttribute(entry.target as HTMLElement, entry.attributeName ?? '', entry.oldValue ?? '');
+        this.handleAttribute(entry.target as Element, entry.attributeName ?? '', entry.oldValue ?? '');
       }
     }
   }
