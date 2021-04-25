@@ -1,5 +1,5 @@
 /*!
- * Magnus, v0.13.0
+ * Magnus, v0.14.0
  * https://github.com/oscarpalmer/magnus
  * (c) Oscar Palmér, 2021, MIT @license
  */
