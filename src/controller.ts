@@ -2,8 +2,12 @@ import { Context } from './context';
 
 export type ControllerConstructor = new(context: Context) => Controller;
 
-export class Controller {
+export abstract class Controller {
   constructor (readonly context: Context) {}
+
+  get data (): any {
+    return this.context.store.data.proxy;
+  }
 
   get element (): Element {
     return this.context.element;
@@ -13,7 +17,9 @@ export class Controller {
     return this.context.identifier;
   }
 
-  connect (): void {}
+  abstract connect (): void;
+
+  abstract disconnect (): void;
 
   hasTarget (name: string): boolean {
     return this.context.store.targets.has(name);

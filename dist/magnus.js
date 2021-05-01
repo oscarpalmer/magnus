@@ -1,5 +1,5 @@
 /*!
- * Magnus, v0.14.0
+ * Magnus, v0.15.0
  * https://github.com/oscarpalmer/magnus
  * (c) Oscar Palmér, 2021, MIT @license
  */
@@ -179,6 +179,46 @@
         }
     }
 
+    class DataStoreHandlers {
+        constructor(store) {
+            this.store = store;
+        }
+        get(target, property) {
+            return Reflect.get(target, property);
+        }
+        set(target, property, value) {
+            this.handleValue(property, Reflect.get(target, property), value);
+            return Reflect.set(target, property, value);
+        }
+        getProperty(property) {
+            return property.replace(DataStoreHandlers.PATTERN, (character) => character.toUpperCase());
+        }
+        handleValue(property, oldValue, newValue) {
+            let callback;
+            if (this.store.callbacks.has(property)) {
+                callback = this.store.callbacks.get(property);
+                if (typeof callback === 'function') {
+                    callback.call(this.store.context.controller, newValue, oldValue);
+                }
+                return;
+            }
+            callback = this.store.context.controller[`data${this.getProperty(property)}Changed`];
+            this.store.callbacks.set(property, callback);
+            if (typeof callback === 'function') {
+                callback.call(this.store.context.controller, newValue, oldValue);
+            }
+        }
+    }
+    DataStoreHandlers.PATTERN = /^\w/;
+    class DataStore {
+        constructor(context) {
+            this.context = context;
+            this.callbacks = new Map();
+            this.handlers = new DataStoreHandlers(this);
+            this.proxy = new Proxy({}, this.handlers);
+        }
+    }
+
     class TargetStore {
         constructor() {
             this.targets = new Map();
@@ -217,8 +257,9 @@
     }
 
     class Store {
-        constructor() {
+        constructor(context) {
             this.actions = new ActionStore();
+            this.data = new DataStore(context);
             this.targets = new TargetStore();
         }
     }
@@ -228,11 +269,13 @@
             this.application = application;
             this.identifier = identifier;
             this.element = element;
-            this.store = new Store();
+            this.store = new Store(this);
             this.observer = new ControllerObserver(this);
             this.controller = new ControllerConstructor(this);
             this.observer.start();
-            this.controller.connect();
+            if (typeof this.controller.connect === 'function') {
+                this.controller.connect();
+            }
         }
         findElement(selector) {
             return this.element.querySelector(selector);
@@ -283,6 +326,9 @@
             // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
             delete element[identifier];
             blob.instances.delete(element);
+            if (typeof instance.disconnect === 'function') {
+                instance.disconnect();
+            }
         }
     }
 
@@ -344,13 +390,15 @@
         constructor(context) {
             this.context = context;
         }
+        get data() {
+            return this.context.store.data.proxy;
+        }
         get element() {
             return this.context.element;
         }
         get identifier() {
             return this.context.identifier;
         }
-        connect() { }
         hasTarget(name) {
             return this.context.store.targets.has(name);
         }

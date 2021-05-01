@@ -11,12 +11,12 @@ It's basically a barebones version of [Stimulus](https://github.com/hotwired/sti
 To quickly get started, Magnus needs some nice HTML:
 
 ```html
-<div data-controller="xyz">
-  <input data-xyz-target="input" type="text" />
+<div data-controller="hello">
+  <input data-hello-target="input" type="text" />
 
-  <button data-xyz-action="click:greet">Greet</button>
+  <button data-hello-action="click:greet">Greet</button>
 
-  <span data-xyz-target="output"></span>
+  <span data-hello-target="output"></span>
 </div>
 ```
 
@@ -48,13 +48,17 @@ It very loosely follows the MVC-pattern, where the M(odel) and C(ontroller) is r
 
 ### Lifecycles
 
-Magnus is built on top of mutation observers in JavaScript, which are objects that watch for changes in the DOM, allowing Magnus to connect specific element and attribute changes to event handlers within Magnus.
+Magnus is built on top of mutation observers, which are objects that watch for changes in the DOM, allowing Magnus to connect specific element and attribute changes to event handlers within Magnus.
 
 These event handlers are then able to:
 
 - create (and remove) controller instances that can react to interactivity in the DOM
 - create (and remove) targets – element groups – from controllers
 - create (and remove) actions – controller-specific event handlers – that handle interactivity for the controller
+
+#### Controller lifecycle events
+
+As controllers can be created and destroyed, they may also need to react to such events. When a controller is created, it will call the method `connect`; when it's destroyed, it will call the method `disconnect`.
 
 ### Application
 
@@ -90,19 +94,19 @@ export default class extends Controller {
 To allow Magnus to create instances for a controller, it must also be added to the application with a name.
 
 ```typescript
-import XYZ from 'xyz';
+import Hello from 'hello';
 
 // Add controller to application with a name to watch for in observer
-application.add('xyz', XYZ);
+application.add('hello', Hello);
 ```
 
-When a controller has been instantiated, it will also create a mutation observer for itself and begin to observe actions and targets within the controller instance's element.
+When a controller has been instantiated, it will also create a mutation observer for itself and begin to observe actions and targets within the controller instance's element, as well as call its `connect`-method.
 
-When a controller is removed, either by having its element removed from the DOM or by modifying the element's `data-controller`-attribute, it will stop observing the element, as well as remove all actions and targets from itself.
+When a controller is removed, either by having its element removed from the DOM or by modifying the element's `data-controller`-attribute, it will stop observing the element, as well as remove all actions and targets from itself and finally call the `disconnect`-method.
 
 ### Targets
 
-Targets are elements in your controller that are useful to have quick and easy access to. Targers are defined by the attribute `data-xyz-target`, where `xyz` is the name of your controller.
+Targets are elements in your controller that are useful to have quick and easy access to. Targers are defined by the attribute `data-hello-target`, where `hello` is the name of your controller.
 
 The value for the attribute should be a string of space-separated names, allowing for an element to be part of multiple target groups.
 
@@ -117,7 +121,7 @@ Define your targets in HTML:
 And access them in JavaScript:
 
 ```typescript
-// Inside the controller 'XYZ'
+// Inside the controller 'Hello'
 
 // Returns an array of elements
 const elements = this.targets('output')
@@ -131,27 +135,49 @@ const exists = this.hasTarget('output')
 
 ### Actions
 
-Actions are events for elements within a controller and are defined by the attribute `data-xyz-action`, where `xyz` is the name of your controller.
+Actions are events for elements within a controller and are defined by the attribute `data-hello-action`, where `hello` is the name of your controller.
 
 The value for the attribute should be a space-separated string of actions, where each action resembles `type:callback`, for which `type` should match an event name (e.g. 'click') and `callback` should match the name of a function in your controller.
 
 #### Action example
 
+Define your actions in HTML:
+
 ```html
-<button data-xyz-action="click:greet">Greet</button>
+<button data-hello-action="click:greet">Greet</button>
 ```
 
+And define their methods in JavaScript:
+
 ```typescript
-// Inside the controller 'XYZ'
+// Inside the controller 'Hello'
 
 greet() {
   // Called on a click event
 }
 ```
 
-## In the future?
+### Data
 
-- Data store for controllers?
+Magnus is also able to handle simple data structures, as well as respond to changes when needed.
+
+To access the data structure for retrieving and storing information, the controller has the property `data` which returns a Proxy-object.
+
+When storing values, Magnus will also try to find an accompanying method on the controller based on the property being stored. For the property `message`, Magnus will look for a method named `dataMessageChanged` and if it exists will call it with two parameters: the new and previous values.
+
+#### Data example
+
+```typescript
+// Inside the controller 'Hello'
+
+connect() {
+  this.data.message = 'Hello, world'
+}
+
+dataMessageChanged(newValue, oldValue) {
+  // Called when the value for data property 'message' has changed
+}
+```
 
 ## The name
 

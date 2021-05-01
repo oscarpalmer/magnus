@@ -15,13 +15,16 @@ export class Context {
     readonly element: Element,
     ControllerConstructor: ControllerConstructor,
   ) {
-    this.store = new Store();
+    this.store = new Store(this);
     this.observer = new ControllerObserver(this);
 
     this.controller = new ControllerConstructor(this);
 
     this.observer.start();
-    this.controller.connect();
+
+    if (typeof this.controller.connect === 'function') {
+      this.controller.connect();
+    }
   }
 
   findElement (selector: string): Element|null {

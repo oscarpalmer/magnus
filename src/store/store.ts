@@ -1,12 +1,16 @@
+import { Context } from '../context';
 import { ActionStore } from './action.store';
+import { DataStore } from './data.store';
 import { TargetStore } from './target.store';
 
 export class Store {
   readonly actions: ActionStore;
+  readonly data: DataStore;
   readonly targets: TargetStore;
 
-  constructor () {
+  constructor (context: Context) {
     this.actions = new ActionStore();
+    this.data = new DataStore(context);
     this.targets = new TargetStore();
   }
 }
