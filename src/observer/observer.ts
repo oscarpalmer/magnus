@@ -25,7 +25,7 @@ export abstract class Observer implements IObserver {
   start (): void {
     this.observer.observe(this.element, this.options);
 
-    this.handleNodes(this.element.childNodes, true);
+    this.handleNodes([this.element], true);
   }
 
   stop (): void {
@@ -60,7 +60,7 @@ export abstract class Observer implements IObserver {
 
   protected abstract handleElement (element: Element, added: boolean): void;
 
-  private handleNodes (nodes: NodeList, added: boolean): void {
+  private handleNodes (nodes: NodeList|Node[], added: boolean): void {
     for (const node of (nodes ?? [])) {
       if (node.nodeType === Node.ELEMENT_NODE) {
         this.handleElement(node as Element, added);

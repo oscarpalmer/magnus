@@ -5,11 +5,11 @@ class DataStoreHandlers {
 
   constructor (private readonly store: DataStore) {}
 
-  get (target: any, property: string | symbol): any {
+  get (target: any, property: string|symbol): any {
     return Reflect.get(target, property);
   }
 
-  set (target: any, property: string | symbol, value: any): boolean {
+  set (target: any, property: string|symbol, value: any): boolean {
     this.handleValue(property as string, Reflect.get(target, property), value);
 
     return Reflect.set(target, property, value);

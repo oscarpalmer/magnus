@@ -1,5 +1,5 @@
 /*!
- * Magnus, v0.15.0
+ * Magnus, v0.16.0
  * https://github.com/oscarpalmer/magnus
  * (c) Oscar Palmér, 2021, MIT @license
  */
@@ -17,7 +17,7 @@
         }
         start() {
             this.observer.observe(this.element, this.options);
-            this.handleNodes(this.element.childNodes, true);
+            this.handleNodes([this.element], true);
         }
         stop() {
             this.observer.disconnect();
