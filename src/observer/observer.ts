@@ -4,6 +4,7 @@ export interface IObserver {
 }
 
 export abstract class Observer implements IObserver {
+  protected static readonly ATTRIBUTES: string = 'attributes';
   protected static readonly CHILDLIST: string = 'childList';
 
   protected static readonly OPTIONS: MutationObserverInit = {
@@ -14,16 +15,13 @@ export abstract class Observer implements IObserver {
   };
 
   protected readonly observer: MutationObserver;
-  protected readonly options: MutationObserverInit;
 
   constructor (protected readonly element: Element) {
-    this.options = this.getOptions();
-
     this.observer = new MutationObserver(this.observe.bind(this));
   }
 
   start (): void {
-    this.observer.observe(this.element, this.options);
+    this.observer.observe(this.element, this.getOptions());
 
     this.handleNodes([this.element], true);
   }
@@ -74,7 +72,7 @@ export abstract class Observer implements IObserver {
       if (entry.type === Observer.CHILDLIST) {
         this.handleNodes(entry.addedNodes, true);
         this.handleNodes(entry.removedNodes, false);
-      } else {
+      } else if (entry.type === Observer.ATTRIBUTES) {
         this.handleAttribute(entry.target as Element, entry.attributeName ?? '', entry.oldValue ?? '');
       }
     }

@@ -1,5 +1,5 @@
 /*!
- * Magnus, v0.16.0
+ * Magnus, v0.16.1
  * https://github.com/oscarpalmer/magnus
  * (c) Oscar Palmér, 2021, MIT @license
  */
@@ -12,11 +12,10 @@
     class Observer {
         constructor(element) {
             this.element = element;
-            this.options = this.getOptions();
             this.observer = new MutationObserver(this.observe.bind(this));
         }
         start() {
-            this.observer.observe(this.element, this.options);
+            this.observer.observe(this.element, this.getOptions());
             this.handleNodes([this.element], true);
         }
         stop() {
@@ -54,12 +53,13 @@
                     this.handleNodes(entry.addedNodes, true);
                     this.handleNodes(entry.removedNodes, false);
                 }
-                else {
+                else if (entry.type === Observer.ATTRIBUTES) {
                     this.handleAttribute(entry.target, (_a = entry.attributeName) !== null && _a !== void 0 ? _a : '', (_b = entry.oldValue) !== null && _b !== void 0 ? _b : '');
                 }
             }
         }
     }
+    Observer.ATTRIBUTES = 'attributes';
     Observer.CHILDLIST = 'childList';
     Observer.OPTIONS = {
         attributeOldValue: true,
