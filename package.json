@@ -14,9 +14,6 @@
       "require": "./dist/magnus.umd.js"
     }
   },
-  "files": [
-    "dist"
-  ],
   "jsdelivr": "dist/magnus.iife.js",
   "keywords": [
     "framework",
@@ -39,5 +36,5 @@
   },
   "types": "src/types.d.ts",
   "unpkg": "dist/magnus.iife.js",
-  "version": "0.17.0"
+  "version": "0.17.1"
 }
