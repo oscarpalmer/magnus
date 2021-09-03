@@ -1,22 +1,22 @@
 import { ControllerStore } from '../store/controller.store';
-import { Observer } from './observer';
+import { Observer, observerOptions } from './observer';
+
+const dataControllerAttribute = 'data-controller';
 
 export class DocumentObserver extends Observer {
-  private static readonly ATTRIBUTE: string = 'data-controller';
-
-  constructor (private readonly controllers: ControllerStore) {
+  constructor(private readonly controllers: ControllerStore) {
     super(document.documentElement);
   }
 
-  protected getOptions (): MutationObserverInit {
-    const options: MutationObserverInit = Object.assign({}, Observer.OPTIONS);
+  protected getOptions(): MutationObserverInit {
+    const options: MutationObserverInit = Object.assign({}, observerOptions);
 
-    options.attributeFilter = [DocumentObserver.ATTRIBUTE];
+    options.attributeFilter = [dataControllerAttribute];
 
     return options;
   }
 
-  protected handleAttribute (element: Element, attributeName: string, oldValue: string, removedElement?: boolean): void {
+  protected handleAttribute(element: Element, attributeName: string, oldValue: string, removedElement?: boolean): void {
     let newValue: string = element.getAttribute(attributeName) ?? '';
 
     if (newValue === oldValue) {
@@ -31,13 +31,13 @@ export class DocumentObserver extends Observer {
     this.handleChanges(element, newValue, oldValue);
   }
 
-  protected handleElement (element: Element, added: true): void {
-    if (element.hasAttribute(DocumentObserver.ATTRIBUTE)) {
-      this.handleAttribute(element, DocumentObserver.ATTRIBUTE, '', !added);
+  protected handleElement(element: Element, added: true): void {
+    if (element.hasAttribute(dataControllerAttribute)) {
+      this.handleAttribute(element, dataControllerAttribute, '', !added);
     }
   }
 
-  private handleChanges (element: Element, newValue: string, oldValue: string): void {
+  private handleChanges(element: Element, newValue: string, oldValue: string): void {
     this.getAttributes(oldValue, newValue).forEach((attributes: string[], index: number) => {
       const added: boolean = index === 0;
 

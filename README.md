@@ -4,19 +4,19 @@
 
 A JavaScript framework for developers who like HTML.
 
-It's basically a barebones version of [Stimulus](https://github.com/hotwired/stimulus), so please use that amazing framework instead.
+It's basically a lightweight version of [Stimulus](https://github.com/hotwired/stimulus), so you may want to use that lovely framework instead.
 
 ## Quick start
 
 To quickly get started, Magnus needs some nice HTML:
 
 ```html
-<div data-controller="hello">
-  <input data-hello-target="input" type="text" />
+<div data-controller="talin">
+  <input data-talin-target="input" type="text" />
 
-  <button data-hello-action="click:greet">Greet</button>
+  <button data-talin-action="click:greet">Greet</button>
 
-  <span data-hello-target="output"></span>
+  <span data-talin-target="output"></span>
 </div>
 ```
 
@@ -27,7 +27,7 @@ import { Controller } from 'magnus';
 
 export default class extends Controller {
   greet() {
-    this.target('output').textContent = this.target('input').value
+    this.target('output').textContent = this.target('input').value;
   }
 }
 ```
@@ -44,7 +44,7 @@ Magnus is available on NPM as `magnus` and works well with JavaScript-bundlers, 
 
 Magnus isn't very opinionated, but does have some ideas on how HTML and JavaScript should be written.
 
-It very loosely follows the MVC-pattern, where the M(odel) and C(ontroller) is represented by [Controllers](#controllers), and the V(iew) is represented by HTML.
+It _very loosely_ follows the MVC-pattern, where the M(odel) and C(ontroller) is represented by [Controllers](#controllers), and the V(iew) is represented by HTML.
 
 ### Lifecycles
 
@@ -86,7 +86,7 @@ import { Controller } from 'magnus';
 
 export default class extends Controller {
   greet() {
-    this.target('output').textContent = this.target('name').value
+    this.target('output').textContent = this.target('name').value;
   }
 }
 ```
@@ -94,10 +94,10 @@ export default class extends Controller {
 To allow Magnus to create instances for a controller, it must also be added to the application with a name.
 
 ```typescript
-import Hello from 'hello';
+import Talin from 'talin';
 
 // Add controller to application with a name to watch for in observer
-application.add('hello', Hello);
+application.add('talin', Talin);
 ```
 
 When a controller has been instantiated, it will also create a mutation observer for itself and begin to observe actions and targets within the controller instance's element, as well as call its `connect`-method.
@@ -106,7 +106,7 @@ When a controller is removed, either by having its element removed from the DOM 
 
 ### Targets
 
-Targets are elements in your controller that are useful to have quick and easy access to. Targers are defined by the attribute `data-hello-target`, where `hello` is the name of your controller.
+Targets are elements in your controller that are useful to have quick and easy access to. Targers are defined by the attribute `data-talin-target`, where `talin` is the name of your controller.
 
 The value for the attribute should be a string of space-separated names, allowing for an element to be part of multiple target groups.
 
@@ -115,27 +115,46 @@ The value for the attribute should be a string of space-separated names, allowin
 Define your targets in HTML:
 
 ```html
-<span data-hello-target="output"></span>
+<span data-talin-target="output"></span>
 ```
 
 And access them in JavaScript:
 
 ```typescript
-// Inside the controller 'Hello'
+class TalinController extends Magnus.Controller {
+  getTargets() {
+    // Returns an array of elements
+    const elements = this.targets('output')
 
-// Returns an array of elements
-const elements = this.targets('output')
+    // Returns first element if it exists
+    const element = this.target('output')
 
-// Returns first element if it exists
-const element = this.target('output')
+    // Returns true if target(s) exists
+    const exists = this.hasTarget('output')
+  }
+}
+```
 
-// Returns true if target(s) exists
-const exists = this.hasTarget('output')
+#### Target changes
+
+It's also possible to listen for target changes, for which there are two events: when they have been _added_ and _removed_.
+
+##### Target change example
+
+```typescript
+class TalinController extends Magnus.Controller {
+  targetChanged(target) {
+    // Called when any target has changed and is a simple object of:
+    // - target.name: it's previously defined target name
+    // - target.element: the HTML element
+    // - target.added: true if added, false if removed
+  }
+}
 ```
 
 ### Actions
 
-Actions are events for elements within a controller and are defined by the attribute `data-hello-action`, where `hello` is the name of your controller.
+Actions are events for elements within a controller and are defined by the attribute `data-talin-action`, where `talin` is the name of your controller.
 
 The value for the attribute should be a space-separated string of actions, where each action resembles `type:callback`, for which `type` should match an event name (e.g. 'click') and `callback` should match the name of a function in your controller.
 
@@ -144,16 +163,16 @@ The value for the attribute should be a space-separated string of actions, where
 Define your actions in HTML:
 
 ```html
-<button data-hello-action="click:greet">Greet</button>
+<button data-talin-action="click:greet">Greet</button>
 ```
 
 And define their methods in JavaScript:
 
 ```typescript
-// Inside the controller 'Hello'
-
-greet() {
-  // Called on a click event
+class TalinController extends Magnus.Controller {
+  greet(event) {
+    // Called on a click event
+  }
 }
 ```
 
@@ -161,21 +180,25 @@ greet() {
 
 Magnus is also able to handle simple data structures, as well as respond to changes when needed.
 
-To access the data structure for retrieving and storing information, the controller has the property `data` which returns a Proxy-object.
+To access the data structure for retrieving and storing information, the controller has the property `data` which returns [a Proxy-object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy).
 
-When storing values, Magnus will also try to find an accompanying method on the controller based on the property being stored. For the property `message`, Magnus will look for a method named `dataMessageChanged` and if it exists will call it with two parameters: the new and previous values.
+When storing values, Magnus will attempt to use the method named `dataChanged`, and if it exists, it will be called with a parameters object consisting of: a property name, and its new and previous values.
 
 #### Data example
 
 ```typescript
-// Inside the controller 'Hello'
+class TalinController extends Magnus.Controller {
+  connect() {
+    this.data.message = 'Talin, world'
+  }
 
-connect() {
-  this.data.message = 'Hello, world'
-}
-
-dataMessageChanged(newValue, oldValue) {
-  // Called when the value for data property 'message' has changed
+  dataChanged(data) {
+    // Called when any property's data has changed and is a simple object of:
+    // - data.property
+    // - data.values:
+    //     - data.values.new
+    //     - data.values.old
+  }
 }
 ```
 

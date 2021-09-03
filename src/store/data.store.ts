@@ -1,56 +1,51 @@
 import { Context } from '../context';
 
+export interface DataChangeValues {
+  new: unknown;
+  old: unknown;
+}
+
+export interface DataChange {
+  property: string;
+  values: DataChangeValues;
+}
+
+export interface MagnusProxy {
+  [key: string]: unknown;
+}
+
 class DataStoreHandlers {
-  private static readonly PATTERN = /^\w/;
+  private get callback(): (data: DataChange) => void {
+    return this.store.context.controller.dataChanged;
+  }
 
-  constructor (private readonly store: DataStore) {}
+  constructor(private readonly store: DataStore) {}
 
-  get (target: any, property: string|symbol): any {
+  get(target: MagnusProxy, property: string | symbol): unknown {
     return Reflect.get(target, property);
   }
 
-  set (target: any, property: string|symbol, value: any): boolean {
-    this.handleValue(property as string, Reflect.get(target, property), value);
-
-    return Reflect.set(target, property, value);
+  set(target: MagnusProxy, property: string | symbol, value: unknown): boolean {
+    return Reflect.set(target, property, value) && this.handleChange(property, Reflect.get(target, property), value);
   }
 
-  private getProperty (property: string): string {
-    return property.replace(DataStoreHandlers.PATTERN, (character) => character.toUpperCase());
-  }
-
-  private handleValue (property: string, oldValue: any, newValue: any): void {
-    let callback: Function|undefined;
-
-    if (this.store.callbacks.has(property)) {
-      callback = this.store.callbacks.get(property);
-
-      if (typeof callback === 'function') {
-        callback.call(this.store.context.controller, newValue, oldValue);
-      }
-
-      return;
+  private handleChange(property: string | symbol, oldValue: unknown, newValue: unknown): boolean {
+    if (typeof this.callback === 'function') {
+      this.callback.call(
+        this.store.context.controller,
+        { property: property as string, values: { new: newValue, old: oldValue, }, });
     }
 
-    callback = (this.store.context.controller as any)[`data${this.getProperty(property)}Changed`];
-
-    this.store.callbacks.set(property, callback);
-
-    if (typeof callback === 'function') {
-      callback.call(this.store.context.controller, newValue, oldValue);
-    }
+    return true;
   }
 }
 
 export class DataStore {
-  readonly callbacks: Map<string, Function|undefined>;
   readonly handlers: DataStoreHandlers;
-  readonly proxy: any;
+  readonly proxy: MagnusProxy;
 
-  constructor (readonly context: Context) {
-    this.callbacks = new Map();
+  constructor(readonly context: Context) {
     this.handlers = new DataStoreHandlers(this);
-
     this.proxy = new Proxy({}, this.handlers);
   }
 }

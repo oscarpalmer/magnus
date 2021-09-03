@@ -7,20 +7,20 @@ export class Application {
   private readonly controllers: ControllerStore;
   private readonly observer: IObserver;
 
-  constructor () {
+  constructor() {
     this.controllers = new ControllerStore(this);
     this.observer = new DocumentObserver(this.controllers);
   }
 
-  add (name: string, controller: ControllerConstructor): void {
+  add(name: string, controller: ControllerConstructor): void {
     this.controllers.create(name, controller);
   }
 
-  start (): void {
+  start(): void {
     this.observer.start();
   }
 
-  stop (): void {
+  stop(): void {
     this.observer.stop();
   }
 }

@@ -8,9 +8,9 @@ export class Store {
   readonly data: DataStore;
   readonly targets: TargetStore;
 
-  constructor (context: Context) {
+  constructor(context: Context) {
     this.actions = new ActionStore();
     this.data = new DataStore(context);
-    this.targets = new TargetStore();
+    this.targets = new TargetStore(context);
   }
 }

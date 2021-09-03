@@ -1,5 +1,5 @@
-import { defineConfig } from 'vite';
 import { resolve } from 'path';
+import { defineConfig } from 'vite';
 
 export default defineConfig({
   build: {
@@ -8,7 +8,7 @@ export default defineConfig({
       name: 'Magnus',
       formats: ['es', 'umd', 'iife']
     },
-    minify: 'esbuild',
-    target: 'esnext',
+    minify: false,
+    target: 'es2020',
   }
 })

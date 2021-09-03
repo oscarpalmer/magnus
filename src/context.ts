@@ -9,7 +9,7 @@ export class Context {
   readonly observer: IObserver;
   readonly store: Store;
 
-  constructor (
+  constructor(
     readonly application: Application,
     readonly identifier: string,
     readonly element: Element,
@@ -27,11 +27,11 @@ export class Context {
     }
   }
 
-  findElement (selector: string): Element|null {
+  findElement(selector: string): Element | null {
     return this.element.querySelector(selector);
   }
 
-  findElements (selector: string): Element[] {
+  findElements(selector: string): Element[] {
     return Array.from(this.element.querySelectorAll(selector));
   }
 }

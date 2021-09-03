@@ -3,19 +3,19 @@ import { Context } from '../context';
 import { Controller, ControllerConstructor } from '../controller';
 
 export interface ControllerBlob {
-  controllerConstructor: ControllerConstructor
-  instances: Map<Element, Controller>
+  controllerConstructor: ControllerConstructor;
+  instances: Map<Element, Controller>;
 }
 
 export class ControllerStore {
   private readonly controllers: Map<string, ControllerBlob>;
 
-  constructor (private readonly application: Application) {
+  constructor(private readonly application: Application) {
     this.controllers = new Map();
   }
 
-  add (identifier: string, element: Element): void {
-    const blob: ControllerBlob|undefined = this.controllers.get(identifier);
+  add(identifier: string, element: Element): void {
+    const blob: ControllerBlob | undefined = this.controllers.get(identifier);
 
     if (blob == null) {
       return;
@@ -23,12 +23,13 @@ export class ControllerStore {
 
     const context = new Context(this.application, identifier, element, blob.controllerConstructor);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (element as any)[identifier] = context.controller;
 
     blob.instances.set(element, context.controller);
   }
 
-  create (identifier: string, controllerConstructor: ControllerConstructor): void {
+  create(identifier: string, controllerConstructor: ControllerConstructor): void {
     if (!this.controllers.has(identifier)) {
       this.controllers.set(identifier, {
         controllerConstructor,
@@ -37,18 +38,18 @@ export class ControllerStore {
     }
   }
 
-  get (identifier: string): Controller[] {
+  get(identifier: string): Controller[] {
     return Array.from(this.controllers.get(identifier)?.instances.values() ?? []);
   }
 
-  remove (identifier: string, element: Element): void {
-    const blob: ControllerBlob|undefined = this.controllers.get(identifier);
+  remove(identifier: string, element: Element): void {
+    const blob: ControllerBlob | undefined = this.controllers.get(identifier);
 
     if (blob == null) {
       return;
     }
 
-    const instance: Controller|undefined = blob.instances.get(element);
+    const instance: Controller | undefined = blob.instances.get(element);
 
     if (instance == null) {
       return;
@@ -59,7 +60,7 @@ export class ControllerStore {
     instance.context.store.actions.clear();
     instance.context.store.targets.clear();
 
-    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     delete (element as any)[identifier];
 
     blob.instances.delete(element);
