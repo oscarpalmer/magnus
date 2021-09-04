@@ -34,7 +34,7 @@ export class TargetStore {
   }
 
   get(name: string): Element[] {
-    return Array.from(this.targets.get(name) ?? []);
+    return Array.from(this.targets.get(name) || []);
   }
 
   has(name: string): boolean {

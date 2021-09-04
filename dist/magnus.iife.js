@@ -1,5 +1,103 @@
 var Magnus = function() {
   "use strict";
+  const actionOptions = ["capture", "once", "passive"];
+  const actionPattern = /^(?:(\w+)@)?(\w+)(?::([\w:]+))?$/;
+  const defaultEventTypes = {
+    a: "click",
+    button: "click",
+    form: "submit",
+    select: "change",
+    textarea: "input"
+  };
+  function getDefaultEventType(element) {
+    const tagName = element.tagName.toLowerCase();
+    if (tagName === "input") {
+      return element.getAttribute("type") === "submit" ? "click" : "input";
+    }
+    if (tagName in defaultEventTypes) {
+      return defaultEventTypes[tagName];
+    }
+  }
+  function getActionParameters(element, action) {
+    const matches = action.match(actionPattern);
+    if (matches == null || matches.length === 0) {
+      return;
+    }
+    const parameters = {
+      action,
+      name: matches[2],
+      options: matches[3],
+      type: matches[1]
+    };
+    if (parameters.type == null) {
+      const type = getDefaultEventType(element);
+      if (type == null) {
+        return;
+      }
+      parameters.type = type;
+    }
+    return parameters;
+  }
+  class ActionStore {
+    constructor() {
+      this.actions = new Map();
+    }
+    add(name, element) {
+      const action = this.actions.get(name);
+      if (action == null) {
+        return;
+      }
+      action.elements.add(element);
+      element.addEventListener(action.type, action.callback, action.options);
+    }
+    clear() {
+      this.actions.forEach((action) => {
+        action.elements.forEach((element) => {
+          element.removeEventListener(action.type, action.callback, action.options);
+        });
+        action.elements.clear();
+      });
+    }
+    create(parameters, callback) {
+      if (this.actions.has(parameters.action)) {
+        return;
+      }
+      this.actions.set(parameters.action, {
+        callback,
+        elements: new Set(),
+        options: this.getOptions(parameters.options || ""),
+        type: parameters.type
+      });
+    }
+    has(name) {
+      return this.actions.has(name);
+    }
+    remove(name, element) {
+      const action = this.actions.get(name);
+      if (action == null) {
+        return;
+      }
+      action.elements.delete(element);
+      element.removeEventListener(action.type, action.callback, action.options);
+      if (action.elements.size === 0) {
+        this.actions.delete(name);
+      }
+    }
+    getOptions(options) {
+      const x = {
+        capture: false,
+        once: false,
+        passive: false
+      };
+      const parts = options.split(":");
+      for (const property of actionOptions) {
+        if (parts.indexOf(property) > -1) {
+          x[property] = true;
+        }
+      }
+      return x;
+    }
+  }
   const observerAttributes = "attributes";
   const observerChildList = "childList";
   const observerOptions = {
@@ -38,7 +136,7 @@ var Magnus = function() {
       return [addedValues, removedValues];
     }
     handleNodes(nodes, added) {
-      for (const node of nodes ?? []) {
+      for (const node of nodes || []) {
         if (node.nodeType === Node.ELEMENT_NODE) {
           this.handleElement(node, added);
           this.handleNodes(node.childNodes, added);
@@ -51,7 +149,7 @@ var Magnus = function() {
           this.handleNodes(entry.addedNodes, true);
           this.handleNodes(entry.removedNodes, false);
         } else if (entry.type === observerAttributes) {
-          this.handleAttribute(entry.target, entry.attributeName ?? "", entry.oldValue ?? "");
+          this.handleAttribute(entry.target, entry.attributeName || "", entry.oldValue || "");
         }
       }
     }
@@ -72,7 +170,7 @@ var Magnus = function() {
       return options;
     }
     handleAttribute(element, attributeName, oldValue, removedElement) {
-      let newValue = element.getAttribute(attributeName) ?? "";
+      let newValue = element.getAttribute(attributeName) || "";
       if (newValue === oldValue) {
         return;
       }
@@ -100,15 +198,15 @@ var Magnus = function() {
       if (!added) {
         return;
       }
-      const parts = action.split(":");
-      if (parts.length < 2) {
+      const parameters = getActionParameters(element, action);
+      if (parameters == null) {
         return;
       }
-      const callback = this.context.controller[parts[1]];
+      const callback = this.context.controller[parameters.name];
       if (typeof callback !== "function") {
         return;
       }
-      this.context.store.actions.create(action, parts[0], callback.bind(this.context.controller));
+      this.context.store.actions.create(parameters, callback.bind(this.context.controller));
       this.context.store.actions.add(action, element);
     }
     handleChanges(element, oldValue, newValue, callback) {
@@ -120,50 +218,10 @@ var Magnus = function() {
       });
     }
     handleTarget(element, target, added) {
-      this.context.store.targets[added ? "add" : "remove"](target, element);
-    }
-  }
-  class ActionStore {
-    constructor() {
-      this.actions = new Map();
-    }
-    add(name, element) {
-      const action = this.actions.get(name);
-      if (action == null) {
-        return;
-      }
-      action.elements.add(element);
-      element.addEventListener(action.type, action.callback);
-    }
-    clear() {
-      this.actions.forEach((action) => {
-        action.elements.forEach((element) => {
-          element.removeEventListener(action.type, action.callback);
-        });
-        action.elements.clear();
-      });
-    }
-    create(name, type, callback) {
-      if (!this.actions.has(name)) {
-        this.actions.set(name, {
-          callback,
-          elements: new Set(),
-          type
-        });
-      }
-    }
-    has(name) {
-      return this.actions.has(name);
-    }
-    remove(name, element) {
-      const action = this.actions.get(name);
-      if (action == null) {
-        return;
-      }
-      action.elements.delete(element);
-      element.removeEventListener(action.type, action.callback);
-      if (action.elements.size === 0) {
-        this.actions.delete(name);
+      if (added) {
+        this.context.store.targets.add(target, element);
+      } else {
+        this.context.store.targets.remove(target, element);
       }
     }
   }
@@ -216,7 +274,7 @@ var Magnus = function() {
       });
     }
     get(name) {
-      return Array.from(this.targets.get(name) ?? []);
+      return Array.from(this.targets.get(name) || []);
     }
     has(name) {
       return this.targets.has(name);
@@ -272,12 +330,9 @@ var Magnus = function() {
     }
     add(identifier, element) {
       const blob = this.controllers.get(identifier);
-      if (blob == null) {
-        return;
+      if (blob != null) {
+        blob.instances.set(element, new Context(this.application, identifier, element, blob.controllerConstructor).controller);
       }
-      const context = new Context(this.application, identifier, element, blob.controllerConstructor);
-      element[identifier] = context.controller;
-      blob.instances.set(element, context.controller);
     }
     create(identifier, controllerConstructor) {
       if (!this.controllers.has(identifier)) {
@@ -286,9 +341,6 @@ var Magnus = function() {
           instances: new Map()
         });
       }
-    }
-    get(identifier) {
-      return Array.from(this.controllers.get(identifier)?.instances.values() ?? []);
     }
     remove(identifier, element) {
       const blob = this.controllers.get(identifier);
@@ -302,7 +354,6 @@ var Magnus = function() {
       instance.context.observer.stop();
       instance.context.store.actions.clear();
       instance.context.store.targets.clear();
-      delete element[identifier];
       blob.instances.delete(element);
       if (typeof instance.disconnect === "function") {
         instance.disconnect();
@@ -321,7 +372,7 @@ var Magnus = function() {
       return options;
     }
     handleAttribute(element, attributeName, oldValue, removedElement) {
-      let newValue = element.getAttribute(attributeName) ?? "";
+      let newValue = element.getAttribute(attributeName) || "";
       if (newValue === oldValue) {
         return;
       }
@@ -340,7 +391,11 @@ var Magnus = function() {
       this.getAttributes(oldValue, newValue).forEach((attributes, index2) => {
         const added = index2 === 0;
         for (const attribute of attributes) {
-          this.controllers[added ? "add" : "remove"](attribute, element);
+          if (added) {
+            this.controllers.add(attribute, element);
+          } else {
+            this.controllers.remove(attribute, element);
+          }
         }
       });
     }

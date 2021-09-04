@@ -17,7 +17,7 @@ export class DocumentObserver extends Observer {
   }
 
   protected handleAttribute(element: Element, attributeName: string, oldValue: string, removedElement?: boolean): void {
-    let newValue: string = element.getAttribute(attributeName) ?? '';
+    let newValue: string = element.getAttribute(attributeName) || '';
 
     if (newValue === oldValue) {
       return;
@@ -42,7 +42,11 @@ export class DocumentObserver extends Observer {
       const added: boolean = index === 0;
 
       for (const attribute of attributes) {
-        this.controllers[added ? 'add' : 'remove'](attribute, element);
+        if (added) {
+          this.controllers.add(attribute, element);
+        } else {
+          this.controllers.remove(attribute, element);
+        }
       }
     });
   }

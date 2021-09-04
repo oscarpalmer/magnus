@@ -1,11 +1,10 @@
 import { ControllerStore } from './store/controller.store';
 import { ControllerConstructor } from './controller';
 import { DocumentObserver } from './observer/document.observer';
-import { IObserver } from './observer/observer';
 
 export class Application {
   private readonly controllers: ControllerStore;
-  private readonly observer: IObserver;
+  private readonly observer: DocumentObserver;
 
   constructor() {
     this.controllers = new ControllerStore(this);

@@ -1,5 +1,8 @@
+import { ActionParameters, getActionParameters } from '../store/action.store';
 import { Context } from '../context';
 import { Observer, observerOptions } from './observer';
+
+
 
 export class ControllerObserver extends Observer {
   private readonly actionAttribute: string;
@@ -24,7 +27,7 @@ export class ControllerObserver extends Observer {
   }
 
   protected handleAttribute(element: Element, attributeName: string, oldValue: string, removedElement?: boolean): void {
-    let newValue: string = element.getAttribute(attributeName) ?? '';
+    let newValue: string = element.getAttribute(attributeName) || '';
 
     if (newValue === oldValue) {
       return;
@@ -64,20 +67,20 @@ export class ControllerObserver extends Observer {
       return;
     }
 
-    const parts: string[] = action.split(':');
+    const parameters: ActionParameters | undefined = getActionParameters(element, action);
 
-    if (parts.length < 2) {
+    if (parameters == null) {
       return;
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const callback: (event: Event) => void = (this.context.controller as any)[parts[1]];
+    const callback: (event: Event) => void = (this.context.controller as any)[parameters.name];
 
     if (typeof callback !== 'function') {
       return;
     }
 
-    this.context.store.actions.create(action, parts[0], callback.bind(this.context.controller));
+    this.context.store.actions.create(parameters, callback.bind(this.context.controller));
 
     this.context.store.actions.add(action, element);
   }
@@ -93,6 +96,10 @@ export class ControllerObserver extends Observer {
   }
 
   private handleTarget(element: Element, target: string, added: boolean): void {
-    this.context.store.targets[added ? 'add' : 'remove'](target, element);
+    if (added) {
+      this.context.store.targets.add(target, element);
+    } else {
+      this.context.store.targets.remove(target, element);
+    }
   }
 }

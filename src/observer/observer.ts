@@ -59,7 +59,7 @@ export abstract class Observer implements IObserver {
   protected abstract handleElement(element: Element, added: boolean): void;
 
   private handleNodes(nodes: NodeList | Node[], added: boolean): void {
-    for (const node of (nodes ?? [])) {
+    for (const node of (nodes || [])) {
       if (node.nodeType === Node.ELEMENT_NODE) {
         this.handleElement(node as Element, added);
         this.handleNodes(node.childNodes, added);
@@ -73,7 +73,7 @@ export abstract class Observer implements IObserver {
         this.handleNodes(entry.addedNodes, true);
         this.handleNodes(entry.removedNodes, false);
       } else if (entry.type === observerAttributes) {
-        this.handleAttribute(entry.target as Element, entry.attributeName ?? '', entry.oldValue ?? '');
+        this.handleAttribute(entry.target as Element, entry.attributeName || '', entry.oldValue || '');
       }
     }
   }

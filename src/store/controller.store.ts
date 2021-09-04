@@ -17,16 +17,9 @@ export class ControllerStore {
   add(identifier: string, element: Element): void {
     const blob: ControllerBlob | undefined = this.controllers.get(identifier);
 
-    if (blob == null) {
-      return;
+    if (blob != null) {
+      blob.instances.set(element, (new Context(this.application, identifier, element, blob.controllerConstructor)).controller);
     }
-
-    const context = new Context(this.application, identifier, element, blob.controllerConstructor);
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (element as any)[identifier] = context.controller;
-
-    blob.instances.set(element, context.controller);
   }
 
   create(identifier: string, controllerConstructor: ControllerConstructor): void {
@@ -36,10 +29,6 @@ export class ControllerStore {
         instances: new Map(),
       });
     }
-  }
-
-  get(identifier: string): Controller[] {
-    return Array.from(this.controllers.get(identifier)?.instances.values() ?? []);
   }
 
   remove(identifier: string, element: Element): void {
@@ -59,9 +48,6 @@ export class ControllerStore {
 
     instance.context.store.actions.clear();
     instance.context.store.targets.clear();
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    delete (element as any)[identifier];
 
     blob.instances.delete(element);
 

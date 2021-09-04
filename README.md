@@ -156,14 +156,16 @@ class TalinController extends Magnus.Controller {
 
 Actions are events for elements within a controller and are defined by the attribute `data-talin-action`, where `talin` is the name of your controller.
 
-The value for the attribute should be a space-separated string of actions, where each action resembles `type:callback`, for which `type` should match an event name (e.g. 'click') and `callback` should match the name of a function in your controller.
+The value for the attribute should be a space-separated string of actions, where each action should resembles `type@callback` or `callback`, where `type` is an optional value matching an event type, and `callback` should match a method in your controller. Omitting the type tells Magnus to find an appropriate one based on the element's tag, if possible.
+
+Event options can also be set for an action, which are suffixed to the previous attribute value with a colon, e.g. `type@callback:option-1:option-2`, where `option-1` and `option-2` are the two options. [Valid event options](https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener#parameters) for an action are `capture`, `once`, and `passive`, and when included, will be set to true. All options are by default set to `false`.
 
 #### Action example
 
 Define your actions in HTML:
 
 ```html
-<button data-talin-action="click:greet">Greet</button>
+<button data-talin-action="click@greet:once">Greet</button>
 ```
 
 And define their methods in JavaScript:
@@ -171,7 +173,7 @@ And define their methods in JavaScript:
 ```typescript
 class TalinController extends Magnus.Controller {
   greet(event) {
-    // Called on a click event
+    // Called on a click event once
   }
 }
 ```
