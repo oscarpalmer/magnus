@@ -310,9 +310,7 @@ class Context {
     this.observer = new ControllerObserver(this);
     this.controller = new ControllerConstructor2(this);
     this.observer.start();
-    if (typeof this.controller.connect === "function") {
-      this.controller.connect();
-    }
+    this.controller.connect();
   }
   findElement(selector) {
     return this.element.querySelector(selector);
@@ -353,9 +351,7 @@ class ControllerStore {
     instance.context.store.actions.clear();
     instance.context.store.targets.clear();
     blob.instances.delete(element);
-    if (typeof instance.disconnect === "function") {
-      instance.disconnect();
-    }
+    instance.disconnect();
   }
 }
 const dataControllerAttribute = "data-controller";
@@ -426,11 +422,19 @@ class Controller {
   get identifier() {
     return this.context.identifier;
   }
+  connect() {
+  }
+  dataChanged(data) {
+  }
+  disconnect() {
+  }
   hasTarget(name) {
     return this.context.store.targets.has(name);
   }
   target(name) {
     return this.context.store.targets.get(name)[0];
+  }
+  targetChanged(target) {
   }
   targets(name) {
     return this.context.store.targets.get(name);

@@ -51,8 +51,6 @@ export class ControllerStore {
 
     blob.instances.delete(element);
 
-    if (typeof instance.disconnect === 'function') {
-      instance.disconnect();
-    }
+    instance.disconnect();
   }
 }

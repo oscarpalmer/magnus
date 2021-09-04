@@ -19,11 +19,14 @@ export abstract class Controller {
     return this.context.identifier;
   }
 
-  abstract connect(): void;
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  connect(): void {}
 
-  abstract dataChanged(data: DataChange): void;
+  // eslint-disable-next-line @typescript-eslint/no-empty-function, @typescript-eslint/no-unused-vars
+  dataChanged(data: DataChange): void {}
 
-  abstract disconnect(): void;
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  disconnect(): void {}
 
   hasTarget(name: string): boolean {
     return this.context.store.targets.has(name);
@@ -33,9 +36,10 @@ export abstract class Controller {
     return this.context.store.targets.get(name)[0];
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-empty-function, @typescript-eslint/no-unused-vars
+  targetChanged(target: TargetChange): void {}
+
   targets(name: string): Element[] {
     return this.context.store.targets.get(name);
   }
-
-  abstract targetChanged(target: TargetChange): void;
 }

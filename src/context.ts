@@ -22,9 +22,7 @@ export class Context {
 
     this.observer.start();
 
-    if (typeof this.controller.connect === 'function') {
-      this.controller.connect();
-    }
+    this.controller.connect();
   }
 
   findElement(selector: string): Element | null {
