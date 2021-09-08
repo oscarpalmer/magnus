@@ -28,9 +28,11 @@ export class TargetStore {
   }
 
   clear(): void {
-    this.targets.forEach((elements: Set<Element>) => {
+    const targets: IterableIterator<Set<Element>> = this.targets.values();
+
+    for (const elements of targets) {
       elements.clear();
-    });
+    }
   }
 
   get(name: string): Element[] {

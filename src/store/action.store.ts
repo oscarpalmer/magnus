@@ -90,13 +90,15 @@ export class ActionStore {
   }
 
   clear(): void {
-    this.actions.forEach((action: Action) => {
-      action.elements.forEach((element: Element) => {
+    const actions: IterableIterator<Action> = this.actions.values();
+
+    for (const action of actions) {
+      for (const element of action.elements) {
         element.removeEventListener(action.type, action.callback, action.options);
-      });
+      }
 
       action.elements.clear();
-    });
+    }
   }
 
   create(parameters: ActionParameters, callback: (event: Event) => void): void {
@@ -132,22 +134,22 @@ export class ActionStore {
     }
   }
 
-  private getOptions(options: string): ActionOptions {
-    const x: ActionOptions = {
+  private getOptions(value: string): ActionOptions {
+    const options: ActionOptions = {
       capture: false,
       once: false,
       passive: false,
     };
 
-    const parts: string[] = options.split(':');
+    const parts: string[] = value.split(':');
 
-    for (const property of actionOptions) {
-      if (parts.indexOf(property) > -1) {
+    for (const option of actionOptions) {
+      if (parts.indexOf(option) > -1) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (x as any)[property] = true;
+        (options as any)[option] = true;
       }
     }
 
-    return x;
+    return options;
   } 
 }

@@ -49,12 +49,13 @@ class ActionStore {
     element.addEventListener(action.type, action.callback, action.options);
   }
   clear() {
-    this.actions.forEach((action) => {
-      action.elements.forEach((element) => {
+    const actions = this.actions.values();
+    for (const action of actions) {
+      for (const element of action.elements) {
         element.removeEventListener(action.type, action.callback, action.options);
-      });
+      }
       action.elements.clear();
-    });
+    }
   }
   create(parameters, callback) {
     if (this.actions.has(parameters.action)) {
@@ -81,19 +82,19 @@ class ActionStore {
       this.actions.delete(name);
     }
   }
-  getOptions(options) {
-    const x = {
+  getOptions(value) {
+    const options = {
       capture: false,
       once: false,
       passive: false
     };
-    const parts = options.split(":");
-    for (const property of actionOptions) {
-      if (parts.indexOf(property) > -1) {
-        x[property] = true;
+    const parts = value.split(":");
+    for (const option of actionOptions) {
+      if (parts.indexOf(option) > -1) {
+        options[option] = true;
       }
     }
-    return x;
+    return options;
   }
 }
 const observerAttributes = "attributes";
@@ -121,14 +122,14 @@ class Observer {
     const newAttributeValues = newAttribute.split(" ");
     const addedValues = [];
     const removedValues = [];
-    for (const value of oldAttributeValues) {
-      if (value !== "" && newAttributeValues.indexOf(value) === -1) {
-        removedValues.push(value);
+    for (const attribute of oldAttributeValues) {
+      if (attribute !== "" && newAttributeValues.indexOf(attribute) === -1) {
+        removedValues.push(attribute);
       }
     }
-    for (const value of newAttributeValues) {
-      if (value !== "" && oldAttributeValues.indexOf(value) === -1) {
-        addedValues.push(value);
+    for (const attribute of newAttributeValues) {
+      if (attribute !== "" && oldAttributeValues.indexOf(attribute) === -1) {
+        addedValues.push(attribute);
       }
     }
     return [addedValues, removedValues];
@@ -152,37 +153,63 @@ class Observer {
     }
   }
 }
+function getValue(value) {
+  try {
+    return JSON.parse(value);
+  } catch (error) {
+    return value;
+  }
+}
 class ControllerObserver extends Observer {
   constructor(context) {
     super(context.element);
     this.context = context;
     this.actionAttribute = `data-${context.identifier}-action`;
     this.targetAttribute = `data-${context.identifier}-target`;
+    this.dataAttributePattern = new RegExp(`^data-${this.context.identifier}-(.+)$`);
+    this.attributes = [this.actionAttribute, this.targetAttribute];
   }
   getOptions() {
-    const options = Object.assign({}, observerOptions);
-    options.attributeFilter = [
-      this.actionAttribute,
-      this.targetAttribute
-    ];
-    return options;
+    return Object.assign({}, observerOptions);
   }
-  handleAttribute(element, attributeName, oldValue, removedElement) {
-    let newValue = element.getAttribute(attributeName) || "";
-    if (newValue === oldValue) {
+  handleAttribute(element, name, value, removedElement) {
+    let isData = false;
+    let dataName = "";
+    if (element === this.context.element && this.attributes.indexOf(name) === -1) {
+      const matches = name.match(this.dataAttributePattern);
+      if (matches == null || matches.length === 0) {
+        return;
+      }
+      isData = true;
+      dataName = matches[1];
+    }
+    let newValue = element.getAttribute(name) || "";
+    if (newValue === value) {
       return;
     }
     if (removedElement === true) {
-      oldValue = newValue;
+      value = newValue;
       newValue = "";
     }
-    const callback = attributeName === this.actionAttribute ? this.handleAction : this.handleTarget;
-    this.handleChanges(element, oldValue, newValue, callback);
+    if (isData) {
+      if (this.context.store.data.skip[dataName] == null) {
+        this.context.store.data.skip[dataName] = 0;
+        this.context.controller.data[dataName] = getValue(newValue);
+        return;
+      }
+      delete this.context.store.data.skip[dataName];
+      return;
+    }
+    const callback = name === this.actionAttribute ? this.handleAction : this.handleTarget;
+    this.handleChanges(element, value, newValue, callback);
   }
   handleElement(element, added) {
-    [this.actionAttribute, this.targetAttribute].forEach((attribute) => {
-      this.handleAttribute(element, attribute, "", !added);
-    });
+    for (let index2 = 0; index2 < element.attributes.length; index2 += 1) {
+      const attribute = element.attributes[index2].name;
+      if (this.attributes.indexOf(attribute) > -1 || element === this.context.element && this.dataAttributePattern.test(attribute)) {
+        this.handleAttribute(element, attribute, "", !added);
+      }
+    }
   }
   handleAction(element, action, added) {
     if (this.context.store.actions.has(action)) {
@@ -208,12 +235,13 @@ class ControllerObserver extends Observer {
     this.context.store.actions.add(action, element);
   }
   handleChanges(element, oldValue, newValue, callback) {
-    this.getAttributes(oldValue, newValue).forEach((attributes, index2) => {
-      const added = index2 === 0;
+    const allAttributes = this.getAttributes(oldValue, newValue);
+    for (const attributes of allAttributes) {
+      const added = allAttributes.indexOf(attributes) === 0;
       for (const attribute of attributes) {
         callback.call(this, element, attribute, added);
       }
-    });
+    }
   }
   handleTarget(element, target, added) {
     if (added) {
@@ -223,29 +251,83 @@ class ControllerObserver extends Observer {
     }
   }
 }
+function debounce(store, name, value, callback) {
+  clearTimeout(store.timers[name]);
+  store.timers[name] = setTimeout(() => {
+    delete store.timers[name];
+    callback.call(store.handlers, name, value);
+  }, 250);
+}
 class DataStoreHandlers {
   constructor(store) {
     this.store = store;
   }
-  get callback() {
-    return this.store.context.controller.dataChanged;
+  get controller() {
+    return this.store.context.controller;
+  }
+  get element() {
+    return this.store.context.element;
+  }
+  get identifier() {
+    return this.store.context.identifier;
   }
   get(target, property) {
+    if (property === "action") {
+      return null;
+    }
     return Reflect.get(target, property);
   }
   set(target, property, value) {
-    return Reflect.set(target, property, value) && this.handleChange(property, Reflect.get(target, property), value);
-  }
-  handleChange(property, oldValue, newValue) {
-    if (typeof this.callback === "function") {
-      this.callback.call(this.store.context.controller, { property, values: { new: newValue, old: oldValue } });
+    if (property === "action") {
+      return false;
     }
-    return true;
+    const oldValue = Reflect.get(target, property);
+    const set = Reflect.set(target, property, value);
+    if (set) {
+      debounce(this.store, property, value, this.setAttribute);
+      if (typeof this.controller.dataChanged === "function") {
+        this.controller.dataChanged.call(this.controller, {
+          property,
+          values: {
+            new: value,
+            old: oldValue
+          }
+        });
+      }
+    }
+    return set;
+  }
+  getAttributeName(property) {
+    return `data-${this.identifier}-${property}`;
+  }
+  getAttributeValue(value) {
+    if (typeof value !== "object") {
+      return value;
+    }
+    try {
+      return JSON.stringify(value);
+    } catch (error) {
+      return `${value}`;
+    }
+  }
+  setAttribute(property, value) {
+    if (this.store.skip[property] != null) {
+      delete this.store.skip[property];
+      return;
+    }
+    this.store.skip[property] = 0;
+    if (value == null || value === "") {
+      this.element.removeAttribute(this.getAttributeName(property));
+      return;
+    }
+    this.element.setAttribute(this.getAttributeName(property), this.getAttributeValue(value));
   }
 }
 class DataStore {
   constructor(context) {
     this.context = context;
+    this.skip = {};
+    this.timers = {};
     this.handlers = new DataStoreHandlers(this);
     this.proxy = new Proxy({}, this.handlers);
   }
@@ -267,9 +349,10 @@ class TargetStore {
     this.handleChange(name, element, true);
   }
   clear() {
-    this.targets.forEach((elements) => {
+    const targets = this.targets.values();
+    for (const elements of targets) {
       elements.clear();
-    });
+    }
   }
   get(name) {
     return Array.from(this.targets.get(name) || []);
@@ -365,16 +448,16 @@ class DocumentObserver extends Observer {
     options.attributeFilter = [dataControllerAttribute];
     return options;
   }
-  handleAttribute(element, attributeName, oldValue, removedElement) {
-    let newValue = element.getAttribute(attributeName) || "";
-    if (newValue === oldValue) {
+  handleAttribute(element, name, value, removedElement) {
+    let newValue = element.getAttribute(name) || "";
+    if (newValue === value) {
       return;
     }
     if (removedElement === true) {
-      oldValue = newValue;
+      value = newValue;
       newValue = "";
     }
-    this.handleChanges(element, newValue, oldValue);
+    this.handleChanges(element, newValue, value);
   }
   handleElement(element, added) {
     if (element.hasAttribute(dataControllerAttribute)) {
@@ -382,8 +465,9 @@ class DocumentObserver extends Observer {
     }
   }
   handleChanges(element, newValue, oldValue) {
-    this.getAttributes(oldValue, newValue).forEach((attributes, index2) => {
-      const added = index2 === 0;
+    const allAttributes = this.getAttributes(oldValue, newValue);
+    for (const attributes of allAttributes) {
+      const added = allAttributes.indexOf(attributes) === 0;
       for (const attribute of attributes) {
         if (added) {
           this.controllers.add(attribute, element);
@@ -391,7 +475,7 @@ class DocumentObserver extends Observer {
           this.controllers.remove(attribute, element);
         }
       }
-    });
+    }
   }
 }
 class Application {

@@ -37,15 +37,15 @@ export abstract class Observer implements IObserver {
     const addedValues: string[] = [];
     const removedValues: string[] = [];
 
-    for (const value of oldAttributeValues) {
-      if (value !== '' && newAttributeValues.indexOf(value) === -1) {
-        removedValues.push(value);
+    for (const attribute of oldAttributeValues) {
+      if (attribute !== '' && newAttributeValues.indexOf(attribute) === -1) {
+        removedValues.push(attribute);
       }
     }
 
-    for (const value of newAttributeValues) {
-      if (value !== '' && oldAttributeValues.indexOf(value) === -1) {
-        addedValues.push(value);
+    for (const attribute of newAttributeValues) {
+      if (attribute !== '' && oldAttributeValues.indexOf(attribute) === -1) {
+        addedValues.push(attribute);
       }
     }
 
@@ -54,7 +54,7 @@ export abstract class Observer implements IObserver {
 
   protected abstract getOptions(): MutationObserverInit;
 
-  protected abstract handleAttribute(element: Element, attributeName: string, oldValue: string, removedElement?: boolean): void;
+  protected abstract handleAttribute(element: Element, name: string, value: string, removedElement?: boolean): void;
 
   protected abstract handleElement(element: Element, added: boolean): void;
 
