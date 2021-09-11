@@ -1,19 +1,12 @@
-import { ActionParameters, getActionParameters } from '../store/action.store';
+import { ActionParameters } from '../store/action.store';
 import { Context } from '../context';
 import { Observer, observerOptions } from './observer';
-
-function getValue(value: string): unknown {
-  try {
-    return JSON.parse(value);
-  } catch (error) {
-    return value;
-  }
-}
+import { getActionParameters, getCamelCasedName, getRawValue } from '../helpers';
 
 export class ControllerObserver extends Observer {
   private readonly actionAttribute: string;
+  private readonly attributePattern: RegExp;
   private readonly attributes: string[];
-  private readonly dataAttributePattern: RegExp;
   private readonly targetAttribute: string;
 
   constructor(private readonly context: Context) {
@@ -22,7 +15,7 @@ export class ControllerObserver extends Observer {
     this.actionAttribute = `data-${context.identifier}-action`;
     this.targetAttribute = `data-${context.identifier}-target`;
 
-    this.dataAttributePattern = new RegExp(`^data-${this.context.identifier}-(.+)$`);
+    this.attributePattern = new RegExp(`^data-${this.context.identifier}-(class|data)-([\\w+\\-_]+)$`);
 
     this.attributes = [this.actionAttribute, this.targetAttribute];
   }
@@ -32,18 +25,18 @@ export class ControllerObserver extends Observer {
   }
 
   protected handleAttribute(element: Element, name: string, value: string, removedElement?: boolean): void {
-    let isData = false;
-    let dataName = '';
+    let property = '';
+    let type = 0;
 
     if (element === this.context.element && this.attributes.indexOf(name) === -1) {
-      const matches: string[] | null = name.match(this.dataAttributePattern);
+      const matches: string[] | null = name.match(this.attributePattern);
 
       if (matches == null || matches.length === 0) {
         return;
       }
 
-      isData = true;
-      dataName = matches[1];
+      property = getCamelCasedName(matches[2]);
+      type = matches[1] === 'class' ? 1 : 2;
     }
 
     let newValue: string = element.getAttribute(name) || '';
@@ -57,21 +50,26 @@ export class ControllerObserver extends Observer {
       newValue = '';
     }
 
-    if (isData) {
-      if (this.context.store.data.skip[dataName] == null) {
-        this.context.store.data.skip[dataName] = 0;
-        this.context.controller.data[dataName] = getValue(newValue);
-
-        return;
-      }
-
-      delete this.context.store.data.skip[dataName];
+    if (type === 1) {
+      this.context.store.classes.set(property, newValue);
 
       return;
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const callback: any = name === this.actionAttribute
+    if (type === 2) {
+      if (this.context.store.data.skip[property] == null) {
+        this.context.store.data.skip[property] = 0;
+        this.context.controller.data[property] = getRawValue(newValue);
+
+        return;
+      }
+
+      delete this.context.store.data.skip[property];
+
+      return;
+    }
+
+    const callback: (element: Element, value: string, added: boolean) => void = name === this.actionAttribute
       ? this.handleAction
       : this.handleTarget;
 
@@ -82,7 +80,8 @@ export class ControllerObserver extends Observer {
     for (let index = 0; index < element.attributes.length; index += 1) {
       const attribute: string = element.attributes[index].name;
 
-      if (this.attributes.indexOf(attribute) > -1 || (element === this.context.element && this.dataAttributePattern.test(attribute))) {
+      if (this.attributes.indexOf(attribute) > -1
+          || (element === this.context.element && this.attributePattern.test(attribute))) {
         this.handleAttribute(element, attribute, '', !added);
       }
     }
@@ -121,7 +120,12 @@ export class ControllerObserver extends Observer {
     this.context.store.actions.add(action, element);
   }
 
-  private handleChanges(element: Element, oldValue: string, newValue: string, callback: (...args: unknown[]) => void): void {
+  private handleChanges(
+    element: Element,
+    oldValue: string,
+    newValue: string,
+    callback: (element: Element, value: string, added: boolean) => void,
+  ): void {
     const allAttributes: string[][] = this.getAttributes(oldValue, newValue);
 
     for (const attributes of allAttributes) {

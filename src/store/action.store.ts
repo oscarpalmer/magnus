@@ -1,54 +1,4 @@
-const actionOptions: string[] = ['capture', 'once', 'passive'];
-const actionPattern = /^(?:(\w+)@)?(\w+)(?::([\w:]+))?$/;
-
-const defaultEventTypes: { [key: string]: string; } = {
-  a: 'click',
-  button: 'click',
-  form: 'submit',
-  select: 'change',
-  textarea: 'input',
-};
-
-function getDefaultEventType(element: Element): string | undefined {
-  const tagName: string = element.tagName.toLowerCase();
-
-  if (tagName === 'input') {
-    return element.getAttribute('type') === 'submit'
-      ? 'click'
-      : 'input';
-  }
-
-  if (tagName in defaultEventTypes) {
-    return defaultEventTypes[tagName];
-  }
-}
-
-export function getActionParameters(element: Element, action: string): ActionParameters | undefined {
-  const matches: RegExpMatchArray | null = action.match(actionPattern);
-
-  if (matches == null || matches.length === 0) {
-    return;
-  }
-
-  const parameters: ActionParameters = {
-    action,
-    name: matches[2],
-    options: matches[3],
-    type: matches[1],
-  };
-
-  if (parameters.type == null) {
-    const type: string | undefined = getDefaultEventType(element);
-
-    if (type == null) {
-      return;
-    }
-
-    parameters.type = type;
-  }
-
-  return parameters;
-}
+import { getActionOptions } from '../helpers';
 
 export interface ActionParameters {
   action: string;
@@ -109,7 +59,7 @@ export class ActionStore {
     this.actions.set(parameters.action, {
       callback,
       elements: new Set(),
-      options: this.getOptions(parameters.options || ''),
+      options: getActionOptions(parameters.options || ''),
       type: parameters.type,
     });
   }
@@ -133,23 +83,4 @@ export class ActionStore {
       this.actions.delete(name);
     }
   }
-
-  private getOptions(value: string): ActionOptions {
-    const options: ActionOptions = {
-      capture: false,
-      once: false,
-      passive: false,
-    };
-
-    const parts: string[] = value.split(':');
-
-    for (const option of actionOptions) {
-      if (parts.indexOf(option) > -1) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (options as any)[option] = true;
-      }
-    }
-
-    return options;
-  } 
 }

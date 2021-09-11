@@ -1,4 +1,5 @@
 import { Context } from './context';
+import { ClassNames } from './store/classes.store';
 import { DataChange, MagnusProxy } from './store/data.store';
 import { TargetChange } from './store/target.store';
 
@@ -6,6 +7,10 @@ export type ControllerConstructor = new(context: Context) => Controller;
 
 export abstract class Controller {
   constructor (readonly context: Context) {}
+
+  get classes(): ClassNames {
+    return Object.assign({}, this.context.store.classes.values);
+  }
 
   get data(): MagnusProxy {
     return this.context.store.data.proxy;
@@ -19,14 +24,17 @@ export abstract class Controller {
     return this.context.identifier;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  connect(): void {}
+  connect(): void {
+    // Can be overridden in custom controllers
+  }
 
-  // eslint-disable-next-line @typescript-eslint/no-empty-function, @typescript-eslint/no-unused-vars
-  dataChanged(data: DataChange): void {}
+  dataChanged(data: DataChange): void {
+    // Can be overridden in custom controllers
+  }
 
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  disconnect(): void {}
+  disconnect(): void {
+    // Can be overridden in custom controllers
+  }
 
   hasTarget(name: string): boolean {
     return this.context.store.targets.has(name);
@@ -36,8 +44,9 @@ export abstract class Controller {
     return this.context.store.targets.get(name)[0];
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-empty-function, @typescript-eslint/no-unused-vars
-  targetChanged(target: TargetChange): void {}
+  targetChanged(target: TargetChange): void {
+    // Can be overridden in custom controllers
+  }
 
   targets(name: string): Element[] {
     return this.context.store.targets.get(name);

@@ -121,7 +121,8 @@ Define your targets in HTML:
 And access them in JavaScript:
 
 ```typescript
-class TalinController extends Magnus.Controller {
+export class TalinController extends Magnus.Controller {
+  // Custom method for showcasing built-in target-methods
   getTargets() {
     // Returns an array of elements
     const elements = this.targets('output')
@@ -144,8 +145,8 @@ It's also possible to listen for target changes, for which there are two events:
 ```typescript
 class TalinController extends Magnus.Controller {
   targetChanged(target) {
-    // Called when any target has changed and is a simple object of:
-    // - target.name: it's previously defined target name
+    // Called when any target has changed, where 'target' is a simple object of:
+    // - target.name: its previously defined target name
     // - target.element: the HTML element
     // - target.added: true if added, false if removed
   }
@@ -171,7 +172,7 @@ Define your actions in HTML:
 And define their methods in JavaScript:
 
 ```typescript
-class TalinController extends Magnus.Controller {
+export class TalinController extends Magnus.Controller {
   greet(event) {
     // Called on a click event once
   }
@@ -180,26 +181,54 @@ class TalinController extends Magnus.Controller {
 
 ### Data
 
-Magnus is also able to handle simple data structures, as well as respond to changes when needed.
+Magnus is also able to handle simple, mostly-flat data structures, as well as respond to changes when needed.
+
+Data can be initialized for a controller using attributes on your controller element, e.g. `data-talin-data-name`, where `name` is the name for the value to store, and its value is the actual data value (of any type!). If the name contains dashes or underscores, it will be converted to its camel-cased variant in the controller, i.e. `data-talin-data-my-property` &rarr; `myProperty`.
 
 To access the data structure for retrieving and storing information, the controller has the property `data` which returns [a Proxy-object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy).
 
-When storing values, Magnus will attempt to use the method named `dataChanged`, and if it exists, it will be called with a parameters object consisting of: a property name, and its new and previous values.
+When storing values, Magnus will first: update the attribute as set in the HTML; and second: attempt to call the method named `dataChanged`, and if it exists, it will be called with a parameters object consisting of: a property name, and its new and previous values.
 
 #### Data example
 
-```typescript
-class TalinController extends Magnus.Controller {
-  connect() {
-    this.data.message = 'Talin, world'
-  }
+```html
+<div data-controller="talin" data-talin-data-my-cool-property="and a value"></div>
+```
 
+```typescript
+export class TalinController extends Magnus.Controller {
   dataChanged(data) {
-    // Called when any property's data has changed and is a simple object of:
+    // Called when any property's data has changed, where 'data' is a simple object of:
     // - data.property
     // - data.values:
     //     - data.values.new
     //     - data.values.old
+  }
+
+  // Custom method accessing your custom data property
+  onAlert() {
+    alert(this.data.myCoolProperty);
+  }
+}
+```
+
+### Classes
+
+Magnus can also manage a collection of CSS classes, which can be useful if a controller needs custom classes for certain scenarios, but when we also don't want to hardcode it in our controller.
+
+Classes can be set for a controller using attributes on your controller element, e.g. `data-talin-class-name`, where `name` is the name of the class to store, and its value should be the actual CSS class name. If the name contains dashes or underscores, it will be converted to its camel-cased variant in the controller, i.e. `data-talin-class-my-class` &rarr; `myClass`.
+
+#### Classes example
+
+```html
+<div data-controller="talin" data-talin-class-my-custom-class="my-custom-class"></div>
+```
+
+```typescript
+export class TalinController extends Magnus.Controller {
+  // Custom method accessing your custom CSS class
+  onToggle() {
+    this.element.classList.toggle(this.classes.myCustomClass);
   }
 }
 ```
