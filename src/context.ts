@@ -1,7 +1,7 @@
 import { Application } from './application';
-import { Controller, ControllerConstructor } from './controller';
+import { Controller, Constructor } from './controller';
+import { IObserver } from './models';
 import { ControllerObserver } from './observer/controller.observer';
-import { IObserver } from './observer/observer';
 import { Store } from './store/store';
 
 export class Context {
@@ -13,12 +13,12 @@ export class Context {
     readonly application: Application,
     readonly identifier: string,
     readonly element: Element,
-    ControllerConstructor: ControllerConstructor,
+    controller: Constructor,
   ) {
     this.store = new Store(this);
     this.observer = new ControllerObserver(this);
 
-    this.controller = new ControllerConstructor(this);
+    this.controller = new controller(this);
 
     this.observer.start();
 

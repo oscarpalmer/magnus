@@ -1,10 +1,5 @@
-import { Context } from 'src/context';
-
-export interface TargetChange {
-  added: boolean;
-  element: Element;
-  name: string;
-}
+import { Context } from '../context';
+import { TargetChange } from '../models';
 
 export class TargetStore {
   private readonly targets: Map<string, Set<Element>>;

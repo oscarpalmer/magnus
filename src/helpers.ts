@@ -1,5 +1,4 @@
-import { ActionOptions, ActionParameters } from './store/action.store';
-import { DataTimers } from './store/data.store';
+import { ActionOptions, ActionParameters, KeyValueStore } from './models';
 
 const actionOptions: string[] = ['capture', 'once', 'passive'];
 const actionPattern = /^(?:(\w+)@)?(\w+)(?::([\w:]+))?$/;
@@ -12,7 +11,7 @@ const defaultEventTypes: { [key: string]: string; } = {
   textarea: 'input',
 };
 
-export function debounce(timers: DataTimers, name: string, callback: () => void): void {
+export function debounce(timers: KeyValueStore<number>, name: string, callback: () => void): void {
   clearTimeout(timers[name]);
 
   timers[name] = setTimeout(() => {

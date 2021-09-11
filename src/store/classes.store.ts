@@ -1,9 +1,7 @@
-export interface ClassNames {
-  [name: string]: string;
-}
+import { KeyValueStore } from '../models';
 
 export class ClassesStore {
-  readonly values: ClassNames = {};
+  readonly values: KeyValueStore<string> = {};
 
   set(name: string, value: string): void {
     if (value == null || value === '') {

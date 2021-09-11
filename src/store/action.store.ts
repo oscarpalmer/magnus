@@ -1,24 +1,5 @@
+import { Action, ActionParameters } from '../models';
 import { getActionOptions } from '../helpers';
-
-export interface ActionParameters {
-  action: string;
-  name: string;
-  options?: string;
-  type: string;
-}
-
-export interface ActionOptions {
-  capture: boolean;
-  once: boolean;
-  passive: boolean;
-}
-
-export interface Action {
-  callback: (event: Event) => void;
-  elements: Set<Element>;
-  options: ActionOptions;
-  type: string;
-}
 
 export class ActionStore {
   private readonly actions: Map<string, Action>;

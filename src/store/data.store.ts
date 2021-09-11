@@ -1,28 +1,7 @@
 import { debounce, getDataAttributeName, getStringValue } from '../helpers';
 import { Context } from '../context';
 import { Controller } from '../controller';
-
-export interface DataChangeValues {
-  new: unknown;
-  old: unknown;
-}
-
-export interface DataChange {
-  property: string;
-  values: DataChangeValues;
-}
-
-interface DataSkip {
-  [property: string]: number | undefined;
-}
-
-export interface DataTimers {
-  [property: string]: number | undefined;
-}
-
-export interface MagnusProxy {
-  [property: string]: unknown;
-}
+import { KeyValueStore } from 'src/models';
 
 class DataStoreHandlers {
   private get controller(): Controller {
@@ -31,11 +10,11 @@ class DataStoreHandlers {
 
   constructor(private readonly store: DataStore) {}
 
-  get(target: MagnusProxy, property: string | symbol): unknown {
+  get(target: KeyValueStore<unknown>, property: string | symbol): unknown {
     return Reflect.get(target, property);
   }
 
-  set(target: MagnusProxy, property: string | symbol, value: unknown): boolean {
+  set(target: KeyValueStore<unknown>, property: string | symbol, value: unknown): boolean {
     const oldValue: unknown = Reflect.get(target, property);
     const set: boolean = Reflect.set(target, property, value);
 
@@ -61,10 +40,10 @@ class DataStoreHandlers {
 
 export class DataStore {
   readonly handlers: DataStoreHandlers;
-  readonly proxy: MagnusProxy;
+  readonly proxy: KeyValueStore<unknown>;
 
-  readonly skip: DataSkip = {};
-  readonly timers: DataTimers = {};
+  readonly skip: KeyValueStore<number> = {};
+  readonly timers: KeyValueStore<number> = {};
 
   constructor(readonly context: Context) {
     this.handlers = new DataStoreHandlers(this);

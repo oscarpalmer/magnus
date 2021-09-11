@@ -1,38 +1,31 @@
+import { StoredController } from '../models';
 import { Application } from '../application';
 import { Context } from '../context';
-import { Controller, ControllerConstructor } from '../controller';
-
-export interface ControllerBlob {
-  controllerConstructor: ControllerConstructor;
-  instances: Map<Element, Controller>;
-}
+import { Controller, Constructor } from '../controller';
 
 export class ControllerStore {
-  private readonly controllers: Map<string, ControllerBlob>;
+  private readonly controllers: Map<string, StoredController>;
 
   constructor(private readonly application: Application) {
     this.controllers = new Map();
   }
 
   add(identifier: string, element: Element): void {
-    const blob: ControllerBlob | undefined = this.controllers.get(identifier);
+    const storedController: StoredController | undefined = this.controllers.get(identifier);
 
-    if (blob != null) {
-      blob.instances.set(element, (new Context(this.application, identifier, element, blob.controllerConstructor)).controller);
+    if (storedController != null) {
+      storedController.instances.set(element, (new Context(this.application, identifier, element, storedController.constructor)).controller);
     }
   }
 
-  create(identifier: string, controllerConstructor: ControllerConstructor): void {
+  create(identifier: string, constructor: Constructor): void {
     if (!this.controllers.has(identifier)) {
-      this.controllers.set(identifier, {
-        controllerConstructor,
-        instances: new Map(),
-      });
+      this.controllers.set(identifier, { constructor, instances: new Map(), });
     }
   }
 
   remove(identifier: string, element: Element): void {
-    const blob: ControllerBlob | undefined = this.controllers.get(identifier);
+    const blob: StoredController | undefined = this.controllers.get(identifier);
 
     if (blob == null) {
       return;

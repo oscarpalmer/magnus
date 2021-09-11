@@ -398,13 +398,13 @@ class Store {
   }
 }
 class Context {
-  constructor(application, identifier, element, ControllerConstructor2) {
+  constructor(application, identifier, element, controller) {
     this.application = application;
     this.identifier = identifier;
     this.element = element;
     this.store = new Store(this);
     this.observer = new ControllerObserver(this);
-    this.controller = new ControllerConstructor2(this);
+    this.controller = new controller(this);
     this.observer.start();
     this.controller.connect();
   }
@@ -421,17 +421,14 @@ class ControllerStore {
     this.controllers = new Map();
   }
   add(identifier, element) {
-    const blob = this.controllers.get(identifier);
-    if (blob != null) {
-      blob.instances.set(element, new Context(this.application, identifier, element, blob.controllerConstructor).controller);
+    const storedController = this.controllers.get(identifier);
+    if (storedController != null) {
+      storedController.instances.set(element, new Context(this.application, identifier, element, storedController.constructor).controller);
     }
   }
-  create(identifier, controllerConstructor) {
+  create(identifier, constructor) {
     if (!this.controllers.has(identifier)) {
-      this.controllers.set(identifier, {
-        controllerConstructor,
-        instances: new Map()
-      });
+      this.controllers.set(identifier, { constructor, instances: new Map() });
     }
   }
   remove(identifier, element) {

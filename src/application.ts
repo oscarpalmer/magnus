@@ -1,5 +1,5 @@
 import { ControllerStore } from './store/controller.store';
-import { ControllerConstructor } from './controller';
+import { Constructor } from './controller';
 import { DocumentObserver } from './observer/document.observer';
 
 export class Application {
@@ -11,7 +11,7 @@ export class Application {
     this.observer = new DocumentObserver(this.controllers);
   }
 
-  add(name: string, controller: ControllerConstructor): void {
+  add(name: string, controller: Constructor): void {
     this.controllers.create(name, controller);
   }
 

@@ -1,7 +1,4 @@
-export interface IObserver {
-  start: () => void;
-  stop: () => void;
-}
+import { IObserver } from '../models';
 
 const observerAttributes = 'attributes';
 const observerChildList = 'childList';

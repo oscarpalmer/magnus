@@ -1,18 +1,16 @@
 import { Context } from './context';
-import { ClassNames } from './store/classes.store';
-import { DataChange, MagnusProxy } from './store/data.store';
-import { TargetChange } from './store/target.store';
+import { DataChange, KeyValueStore, TargetChange } from './models';
 
-export type ControllerConstructor = new(context: Context) => Controller;
+export type Constructor = new (context: Context) => Controller;
 
 export abstract class Controller {
   constructor (readonly context: Context) {}
 
-  get classes(): ClassNames {
+  get classes(): KeyValueStore<string> {
     return Object.assign({}, this.context.store.classes.values);
   }
 
-  get data(): MagnusProxy {
+  get data(): KeyValueStore<unknown> {
     return this.context.store.data.proxy;
   }
 

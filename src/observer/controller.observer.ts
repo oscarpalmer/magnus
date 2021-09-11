@@ -1,7 +1,7 @@
-import { ActionParameters } from '../store/action.store';
 import { Context } from '../context';
 import { Observer, observerOptions } from './observer';
 import { getActionParameters, getCamelCasedName, getRawValue } from '../helpers';
+import { ActionParameters } from '../models';
 
 export class ControllerObserver extends Observer {
   private readonly actionAttribute: string;
