@@ -1,12 +1,13 @@
-const observerAttributes = "attributes";
-const observerChildList = "childList";
-const observerOptions = {
+// src/observer/observer.ts
+var observerAttributes = "attributes";
+var observerChildList = "childList";
+var observerOptions = {
   attributeOldValue: true,
   attributes: true,
   childList: true,
   subtree: true
 };
-class Observer {
+var Observer = class {
   constructor(element) {
     this.element = element;
     this.observer = new MutationObserver(this.observe.bind(this));
@@ -53,10 +54,12 @@ class Observer {
       }
     }
   }
-}
-const actionOptions = ["capture", "once", "passive"];
-const actionPattern = /^(?:(\w+)@)?(\w+)(?::([\w:]+))?$/;
-const defaultEventTypes = {
+};
+
+// src/helpers.ts
+var actionOptions = ["capture", "once", "passive"];
+var actionPattern = /^(?:(\w+)@)?(\w+)(?::([\w:]+))?$/;
+var defaultEventTypes = {
   a: "click",
   button: "click",
   form: "submit",
@@ -139,7 +142,9 @@ function getStringValue(value) {
     return `${value}`;
   }
 }
-class ControllerObserver extends Observer {
+
+// src/observer/controller.observer.ts
+var ControllerObserver = class extends Observer {
   constructor(context) {
     super(context.element);
     this.context = context;
@@ -187,8 +192,8 @@ class ControllerObserver extends Observer {
     this.handleChanges(element, value, newValue, callback);
   }
   handleElement(element, added) {
-    for (let index2 = 0; index2 < element.attributes.length; index2 += 1) {
-      const attribute = element.attributes[index2].name;
+    for (let index = 0; index < element.attributes.length; index += 1) {
+      const attribute = element.attributes[index].name;
       if (this.attributes.indexOf(attribute) > -1 || element === this.context.element && this.attributePattern.test(attribute)) {
         this.handleAttribute(element, attribute, "", !added);
       }
@@ -233,8 +238,10 @@ class ControllerObserver extends Observer {
       this.context.store.targets.remove(target, element);
     }
   }
-}
-class ActionStore {
+};
+
+// src/store/action.store.ts
+var ActionStore = class {
   constructor() {
     this.actions = new Map();
   }
@@ -280,8 +287,10 @@ class ActionStore {
       this.actions.delete(name);
     }
   }
-}
-class ClassesStore {
+};
+
+// src/store/classes.store.ts
+var ClassesStore = class {
   constructor() {
     this.values = {};
   }
@@ -292,8 +301,10 @@ class ClassesStore {
       this.values[name] = value;
     }
   }
-}
-class DataStoreHandlers {
+};
+
+// src/store/data.store.ts
+var DataStoreHandlers = class {
   constructor(store) {
     this.store = store;
   }
@@ -322,8 +333,8 @@ class DataStoreHandlers {
     }
     return set;
   }
-}
-class DataStore {
+};
+var DataStore = class {
   constructor(context) {
     this.context = context;
     this.skip = {};
@@ -343,8 +354,10 @@ class DataStore {
     }
     this.context.element.setAttribute(getDataAttributeName(this.context.identifier, property), getStringValue(value));
   }
-}
-class TargetStore {
+};
+
+// src/store/target.store.ts
+var TargetStore = class {
   constructor(context) {
     this.context = context;
     this.targets = new Map();
@@ -388,16 +401,20 @@ class TargetStore {
       this.callback.call(this.context.controller, { element, name, added });
     }
   }
-}
-class Store {
+};
+
+// src/store/store.ts
+var Store = class {
   constructor(context) {
     this.actions = new ActionStore();
     this.classes = new ClassesStore();
     this.data = new DataStore(context);
     this.targets = new TargetStore(context);
   }
-}
-class Context {
+};
+
+// src/context.ts
+var Context = class {
   constructor(application, identifier, element, controller) {
     this.application = application;
     this.identifier = identifier;
@@ -414,8 +431,10 @@ class Context {
   findElements(selector) {
     return Array.from(this.element.querySelectorAll(selector));
   }
-}
-class ControllerStore {
+};
+
+// src/store/controller.store.ts
+var ControllerStore = class {
   constructor(application) {
     this.application = application;
     this.controllers = new Map();
@@ -446,9 +465,11 @@ class ControllerStore {
     blob.instances.delete(element);
     instance.disconnect();
   }
-}
-const dataControllerAttribute = "data-controller";
-class DocumentObserver extends Observer {
+};
+
+// src/observer/document.observer.ts
+var dataControllerAttribute = "data-controller";
+var DocumentObserver = class extends Observer {
   constructor(controllers) {
     super(document.documentElement);
     this.controllers = controllers;
@@ -487,8 +508,10 @@ class DocumentObserver extends Observer {
       }
     }
   }
-}
-class Application {
+};
+
+// src/application.ts
+var Application = class {
   constructor() {
     this.controllers = new ControllerStore(this);
     this.observer = new DocumentObserver(this.controllers);
@@ -502,8 +525,10 @@ class Application {
   stop() {
     this.observer.stop();
   }
-}
-class Controller {
+};
+
+// src/controller.ts
+var Controller = class {
   constructor(context) {
     this.context = context;
   }
@@ -536,6 +561,8 @@ class Controller {
   targets(name) {
     return this.context.store.targets.get(name);
   }
-}
-var index = { Application, Controller };
-export { index as default };
+};
+export {
+  Application,
+  Controller
+};

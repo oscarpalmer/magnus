@@ -5,17 +5,17 @@
   },
   "description": "A JavaScript framework for developers who like HTML.",
   "devDependencies": {
-    "@types/node": "^16.7.10",
-    "@typescript-eslint/eslint-plugin": "^4.30.0",
-    "@typescript-eslint/parser": "^4.30.0",
+    "@types/node": "^16.9.0",
+    "@typescript-eslint/eslint-plugin": "^4.31.0",
+    "@typescript-eslint/parser": "^4.31.0",
+    "esbuild": "^0.12.0",
     "eslint": "^7.32.0",
-    "typescript": "^4.4.0",
-    "vite": "^2.5.0"
+    "typescript": "^4.4.0"
   },
   "exports": {
     ".": {
-      "import": "./dist/magnus.es.js",
-      "require": "./dist/magnus.umd.js"
+      "import": "./dist/magnus.esm.js",
+      "require": "./dist/magnus.iife.js"
     }
   },
   "jsdelivr": "dist/magnus.iife.js",
@@ -26,19 +26,20 @@
     "stimulusjs"
   ],
   "license": "MIT",
-  "main": "dist/magnus.umd.js",
-  "module": "dist/magnus.es.js",
+  "main": "dist/magnus.iife.js",
+  "module": "dist/magnus.esm.js",
   "name": "magnus",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/oscarpalmer/magnus.git"
   },
   "scripts": {
-    "build": "vite build",
-    "dev": "vite",
-    "type": "tsc --noEmit"
+    "build": "npm run build:esm && npm run build:iife",
+    "build:esm": "esbuild ./src/index.ts --bundle --target=es2020 --platform=browser --outfile=./dist/magnus.esm.js --format=esm",
+    "build:iife": "esbuild ./src/index.ts --bundle --target=es2020 --platform=browser --outfile=./dist/magnus.iife.js --global-name=Magnus --format=iife",
+    "watch": ""
   },
   "types": "src/types.d.ts",
   "unpkg": "dist/magnus.iife.js",
-  "version": "0.22.0"
+  "version": "0.23.0"
 }
