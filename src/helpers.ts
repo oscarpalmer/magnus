@@ -1,11 +1,15 @@
 import { ActionOptions, ActionParameters, KeyValueStore } from './models';
 
 const actionOptions: string[] = ['capture', 'once', 'passive'];
+
 const actionPattern = /^(?:(\w+)@)?(\w+)(?::([\w:]+))?$/;
+const camelCasedPattern = /([A-Z])/g;
+const dashedPattern = /(?:[_-])([a-z0-9])/g;
 
 const defaultEventTypes: { [key: string]: string; } = {
   a: 'click',
   button: 'click',
+  details: 'toggle',
   form: 'submit',
   select: 'change',
   textarea: 'input',
@@ -68,11 +72,11 @@ export function getActionParameters(element: Element, action: string): ActionPar
 }
 
 export function getCamelCasedName(value: string): string {
-  return value.replace(/(?:[_-])([a-z0-9])/g, (_, character) => character.toUpperCase());
+  return value.replace(dashedPattern, (_, character) => character.toUpperCase());
 }
 
 export function getDashedName(value: string): string {
-  return value.replace(/([A-Z])/g, (_, character) => `-${character.toLowerCase()}`);
+  return value.replace(camelCasedPattern, (_, character) => `-${character.toLowerCase()}`);
 }
 
 export function getDataAttributeName(prefix: string, property: string): string {

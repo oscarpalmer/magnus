@@ -7,7 +7,7 @@ export abstract class Controller {
   constructor (readonly context: Context) {}
 
   get classes(): KeyValueStore<string> {
-    return Object.assign({}, this.context.store.classes.values);
+    return this.context.store.classes.values;
   }
 
   get data(): KeyValueStore<unknown> {

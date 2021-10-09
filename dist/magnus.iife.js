@@ -1,9 +1,6 @@
 var Magnus = (() => {
   var __defProp = Object.defineProperty;
   var __markAsModule = (target) => __defProp(target, "__esModule", { value: true });
-  var __require = typeof require !== "undefined" ? require : (x) => {
-    throw new Error('Dynamic require of "' + x + '" is not supported');
-  };
   var __export = (target, all) => {
     __markAsModule(target);
     for (var name in all)
@@ -78,9 +75,12 @@ var Magnus = (() => {
   // src/helpers.ts
   var actionOptions = ["capture", "once", "passive"];
   var actionPattern = /^(?:(\w+)@)?(\w+)(?::([\w:]+))?$/;
+  var camelCasedPattern = /([A-Z])/g;
+  var dashedPattern = /(?:[_-])([a-z0-9])/g;
   var defaultEventTypes = {
     a: "click",
     button: "click",
+    details: "toggle",
     form: "submit",
     select: "change",
     textarea: "input"
@@ -127,10 +127,10 @@ var Magnus = (() => {
     return parameters;
   }
   function getCamelCasedName(value) {
-    return value.replace(/(?:[_-])([a-z0-9])/g, (_, character) => character.toUpperCase());
+    return value.replace(dashedPattern, (_, character) => character.toUpperCase());
   }
   function getDashedName(value) {
-    return value.replace(/([A-Z])/g, (_, character) => `-${character.toLowerCase()}`);
+    return value.replace(camelCasedPattern, (_, character) => `-${character.toLowerCase()}`);
   }
   function getDataAttributeName(prefix, property) {
     return `data-${prefix}-data-${getDashedName(property)}`;
@@ -552,7 +552,7 @@ var Magnus = (() => {
       this.context = context;
     }
     get classes() {
-      return Object.assign({}, this.context.store.classes.values);
+      return this.context.store.classes.values;
     }
     get data() {
       return this.context.store.data.proxy;
