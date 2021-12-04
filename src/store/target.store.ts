@@ -4,10 +4,6 @@ import { TargetChange } from '../models';
 export class TargetStore {
   private readonly targets: Map<string, Set<Element>>;
 
-  private get callback(): (target: TargetChange) => void {
-    return this.context.controller.targetChanged;
-  }
-
   constructor(private readonly context: Context) {
     this.targets = new Map();
   }
@@ -55,8 +51,8 @@ export class TargetStore {
   }
 
   private handleChange(name: string, element: Element, added: boolean): void {
-    if (typeof this.callback === 'function') {
-      this.callback.call(this.context.controller, { element, name, added, });
+    if (typeof this.context.controller.targetChanged === 'function') {
+      this.context.controller.targetChanged({ element, name, added, });
     }
   }
 }

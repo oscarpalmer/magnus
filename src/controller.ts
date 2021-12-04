@@ -3,6 +3,13 @@ import { DataChange, KeyValueStore, TargetChange } from './models';
 
 export type Constructor = new (context: Context) => Controller;
 
+export interface Controller {
+  connect?(): void;
+  dataChanged?(data: DataChange): void;
+  disconnect?(): void;
+  targetChanged?(target: TargetChange): void;
+}
+
 export abstract class Controller {
   constructor (readonly context: Context) {}
 
@@ -22,31 +29,15 @@ export abstract class Controller {
     return this.context.identifier;
   }
 
-  connect(): void {
-    // Can be overridden in custom controllers
-  }
-
-  dataChanged(data: DataChange): void {
-    // Can be overridden in custom controllers
-  }
-
-  disconnect(): void {
-    // Can be overridden in custom controllers
-  }
-
-  hasTarget(name: string): boolean {
+  protected hasTarget(name: string): boolean {
     return this.context.store.targets.has(name);
   }
 
-  target(name: string): Element | undefined {
+  protected target(name: string): Element | undefined {
     return this.context.store.targets.get(name)[0];
   }
 
-  targetChanged(target: TargetChange): void {
-    // Can be overridden in custom controllers
-  }
-
-  targets(name: string): Element[] {
+  protected targets(name: string): Element[] {
     return this.context.store.targets.get(name);
   }
 }

@@ -24,7 +24,7 @@ class DataStoreHandlers {
       });
 
       if (typeof this.controller.dataChanged === 'function') {
-        this.controller.dataChanged.call(this.controller, {
+        this.controller.dataChanged({
           property: property as string,
           values: {
             new: value,

@@ -246,7 +246,7 @@ var ControllerObserver = class extends Observer {
 // src/store/action.store.ts
 var ActionStore = class {
   constructor() {
-    this.actions = new Map();
+    this.actions = /* @__PURE__ */ new Map();
   }
   add(name, element) {
     const action = this.actions.get(name);
@@ -271,7 +271,7 @@ var ActionStore = class {
     }
     this.actions.set(parameters.action, {
       callback,
-      elements: new Set(),
+      elements: /* @__PURE__ */ new Set(),
       options: getActionOptions(parameters.options || ""),
       type: parameters.type
     });
@@ -325,7 +325,7 @@ var DataStoreHandlers = class {
         this.store.setAttribute(property, value);
       });
       if (typeof this.controller.dataChanged === "function") {
-        this.controller.dataChanged.call(this.controller, {
+        this.controller.dataChanged({
           property,
           values: {
             new: value,
@@ -363,16 +363,13 @@ var DataStore = class {
 var TargetStore = class {
   constructor(context) {
     this.context = context;
-    this.targets = new Map();
-  }
-  get callback() {
-    return this.context.controller.targetChanged;
+    this.targets = /* @__PURE__ */ new Map();
   }
   add(name, element) {
     if (this.targets.has(name)) {
       this.targets.get(name)?.add(element);
     } else {
-      this.targets.set(name, new Set()).get(name)?.add(element);
+      this.targets.set(name, /* @__PURE__ */ new Set()).get(name)?.add(element);
     }
     this.handleChange(name, element, true);
   }
@@ -400,8 +397,8 @@ var TargetStore = class {
     this.handleChange(name, element, false);
   }
   handleChange(name, element, added) {
-    if (typeof this.callback === "function") {
-      this.callback.call(this.context.controller, { element, name, added });
+    if (typeof this.context.controller.targetChanged === "function") {
+      this.context.controller.targetChanged({ element, name, added });
     }
   }
 };
@@ -426,7 +423,9 @@ var Context = class {
     this.observer = new ControllerObserver(this);
     this.controller = new controller(this);
     this.observer.start();
-    this.controller.connect();
+    if (typeof this.controller.connect === "function") {
+      this.controller.connect();
+    }
   }
   findElement(selector) {
     return this.element.querySelector(selector);
@@ -440,7 +439,7 @@ var Context = class {
 var ControllerStore = class {
   constructor(application) {
     this.application = application;
-    this.controllers = new Map();
+    this.controllers = /* @__PURE__ */ new Map();
   }
   add(identifier, element) {
     const storedController = this.controllers.get(identifier);
@@ -450,7 +449,7 @@ var ControllerStore = class {
   }
   create(identifier, constructor) {
     if (!this.controllers.has(identifier)) {
-      this.controllers.set(identifier, { constructor, instances: new Map() });
+      this.controllers.set(identifier, { constructor, instances: /* @__PURE__ */ new Map() });
     }
   }
   remove(identifier, element) {
@@ -466,7 +465,9 @@ var ControllerStore = class {
     instance.context.store.actions.clear();
     instance.context.store.targets.clear();
     blob.instances.delete(element);
-    instance.disconnect();
+    if (typeof instance.disconnect === "function") {
+      instance.disconnect();
+    }
   }
 };
 
@@ -547,19 +548,11 @@ var Controller = class {
   get identifier() {
     return this.context.identifier;
   }
-  connect() {
-  }
-  dataChanged(data) {
-  }
-  disconnect() {
-  }
   hasTarget(name) {
     return this.context.store.targets.has(name);
   }
   target(name) {
     return this.context.store.targets.get(name)[0];
-  }
-  targetChanged(target) {
   }
   targets(name) {
     return this.context.store.targets.get(name);
