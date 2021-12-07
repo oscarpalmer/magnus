@@ -4,6 +4,7 @@ export interface ActionParameters {
   action: string;
   name: string;
   options?: string;
+  target?: EventTarget;
   type: string;
 }
 
@@ -15,8 +16,9 @@ export interface ActionOptions {
 
 export interface Action {
   callback: (event: Event) => void;
-  elements: Set<Element>;
   options: ActionOptions;
+  target?: EventTarget;
+  targets: Set<EventTarget>;
   type: string;
 }
 
@@ -28,6 +30,18 @@ export interface DataChange {
 export interface DataChangeValues {
   new: unknown;
   old: unknown;
+}
+
+export interface Dispatch {
+  data?: unknown;
+  options?: DispatchOptions;
+  target?: EventTarget;
+}
+
+export interface DispatchOptions {
+  bubbles?: boolean;
+  cancelable?: boolean;
+  composed?: boolean;
 }
 
 export interface IObserver {
@@ -46,6 +60,6 @@ export interface StoredController {
 
 export interface TargetChange {
   added: boolean;
-  element: Element;
   name: string;
+  target: Element;
 }

@@ -1,13 +1,12 @@
 import { Context } from './context';
-import { DataChange, KeyValueStore, TargetChange } from './models';
+import { Events } from './events'
+import { KeyValueStore } from './models';
 
 export type Constructor = new (context: Context) => Controller;
 
 export interface Controller {
   connect?(): void;
-  dataChanged?(data: DataChange): void;
   disconnect?(): void;
-  targetChanged?(target: TargetChange): void;
 }
 
 export abstract class Controller {
@@ -23,6 +22,10 @@ export abstract class Controller {
 
   get element(): Element {
     return this.context.element;
+  }
+
+  get events(): Events {
+    return this.context.events;
   }
 
   get identifier(): string {

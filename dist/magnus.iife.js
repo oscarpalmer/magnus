@@ -14,6 +14,35 @@ var Magnus = (() => {
     Controller: () => Controller
   });
 
+  // src/events.ts
+  var Emitter = class {
+    constructor(context) {
+      this.context = context;
+    }
+    listen(callback) {
+      this.callback = callback;
+    }
+    emit(value) {
+      if (this.callback != null) {
+        this.callback.call(this.context.controller, value);
+      }
+    }
+  };
+  var Events = class {
+    constructor(context) {
+      this.context = context;
+      this.data = new Emitter(this.context);
+      this.target = new Emitter(this.context);
+    }
+    dispatch(name, event) {
+      (event?.target ?? this.context.element).dispatchEvent(new CustomEvent(name, {
+        bubbles: event?.options?.bubbles ?? false,
+        cancelable: event?.options?.cancelable ?? false,
+        detail: event?.data
+      }));
+    }
+  };
+
   // src/observer/observer.ts
   var observerAttributes = "attributes";
   var observerChildList = "childList";
@@ -74,7 +103,7 @@ var Magnus = (() => {
 
   // src/helpers.ts
   var actionOptions = ["capture", "once", "passive"];
-  var actionPattern = /^(?:(\w+)@)?(\w+)(?::([\w:]+))?$/;
+  var actionPattern = /^(?:(?:(?<global>document|window)->(?:(?<global_event>\w+)@))|(?:(?<element_event>\w+)@))?(?<name>\w+)(?::(?<options>[\w+:]+))?$/;
   var camelCasedPattern = /([A-Z])/g;
   var dashedPattern = /(?:[_-])([a-z0-9])/g;
   var defaultEventTypes = {
@@ -108,16 +137,23 @@ var Magnus = (() => {
   }
   function getActionParameters(element, action) {
     const matches = action.match(actionPattern);
-    if (matches == null || matches.length === 0) {
+    if (matches == null || matches.groups == null) {
       return;
     }
+    const isGlobal = matches.groups.global != null;
     const parameters = {
       action,
-      name: matches[2],
-      options: matches[3],
-      type: matches[1]
+      name: matches.groups.name,
+      options: matches.groups.options,
+      type: isGlobal ? matches.groups.global_event : matches.groups.element_event
     };
-    if (parameters.type == null) {
+    if (isGlobal) {
+      parameters.target = matches.groups.global === "document" ? element.ownerDocument : window;
+      if (parameters.target == null) {
+        return;
+      }
+    }
+    if (!isGlobal && parameters.type == null) {
       const type = getDefaultEventType(element);
       if (type == null) {
         return;
@@ -264,21 +300,27 @@ var Magnus = (() => {
     constructor() {
       this.actions = /* @__PURE__ */ new Map();
     }
-    add(name, element) {
+    add(name, target) {
       const action = this.actions.get(name);
       if (action == null) {
         return;
       }
-      action.elements.add(element);
-      element.addEventListener(action.type, action.callback, action.options);
+      action.targets.add(target);
+      if (action.target == null || action.targets.size === 1) {
+        (action.target || target).addEventListener(action.type, action.callback, action.options);
+      }
     }
     clear() {
       const actions = this.actions.values();
       for (const action of actions) {
-        for (const element of action.elements) {
-          element.removeEventListener(action.type, action.callback, action.options);
+        if (action.target != null) {
+          action.target.removeEventListener(action.type, action.callback, action.options);
+        } else {
+          for (const target of action.targets) {
+            target.removeEventListener(action.type, action.callback, action.options);
+          }
         }
-        action.elements.clear();
+        action.targets.clear();
       }
     }
     create(parameters, callback) {
@@ -287,7 +329,8 @@ var Magnus = (() => {
       }
       this.actions.set(parameters.action, {
         callback,
-        elements: /* @__PURE__ */ new Set(),
+        target: parameters.target,
+        targets: /* @__PURE__ */ new Set(),
         options: getActionOptions(parameters.options || ""),
         type: parameters.type
       });
@@ -295,15 +338,21 @@ var Magnus = (() => {
     has(name) {
       return this.actions.has(name);
     }
-    remove(name, element) {
+    remove(name, target) {
       const action = this.actions.get(name);
       if (action == null) {
         return;
       }
-      action.elements.delete(element);
-      element.removeEventListener(action.type, action.callback, action.options);
-      if (action.elements.size === 0) {
-        this.actions.delete(name);
+      action.targets.delete(target);
+      if (action.target == null) {
+        target.removeEventListener(action.type, action.callback, action.options);
+      }
+      if (action.targets.size > 0) {
+        return;
+      }
+      this.actions.delete(name);
+      if (action.target != null) {
+        action.target.removeEventListener(action.type, action.callback, action.options);
       }
     }
   };
@@ -340,15 +389,13 @@ var Magnus = (() => {
         debounce(this.store.timers, property, () => {
           this.store.setAttribute(property, value);
         });
-        if (typeof this.controller.dataChanged === "function") {
-          this.controller.dataChanged({
-            property,
-            values: {
-              new: value,
-              old: oldValue
-            }
-          });
-        }
+        this.controller.events.data.emit({
+          property,
+          values: {
+            new: value,
+            old: oldValue
+          }
+        });
       }
       return set;
     }
@@ -387,7 +434,7 @@ var Magnus = (() => {
       } else {
         this.targets.set(name, /* @__PURE__ */ new Set()).get(name)?.add(element);
       }
-      this.handleChange(name, element, true);
+      this.context.events.target.emit({ name, added: true, target: element });
     }
     clear() {
       const targets = this.targets.values();
@@ -410,12 +457,7 @@ var Magnus = (() => {
       if (targets.size === 0) {
         this.targets.delete(name);
       }
-      this.handleChange(name, element, false);
-    }
-    handleChange(name, element, added) {
-      if (typeof this.context.controller.targetChanged === "function") {
-        this.context.controller.targetChanged({ element, name, added });
-      }
+      this.context.events.target.emit({ name, added: false, target: element });
     }
   };
 
@@ -435,8 +477,9 @@ var Magnus = (() => {
       this.application = application;
       this.identifier = identifier;
       this.element = element;
-      this.store = new Store(this);
+      this.events = new Events(this);
       this.observer = new ControllerObserver(this);
+      this.store = new Store(this);
       this.controller = new controller(this);
       this.observer.start();
       if (typeof this.controller.connect === "function") {
@@ -560,6 +603,9 @@ var Magnus = (() => {
     }
     get element() {
       return this.context.element;
+    }
+    get events() {
+      return this.context.events;
     }
     get identifier() {
       return this.context.identifier;

@@ -23,15 +23,13 @@ class DataStoreHandlers {
         this.store.setAttribute(property as string, value);
       });
 
-      if (typeof this.controller.dataChanged === 'function') {
-        this.controller.dataChanged({
-          property: property as string,
-          values: {
-            new: value,
-            old: oldValue,
-          },
-        });
-      }
+      this.controller.events.data.emit({
+        property: property as string,
+        values: {
+          new: value,
+          old: oldValue,
+        },
+      });
     }
 
     return set;

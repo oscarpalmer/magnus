@@ -8,27 +8,33 @@ export class ActionStore {
     this.actions = new Map();
   }
 
-  add(name: string, element: Element): void {
-    const action: Action | undefined = this.actions.get(name);
+  add(name: string, target: Element): void {
+    const action: Action|undefined = this.actions.get(name);
 
     if (action == null) {
       return;
     }
 
-    action.elements.add(element);
+    action.targets.add(target);
 
-    element.addEventListener(action.type, action.callback, action.options);
+    if (action.target == null || action.targets.size === 1) {
+      (action.target || target).addEventListener(action.type, action.callback, action.options);
+    }
   }
 
   clear(): void {
     const actions: IterableIterator<Action> = this.actions.values();
 
     for (const action of actions) {
-      for (const element of action.elements) {
-        element.removeEventListener(action.type, action.callback, action.options);
+      if (action.target != null) {
+        action.target.removeEventListener(action.type, action.callback, action.options);
+      } else {
+        for (const target of action.targets) {
+          target.removeEventListener(action.type, action.callback, action.options);
+        }
       }
 
-      action.elements.clear();
+      action.targets.clear();
     }
   }
 
@@ -39,7 +45,8 @@ export class ActionStore {
 
     this.actions.set(parameters.action, {
       callback,
-      elements: new Set(),
+      target: parameters.target,
+      targets: new Set(),
       options: getActionOptions(parameters.options || ''),
       type: parameters.type,
     });
@@ -49,19 +56,27 @@ export class ActionStore {
     return this.actions.has(name);
   }
 
-  remove(name: string, element: Element): void {
+  remove(name: string, target: Element): void {
     const action: Action | undefined = this.actions.get(name);
 
     if (action == null) {
       return;
     }
 
-    action.elements.delete(element);
+    action.targets.delete(target);
 
-    element.removeEventListener(action.type, action.callback, action.options);
+    if (action.target == null) {
+      target.removeEventListener(action.type, action.callback, action.options);
+    }
 
-    if (action.elements.size === 0) {
-      this.actions.delete(name);
+    if (action.targets.size > 0) {
+      return;
+    }
+
+    this.actions.delete(name);
+
+    if (action.target != null) {
+      action.target.removeEventListener(action.type, action.callback, action.options);
     }
   }
 }

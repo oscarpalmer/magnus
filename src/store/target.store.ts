@@ -1,5 +1,4 @@
 import { Context } from '../context';
-import { TargetChange } from '../models';
 
 export class TargetStore {
   private readonly targets: Map<string, Set<Element>>;
@@ -15,7 +14,7 @@ export class TargetStore {
       this.targets.set(name, new Set()).get(name)?.add(element);
     }
 
-    this.handleChange(name, element, true);
+    this.context.events.target.emit({ name, added: true, target: element, });
   }
 
   clear(): void {
@@ -47,12 +46,6 @@ export class TargetStore {
       this.targets.delete(name);
     }
 
-    this.handleChange(name, element, false);
-  }
-
-  private handleChange(name: string, element: Element, added: boolean): void {
-    if (typeof this.context.controller.targetChanged === 'function') {
-      this.context.controller.targetChanged({ element, name, added, });
-    }
+    this.context.events.target.emit({ name, added: false, target: element, });
   }
 }

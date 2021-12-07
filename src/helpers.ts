@@ -2,7 +2,7 @@ import { ActionOptions, ActionParameters, KeyValueStore } from './models';
 
 const actionOptions: string[] = ['capture', 'once', 'passive'];
 
-const actionPattern = /^(?:(\w+)@)?(\w+)(?::([\w:]+))?$/;
+const actionPattern = /^(?:(?:(?<global>document|window)->(?:(?<global_event>\w+)@))|(?:(?<element_event>\w+)@))?(?<name>\w+)(?::(?<options>[\w+:]+))?$/;
 const camelCasedPattern = /([A-Z])/g;
 const dashedPattern = /(?:[_-])([a-z0-9])/g;
 
@@ -45,20 +45,34 @@ export function getActionOptions(value: string): ActionOptions {
 }
 
 export function getActionParameters(element: Element, action: string): ActionParameters | undefined {
-  const matches: RegExpMatchArray | null = action.match(actionPattern);
+  const matches: RegExpMatchArray|null = action.match(actionPattern);
 
-  if (matches == null || matches.length === 0) {
+  if (matches == null || matches.groups == null) {
     return;
   }
 
+  const isGlobal: boolean = matches.groups.global != null;
+
   const parameters: ActionParameters = {
     action,
-    name: matches[2],
-    options: matches[3],
-    type: matches[1],
+    name: matches.groups.name,
+    options: matches.groups.options,
+    type: isGlobal
+      ? matches.groups.global_event
+      : matches.groups.element_event,
   };
 
-  if (parameters.type == null) {
+  if (isGlobal) {
+    parameters.target = matches.groups.global === 'document'
+      ? element.ownerDocument
+      : window;
+
+      if (parameters.target == null) {
+        return;
+      }
+  }
+
+  if (!isGlobal && parameters.type == null) {
     const type: string | undefined = getDefaultEventType(element);
 
     if (type == null) {

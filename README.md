@@ -138,17 +138,21 @@ export class TalinController extends Magnus.Controller {
 
 #### Target changes
 
-It's also possible to listen for target changes, for which there are two events: when they have been _added_ and _removed_.
+It's also possible to listen for target changes which are emitted using a parameters object containg the target name, together with the target element and a value to tell if the target was added or removed. To listen for emitted changes, a callback needs to be attached to `events.target` on your controller using its `listen`-method, as seen below.
 
 ##### Target change example
 
 ```typescript
 class TalinController extends Magnus.Controller {
-  targetChanged(target) {
-    // Called when any target has changed, where 'target' is a simple object of:
-    // - target.name: its previously defined target name
-    // - target.element: the HTML element
-    // - target.added: true if added, false if removed
+  connect() {
+    this.events.target.listen(this.targetChanged);
+  }
+
+  targetChanged(change) {
+    // Called when any target has changed, where 'change' is a simple object of:
+    // - change.name: its previously defined target name
+    // - change.element: the HTML element
+    // - change.added: true if added, false if removed
   }
 }
 ```
@@ -179,6 +183,26 @@ export class TalinController extends Magnus.Controller {
 }
 ```
 
+#### Global actions
+
+Actions can also be created for two global targets — `document` and `window` — on your controller's targets, which can be useful to listen for events like `popstate` or even connecting controllers with each other. The syntax is similar to regular actions, but must be prefixed with either `document->` or `window->`, while also specifying a event name, e.g. `window->type@callback`.
+
+#### Triggering actions
+
+To trigger an action, either for a global target – `document` or `window` – or an element, the `xxx.events.dispath`-method can be called with two parameters: the name of the action (event) to be triggered, and an optional object containing information regarding the event. For more details on this object, please see the snippet below:
+
+```typescript
+const information = {
+  data: null, // Any kind of data, to be accessed using the 'details'-property on the event object in the listener method
+  options: {
+    bubbles: false, // Should the event bubble? Defaults to false
+    cancelable: false, // Is the event cancelable? Defaults to false
+    composed: false, // Is the event composed and will travel across DOMs? Defaults to false
+  },
+  target: null, // Can be 'document', 'window', or an element; defaults to the controller's element
+};
+```
+
 ### Data
 
 Magnus is also able to handle simple, mostly-flat data structures, as well as respond to changes when needed.
@@ -187,7 +211,7 @@ Data can be initialized for a controller using attributes on your controller ele
 
 To access the data structure for retrieving and storing information, the controller has the property `data` which returns [a Proxy-object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy).
 
-When storing values, Magnus will first: update the attribute as set in the HTML; and second: attempt to call the method named `dataChanged`, and if it exists, it will be called with a parameters object consisting of: a property name, and its new and previous values.
+When storing values, Magnus will first: update the attribute as set in the HTML; and second: emit a parameters object containg the property name, together with its new and previous values. To listen for emitted changes, a callback needs to be attached to `events.data` on your controller using its `listen`-method, as seen below.
 
 #### Data example
 
@@ -197,12 +221,17 @@ When storing values, Magnus will first: update the attribute as set in the HTML;
 
 ```typescript
 export class TalinController extends Magnus.Controller {
-  dataChanged(data) {
-    // Called when any property's data has changed, where 'data' is a simple object of:
-    // - data.property
-    // - data.values:
-    //     - data.values.new
-    //     - data.values.old
+  connect() {
+    // Add a callback to listen for data changes
+    this.events.data.listen(this.dataChanged);
+  }
+
+  dataChanged(change) {
+    // Called when any property's data has changed, where 'change' is a simple object of:
+    // - change.property
+    // - change.values:
+    //     - change.values.new
+    //     - change.values.old
   }
 
   // Custom method accessing your custom data property
