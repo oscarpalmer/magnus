@@ -1,5 +1,5 @@
+import { DataChange, Dispatch, TargetChange } from '../models';
 import { Context } from './context';
-import { DataChange, Dispatch, TargetChange } from './models';
 
 class Emitter<T> {
   protected callback?: (value: T) => void;

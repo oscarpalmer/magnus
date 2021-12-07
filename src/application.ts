@@ -1,5 +1,5 @@
+import { Constructor } from './controller/controller';
 import { ControllerStore } from './store/controller.store';
-import { Constructor } from './controller';
 import { DocumentObserver } from './observer/document.observer';
 
 export class Application {

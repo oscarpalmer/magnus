@@ -1,6 +1,7 @@
+import { KeyValueStore } from '../models';
 import { Context } from './context';
 import { Events } from './events'
-import { KeyValueStore } from './models';
+import { Targets } from './targets';
 
 export type Constructor = new (context: Context) => Controller;
 
@@ -32,15 +33,7 @@ export abstract class Controller {
     return this.context.identifier;
   }
 
-  protected hasTarget(name: string): boolean {
-    return this.context.store.targets.has(name);
-  }
-
-  protected target(name: string): Element | undefined {
-    return this.context.store.targets.get(name)[0];
-  }
-
-  protected targets(name: string): Element[] {
-    return this.context.store.targets.get(name);
+  get targets(): Targets {
+    return this.context.targets;
   }
 }

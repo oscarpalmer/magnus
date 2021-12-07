@@ -1,4 +1,4 @@
-import { Context } from '../context';
+import { Context } from '../controller/context';
 
 export class TargetStore {
   private readonly targets: Map<string, Set<Element>>;

@@ -1,7 +1,7 @@
+import { KeyValueStore } from '../models';
 import { debounce, getDataAttributeName, getStringValue } from '../helpers';
-import { Context } from '../context';
-import { Controller } from '../controller';
-import { KeyValueStore } from 'src/models';
+import { Context } from '../controller/context';
+import { Controller } from '../controller/controller';
 
 class DataStoreHandlers {
   private get controller(): Controller {

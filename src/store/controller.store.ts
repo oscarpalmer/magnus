@@ -1,7 +1,7 @@
 import { StoredController } from '../models';
 import { Application } from '../application';
-import { Context } from '../context';
-import { Controller, Constructor } from '../controller';
+import { Context } from '../controller/context';
+import { Controller, Constructor } from '../controller/controller';
 
 export class ControllerStore {
   private readonly controllers: Map<string, StoredController>;

@@ -1,90 +1,3 @@
-// src/events.ts
-var Emitter = class {
-  constructor(context) {
-    this.context = context;
-  }
-  listen(callback) {
-    this.callback = callback;
-  }
-  emit(value) {
-    if (this.callback != null) {
-      this.callback.call(this.context.controller, value);
-    }
-  }
-};
-var Events = class {
-  constructor(context) {
-    this.context = context;
-    this.data = new Emitter(this.context);
-    this.target = new Emitter(this.context);
-  }
-  dispatch(name, event) {
-    (event?.target ?? this.context.element).dispatchEvent(new CustomEvent(name, {
-      bubbles: event?.options?.bubbles ?? false,
-      cancelable: event?.options?.cancelable ?? false,
-      detail: event?.data
-    }));
-  }
-};
-
-// src/observer/observer.ts
-var observerAttributes = "attributes";
-var observerChildList = "childList";
-var observerOptions = {
-  attributeOldValue: true,
-  attributes: true,
-  childList: true,
-  subtree: true
-};
-var Observer = class {
-  constructor(element) {
-    this.element = element;
-    this.observer = new MutationObserver(this.observe.bind(this));
-  }
-  start() {
-    this.observer.observe(this.element, this.getOptions());
-    this.handleNodes([this.element], true);
-  }
-  stop() {
-    this.observer.disconnect();
-  }
-  getAttributes(oldAttribute, newAttribute) {
-    const oldAttributeValues = oldAttribute.split(" ");
-    const newAttributeValues = newAttribute.split(" ");
-    const addedValues = [];
-    const removedValues = [];
-    for (const attribute of oldAttributeValues) {
-      if (attribute !== "" && newAttributeValues.indexOf(attribute) === -1) {
-        removedValues.push(attribute);
-      }
-    }
-    for (const attribute of newAttributeValues) {
-      if (attribute !== "" && oldAttributeValues.indexOf(attribute) === -1) {
-        addedValues.push(attribute);
-      }
-    }
-    return [addedValues, removedValues];
-  }
-  handleNodes(nodes, added) {
-    for (const node of nodes || []) {
-      if (node.nodeType === Node.ELEMENT_NODE) {
-        this.handleElement(node, added);
-        this.handleNodes(node.childNodes, added);
-      }
-    }
-  }
-  observe(entries) {
-    for (const entry of entries) {
-      if (entry.type === observerChildList) {
-        this.handleNodes(entry.addedNodes, true);
-        this.handleNodes(entry.removedNodes, false);
-      } else if (entry.type === observerAttributes) {
-        this.handleAttribute(entry.target, entry.attributeName || "", entry.oldValue || "");
-      }
-    }
-  }
-};
-
 // src/helpers.ts
 var actionOptions = ["capture", "once", "passive"];
 var actionPattern = /^(?:(?:(?<global>document|window)->(?:(?<global_event>\w+)@))|(?:(?<element_event>\w+)@))?(?<name>\w+)(?::(?<options>[\w+:]+))?$/;
@@ -181,6 +94,64 @@ function getStringValue(value) {
     return `${value}`;
   }
 }
+
+// src/observer/observer.ts
+var observerAttributes = "attributes";
+var observerChildList = "childList";
+var observerOptions = {
+  attributeOldValue: true,
+  attributes: true,
+  childList: true,
+  subtree: true
+};
+var Observer = class {
+  constructor(element) {
+    this.element = element;
+    this.observer = new MutationObserver(this.observe.bind(this));
+  }
+  start() {
+    this.observer.observe(this.element, this.getOptions());
+    this.handleNodes([this.element], true);
+  }
+  stop() {
+    this.observer.disconnect();
+  }
+  getAttributes(oldAttribute, newAttribute) {
+    const oldAttributeValues = oldAttribute.split(" ");
+    const newAttributeValues = newAttribute.split(" ");
+    const addedValues = [];
+    const removedValues = [];
+    for (const attribute of oldAttributeValues) {
+      if (attribute !== "" && newAttributeValues.indexOf(attribute) === -1) {
+        removedValues.push(attribute);
+      }
+    }
+    for (const attribute of newAttributeValues) {
+      if (attribute !== "" && oldAttributeValues.indexOf(attribute) === -1) {
+        addedValues.push(attribute);
+      }
+    }
+    return [addedValues, removedValues];
+  }
+  handleNodes(nodes, added) {
+    for (const node of nodes || []) {
+      if (node.nodeType === Node.ELEMENT_NODE) {
+        this.handleElement(node, added);
+        this.handleNodes(node.childNodes, added);
+      }
+    }
+  }
+  observe(entries) {
+    for (const entry of entries) {
+      if (entry.type === observerChildList) {
+        this.handleNodes(entry.addedNodes, true);
+        this.handleNodes(entry.removedNodes, false);
+      } else if (entry.type === observerAttributes) {
+        this.handleAttribute(entry.target, entry.attributeName || "", entry.oldValue || "");
+      }
+    }
+  }
+};
 
 // src/observer/controller.observer.ts
 var ControllerObserver = class extends Observer {
@@ -455,26 +426,66 @@ var Store = class {
   }
 };
 
-// src/context.ts
+// src/controller/events.ts
+var Emitter = class {
+  constructor(context) {
+    this.context = context;
+  }
+  listen(callback) {
+    this.callback = callback;
+  }
+  emit(value) {
+    if (this.callback != null) {
+      this.callback.call(this.context.controller, value);
+    }
+  }
+};
+var Events = class {
+  constructor(context) {
+    this.context = context;
+    this.data = new Emitter(this.context);
+    this.target = new Emitter(this.context);
+  }
+  dispatch(name, event) {
+    (event?.target ?? this.context.element).dispatchEvent(new CustomEvent(name, {
+      bubbles: event?.options?.bubbles ?? false,
+      cancelable: event?.options?.cancelable ?? false,
+      detail: event?.data
+    }));
+  }
+};
+
+// src/controller/targets.ts
+var Targets = class {
+  constructor(context) {
+    this.context = context;
+  }
+  exists(name) {
+    return this.context.store.targets.has(name);
+  }
+  get(name) {
+    return this.context.store.targets.get(name);
+  }
+  find(selector) {
+    return Array.from(this.context.element.querySelectorAll(selector));
+  }
+};
+
+// src/controller/context.ts
 var Context = class {
   constructor(application, identifier, element, controller) {
     this.application = application;
     this.identifier = identifier;
     this.element = element;
     this.events = new Events(this);
-    this.observer = new ControllerObserver(this);
     this.store = new Store(this);
+    this.targets = new Targets(this);
+    this.observer = new ControllerObserver(this);
     this.controller = new controller(this);
     this.observer.start();
-    if (typeof this.controller.connect === "function") {
+    if (this.controller.connect != null) {
       this.controller.connect();
     }
-  }
-  findElement(selector) {
-    return this.element.querySelector(selector);
-  }
-  findElements(selector) {
-    return Array.from(this.element.querySelectorAll(selector));
   }
 };
 
@@ -574,7 +585,7 @@ var Application = class {
   }
 };
 
-// src/controller.ts
+// src/controller/controller.ts
 var Controller = class {
   constructor(context) {
     this.context = context;
@@ -594,14 +605,8 @@ var Controller = class {
   get identifier() {
     return this.context.identifier;
   }
-  hasTarget(name) {
-    return this.context.store.targets.has(name);
-  }
-  target(name) {
-    return this.context.store.targets.get(name)[0];
-  }
-  targets(name) {
-    return this.context.store.targets.get(name);
+  get targets() {
+    return this.context.targets;
   }
 };
 export {

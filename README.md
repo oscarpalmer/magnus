@@ -125,13 +125,10 @@ export class TalinController extends Magnus.Controller {
   // Custom method for showcasing built-in target-methods
   getTargets() {
     // Returns an array of elements
-    const elements = this.targets('output')
-
-    // Returns first element if it exists
-    const element = this.target('output')
+    const elements = this.targets.get('output')
 
     // Returns true if target(s) exists
-    const exists = this.hasTarget('output')
+    const exists = this.targets.exists('output')
   }
 }
 ```

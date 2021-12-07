@@ -1,4 +1,4 @@
-import { Context } from '../context';
+import { Context } from '../controller/context';
 import { ActionStore } from './action.store';
 import { ClassesStore } from './classes.store';
 import { DataStore } from './data.store';

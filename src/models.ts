@@ -1,4 +1,4 @@
-import { Controller, Constructor } from './controller';
+import { Controller, Constructor } from './controller/controller';
 
 export interface ActionParameters {
   action: string;
