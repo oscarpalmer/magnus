@@ -27,7 +27,7 @@ import { Controller } from 'magnus';
 
 export default class extends Controller {
   greet() {
-    this.target('output').textContent = this.target('input').value;
+    this.targets.get('output')[0].textContent = this.targets.get('input')[0].value;
   }
 }
 ```
@@ -86,7 +86,7 @@ import { Controller } from 'magnus';
 
 export default class extends Controller {
   greet() {
-    this.target('output').textContent = this.target('name').value;
+    this.targets.get('output')[0].textContent = this.targets.get('name')[0].value;
   }
 }
 ```
