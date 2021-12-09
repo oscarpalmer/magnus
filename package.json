@@ -41,5 +41,5 @@
   },
   "types": "src/types.d.ts",
   "unpkg": "dist/magnus.iife.js",
-  "version": "0.27.0"
+  "version": "0.28.0"
 }

@@ -496,9 +496,9 @@ var ControllerStore = class {
     this.controllers = /* @__PURE__ */ new Map();
   }
   add(identifier, element) {
-    const storedController = this.controllers.get(identifier);
-    if (storedController != null) {
-      storedController.instances.set(element, new Context(this.application, identifier, element, storedController.constructor).controller);
+    const controller = this.controllers.get(identifier);
+    if (controller != null) {
+      controller.instances.set(element, new Context(this.application, identifier, element, controller.constructor));
     }
   }
   create(identifier, constructor) {
@@ -507,20 +507,20 @@ var ControllerStore = class {
     }
   }
   remove(identifier, element) {
-    const blob = this.controllers.get(identifier);
-    if (blob == null) {
+    const controller = this.controllers.get(identifier);
+    if (controller == null) {
       return;
     }
-    const instance = blob.instances.get(element);
+    const instance = controller.instances.get(element);
     if (instance == null) {
       return;
     }
-    instance.context.observer.stop();
-    instance.context.store.actions.clear();
-    instance.context.store.targets.clear();
-    blob.instances.delete(element);
-    if (typeof instance.disconnect === "function") {
-      instance.disconnect();
+    instance.observer.stop();
+    instance.store.actions.clear();
+    instance.store.targets.clear();
+    controller.instances.delete(element);
+    if (typeof instance.controller.disconnect === "function") {
+      instance.controller.disconnect();
     }
   }
 };

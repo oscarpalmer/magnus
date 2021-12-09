@@ -1,7 +1,7 @@
 import { StoredController } from '../models';
 import { Application } from '../application';
 import { Context } from '../controller/context';
-import { Controller, Constructor } from '../controller/controller';
+import { Constructor } from '../controller/controller';
 
 export class ControllerStore {
   private readonly controllers: Map<string, StoredController>;
@@ -11,10 +11,10 @@ export class ControllerStore {
   }
 
   add(identifier: string, element: Element): void {
-    const storedController: StoredController | undefined = this.controllers.get(identifier);
+    const controller: StoredController|undefined = this.controllers.get(identifier);
 
-    if (storedController != null) {
-      storedController.instances.set(element, (new Context(this.application, identifier, element, storedController.constructor)).controller);
+    if (controller != null) {
+      controller.instances.set(element, new Context(this.application, identifier, element, controller.constructor));
     }
   }
 
@@ -25,27 +25,27 @@ export class ControllerStore {
   }
 
   remove(identifier: string, element: Element): void {
-    const blob: StoredController | undefined = this.controllers.get(identifier);
+    const controller: StoredController|undefined = this.controllers.get(identifier);
 
-    if (blob == null) {
+    if (controller == null) {
       return;
     }
 
-    const instance: Controller | undefined = blob.instances.get(element);
+    const instance: Context|undefined = controller.instances.get(element);
 
     if (instance == null) {
       return;
     }
 
-    instance.context.observer.stop();
+    instance.observer.stop();
 
-    instance.context.store.actions.clear();
-    instance.context.store.targets.clear();
+    instance.store.actions.clear();
+    instance.store.targets.clear();
 
-    blob.instances.delete(element);
+    controller.instances.delete(element);
 
-    if (typeof instance.disconnect === 'function') {
-      instance.disconnect();
+    if (typeof instance.controller.disconnect === 'function') {
+      instance.controller.disconnect();
     }
   }
 }

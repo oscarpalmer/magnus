@@ -11,7 +11,7 @@ export interface Controller {
 }
 
 export abstract class Controller {
-  constructor (readonly context: Context) {}
+  constructor (private readonly context: Context) {}
 
   get classes(): KeyValueStore<string> {
     return this.context.store.classes.values;

@@ -1,4 +1,5 @@
-import { Controller, Constructor } from './controller/controller';
+import { Context } from './controller/context';
+import { Constructor } from './controller/controller';
 
 export interface ActionParameters {
   action: string;
@@ -55,7 +56,7 @@ export interface KeyValueStore<T> {
 
 export interface StoredController {
   constructor: Constructor;
-  instances: Map<Element, Controller>;
+  instances: Map<Element, Context>;
 }
 
 export interface TargetChange {
