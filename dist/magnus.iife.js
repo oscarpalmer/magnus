@@ -30,7 +30,6 @@ var Magnus = (() => {
   });
 
   // src/helpers.ts
-  var actionOptions = ["capture", "once", "passive"];
   var actionPattern = /^(?:(?:(?<global>document|window)->(?:(?<globalEvent>\w+)@))|(?:(?<elementEvent>\w+)@))?(?<name>\w+)(?::(?<options>[\w+:]+))?$/;
   var camelCasedPattern = /([A-Z])/g;
   var dashedPattern = /(?:[_-])([a-z0-9])/g;
@@ -50,18 +49,12 @@ var Magnus = (() => {
     }, 250);
   }
   function getActionOptions(value) {
-    const options = {
-      capture: false,
-      once: false,
-      passive: false
-    };
     const parts = value.split(":");
-    for (const option of actionOptions) {
-      if (parts.indexOf(option) > -1) {
-        options[option] = true;
-      }
-    }
-    return options;
+    return {
+      capture: parts.indexOf("capture") > -1,
+      once: parts.indexOf("once") > -1,
+      passive: parts.indexOf("passive") > -1
+    };
   }
   function getActionParameters(element, action) {
     const matches = action.match(actionPattern);
@@ -96,8 +89,8 @@ var Magnus = (() => {
   function getDashedName(value) {
     return value.replace(camelCasedPattern, (_, character) => `-${character.toLowerCase()}`);
   }
-  function getDataAttributeName(prefix, property) {
-    return `data-${prefix}-data-${getDashedName(property)}`;
+  function getDataAttributeName(controller, property) {
+    return `data-${controller}-data-${getDashedName(property)}`;
   }
   function getDefaultEventType(element) {
     const tagName = element.tagName.toLowerCase();
@@ -116,8 +109,11 @@ var Magnus = (() => {
     }
   }
   function getStringValue(value) {
-    if (typeof value !== "object") {
+    if (typeof value === "string") {
       return value;
+    }
+    if (typeof value !== "object") {
+      return String(value);
     }
     try {
       return JSON.stringify(value);
@@ -178,7 +174,7 @@ var Magnus = (() => {
           this.handleNodes(entry.addedNodes, true);
           this.handleNodes(entry.removedNodes, false);
         } else if (entry.type === observerAttributes) {
-          this.handleAttribute(entry.target, entry.attributeName || "", entry.oldValue || "");
+          this.handleAttribute(entry.target, entry.attributeName || "", entry.oldValue || "", false);
         }
       }
     }
@@ -192,31 +188,29 @@ var Magnus = (() => {
       this.actionAttribute = `data-${context.identifier}-action`;
       this.dataAttributePrefix = `data-${context.identifier}-data-`;
       this.targetAttribute = `data-${context.identifier}-target`;
-      this.attributes = [this.actionAttribute, this.targetAttribute];
     }
     getOptions() {
       return Object.assign({}, observerOptions);
     }
-    handleAttribute(element, name, value, removedElement) {
+    handleAttribute(element, name, value, removed) {
       let newValue = element.getAttribute(name) || "";
       if (newValue === value) {
         return;
       }
-      if (removedElement === true) {
+      if (removed) {
         value = newValue;
         newValue = "";
       }
-      if (element === this.context.element && this.attributes.indexOf(name) === -1) {
+      if (name.startsWith(this.dataAttributePrefix)) {
         this.handleData(name, newValue);
         return;
       }
-      const callback = name === this.actionAttribute ? this.handleAction : this.handleTarget;
-      this.handleChanges(element, value, newValue, callback);
+      this.handleChanges(element, value, newValue, name === this.actionAttribute ? this.handleAction : this.handleTarget);
     }
     handleElement(element, added) {
       for (let index = 0; index < element.attributes.length; index += 1) {
         const attribute = element.attributes[index].name;
-        if (this.attributes.indexOf(attribute) > -1 || element === this.context.element && attribute.startsWith(this.dataAttributePrefix)) {
+        if (attribute === this.actionAttribute || attribute === this.targetAttribute || attribute.startsWith(this.dataAttributePrefix)) {
           this.handleAttribute(element, attribute, "", !added);
         }
       }
@@ -254,10 +248,6 @@ var Magnus = (() => {
       }
     }
     handleData(name, value) {
-      const isDataAttribute = name.startsWith(this.dataAttributePrefix);
-      if (!isDataAttribute) {
-        return;
-      }
       let property = name.substring(this.dataAttributePrefix.length, name.length);
       if (property == null || property.length === 0) {
         return;
@@ -335,9 +325,7 @@ var Magnus = (() => {
         return;
       }
       this.actions.delete(name);
-      if (action.target != null) {
-        action.target.removeEventListener(action.type, action.callback, action.options);
-      }
+      action.target?.removeEventListener(action.type, action.callback, action.options);
     }
   };
 
@@ -449,9 +437,7 @@ var Magnus = (() => {
       this.callback = callback;
     }
     emit(value) {
-      if (this.callback != null) {
-        this.callback.call(this.context.controller, value);
-      }
+      this.callback?.call(this.context.controller, value);
     }
   };
   var Events = class {
@@ -461,9 +447,10 @@ var Magnus = (() => {
       this.target = new Emitter(this.context);
     }
     dispatch(name, event) {
-      (event && event.target || this.context.element).dispatchEvent(new CustomEvent(name, {
-        bubbles: event && event.options && event.options.bubbles || false,
-        cancelable: event && event.options && event.options.cancelable || false,
+      (event?.target ?? this.context.element).dispatchEvent(new CustomEvent(name, {
+        bubbles: event?.options?.bubbles ?? false,
+        cancelable: event?.options?.cancelable ?? false,
+        composed: event?.options?.composed ?? false,
         detail: event && event.data
       }));
     }
@@ -497,9 +484,7 @@ var Magnus = (() => {
       this.observer = new ControllerObserver(this);
       this.controller = new controller(this);
       this.observer.start();
-      if (this.controller.connect != null) {
-        this.controller.connect();
-      }
+      this.controller.connect?.call(this.controller);
     }
   };
 
@@ -511,9 +496,7 @@ var Magnus = (() => {
     }
     add(identifier, element) {
       const controller = this.controllers.get(identifier);
-      if (controller != null) {
-        controller.instances.set(element, new Context(this.application, identifier, element, controller.constructor));
-      }
+      controller?.instances.set(element, new Context(this.application, identifier, element, controller.constructor));
     }
     create(identifier, constructor) {
       if (!this.controllers.has(identifier)) {
@@ -533,9 +516,7 @@ var Magnus = (() => {
       instance.store.actions.clear();
       instance.store.targets.clear();
       controller.instances.delete(element);
-      if (typeof instance.controller.disconnect === "function") {
-        instance.controller.disconnect();
-      }
+      instance.controller.disconnect?.call(instance.controller);
     }
   };
 
@@ -551,12 +532,12 @@ var Magnus = (() => {
       options.attributeFilter = [dataControllerAttribute];
       return options;
     }
-    handleAttribute(element, name, value, removedElement) {
+    handleAttribute(element, name, value, removed) {
       let newValue = element.getAttribute(name) || "";
       if (newValue === value) {
         return;
       }
-      if (removedElement === true) {
+      if (removed) {
         value = newValue;
         newValue = "";
       }

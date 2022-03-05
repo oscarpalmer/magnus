@@ -1,7 +1,7 @@
-import { StoredController } from '../models';
-import { Application } from '../application';
-import { Context } from '../controller/context';
-import { Constructor } from '../controller/controller';
+import {StoredController} from '../models';
+import {Application} from '../application';
+import {Context} from '../controller/context';
+import {Constructor} from '../controller/controller';
 
 export class ControllerStore {
   private readonly controllers: Map<string, StoredController>;
@@ -11,11 +11,9 @@ export class ControllerStore {
   }
 
   add(identifier: string, element: Element): void {
-    const controller: StoredController|undefined = this.controllers.get(identifier);
+    const controller = this.controllers.get(identifier);
 
-    if (controller != null) {
-      controller.instances.set(element, new Context(this.application, identifier, element, controller.constructor));
-    }
+    controller?.instances.set(element, new Context(this.application, identifier, element, controller.constructor));
   }
 
   create(identifier: string, constructor: Constructor): void {
@@ -25,13 +23,13 @@ export class ControllerStore {
   }
 
   remove(identifier: string, element: Element): void {
-    const controller: StoredController|undefined = this.controllers.get(identifier);
+    const controller = this.controllers.get(identifier);
 
     if (controller == null) {
       return;
     }
 
-    const instance: Context|undefined = controller.instances.get(element);
+    const instance = controller.instances.get(element);
 
     if (instance == null) {
       return;
@@ -44,8 +42,6 @@ export class ControllerStore {
 
     controller.instances.delete(element);
 
-    if (typeof instance.controller.disconnect === 'function') {
-      instance.controller.disconnect();
-    }
+    instance.controller.disconnect?.call(instance.controller);
   }
 }

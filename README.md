@@ -14,20 +14,20 @@ To quickly get started, Magnus needs some nice HTML:
 <div data-controller="talin">
   <input data-talin-target="input" type="text" />
 
-  <button data-talin-action="click:greet">Greet</button>
+  <button data-talin-action="click@greet">Greet</button>
 
-  <span data-talin-target="output"></span>
+  <pre data-talin-target="output"></pre>
 </div>
 ```
 
 … and some JavaScript:
 
 ```typescript
-import { Controller } from 'magnus';
+import {Controller} from 'magnus';
 
-export default class extends Controller {
-  greet() {
-    this.targets.get('output')[0].textContent = this.targets.get('input')[0].value;
+export class Talin extends Controller {
+  greet(): void {
+    this.targets.get('output')[0].innerHTML = this.targets.get('input')[0].value;
   }
 }
 ```
@@ -44,8 +44,6 @@ Magnus is available on NPM as `magnus` and works well with JavaScript-bundlers, 
 
 Magnus isn't very opinionated, but does have some ideas on how HTML and JavaScript should be written.
 
-It _very loosely_ follows the MVC-pattern, where the M(odel) and C(ontroller) is represented by [Controllers](#controllers), and the V(iew) is represented by HTML.
-
 ### Lifecycles
 
 Magnus is built on top of mutation observers, which are objects that watch for changes in the DOM, allowing Magnus to connect specific element and attribute changes to event handlers within Magnus.
@@ -58,14 +56,14 @@ These event handlers are then able to:
 
 #### Controller lifecycle events
 
-As controllers can be created and destroyed, they may also need to react to such events. When a controller is created, it will call the method `connect`; when it's destroyed, it will call the method `disconnect`.
+As controllers can be created and destroyed, they may also need to react to such events. When a controller is created, it will call the `connect`-method; when it's destroyed, it will call the `disconnect`-method.
 
 ### Application
 
 To get things going with Magnus, we first need do create and start its application, like below:
 
 ```typescript
-import { Application } from 'magnus';
+import {Application} from 'magnus';
 
 // Creates a Magnus application
 const application = new Application();
@@ -82,11 +80,11 @@ application.stop();
 Magnus controllers should be regular JavaScript classes, while also extending the base controller class available in Magnus.
 
 ```typescript
-import { Controller } from 'magnus';
+import {Controller} from 'magnus';
 
-export default class extends Controller {
-  greet() {
-    this.targets.get('output')[0].textContent = this.targets.get('name')[0].value;
+export class Talin extends Controller {
+  greet(): void {
+    this.targets.get('output')[0].innerHTML = this.targets.get('name')[0].value;
   }
 }
 ```
@@ -94,7 +92,7 @@ export default class extends Controller {
 To allow Magnus to create instances for a controller, it must also be added to the application with a name.
 
 ```typescript
-import Talin from 'talin';
+import {Talin} from 'talin';
 
 // Add controller to application with a name to watch for in observer
 application.add('talin', Talin);
@@ -121,17 +119,25 @@ Define your targets in HTML:
 And access them in JavaScript:
 
 ```typescript
-export class TalinController extends Magnus.Controller {
+import {Controller} from 'magnus';
+
+export class Talin extends Controller {
   // Custom method for showcasing built-in target-methods
-  getTargets() {
-    // Returns an array of elements
-    const elements = this.targets.get('output')
+  getTargets(): void {
+    // Returns an array of targets, i.e. elements connected to the controller
+    const targets = this.targets.get('output')
 
     // Returns true if target(s) exists
     const exists = this.targets.exists('output')
+
+    // Finds and returns elements within the controller (not just targets),
+    // and accepts whatever 'querySelectorAll' will take
+    const found = this.targets.find('pre');
   }
 }
 ```
+
+Two of the methods above — `get` and `find` — also accepts an optional type for easier control of whatever is found and returned, e.g. `this.targets.find<HTMLButtonElement>('button')`, for retrieving a list of properly typed button-elements.
 
 #### Target changes
 
@@ -140,12 +146,14 @@ It's also possible to listen for target changes which are emitted using a parame
 ##### Target change example
 
 ```typescript
-class TalinController extends Magnus.Controller {
-  connect() {
+import {DataChange, Magnus} from 'magnus';
+
+class Talin extends Controller {
+  connect(): void {
     this.events.target.listen(this.targetChanged);
   }
 
-  targetChanged(change) {
+  targetChanged(change: DataChange): void {
     // Called when any target has changed, where 'change' is a simple object of:
     // - change.name: its previously defined target name
     // - change.element: the HTML element
@@ -173,8 +181,10 @@ Define your actions in HTML:
 And define their methods in JavaScript:
 
 ```typescript
-export class TalinController extends Magnus.Controller {
-  greet(event) {
+import {Controller} from 'magnus';
+
+export class Talin extends Controller {
+  greet(event): void {
     // Called on a click event once
   }
 }
@@ -190,13 +200,20 @@ To trigger an action, either for a global target – `document` or `window` – 
 
 ```typescript
 const information = {
-  data: null, // Any kind of data, to be accessed using the 'details'-property on the event object in the listener method
+  // Any kind of data, to be accessed using the 'details'-property
+  // on the event object in the listener method
+  data: null,
   options: {
-    bubbles: false, // Should the event bubble? Defaults to false
-    cancelable: false, // Is the event cancelable? Defaults to false
-    composed: false, // Is the event composed and will travel across DOMs? Defaults to false
+    // Should the event bubble? Defaults to false
+    bubbles: false,
+    // Is the event cancelable? Defaults to false
+    cancelable: false,
+    // Is the event composed and will travel across DOMs? Defaults to false
+    composed: false,
   },
-  target: null, // Can be 'document', 'window', or an element; defaults to the controller's element
+  // Can be 'document', 'window', or an element;
+  // defaults to the controller's element
+  target: null,
 };
 ```
 
@@ -206,7 +223,7 @@ Magnus is also able to handle simple, mostly-flat data structures, as well as re
 
 Data can be initialized for a controller using attributes on your controller element, e.g. `data-talin-data-name`, where `name` is the name for the value to store, and its value is the actual data value (of any type!). If the name contains dashes or underscores, it will be converted to its camel-cased variant in the controller, i.e. `data-talin-data-my-property` &rarr; `myProperty`.
 
-To access the data structure for retrieving and storing information, the controller has the property `data` which returns [a Proxy-object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy).
+To access the data structure for retrieving and storing information, the controller has the property `data` which returns [a Proxy-object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy), so be mindful of how you retrieve and store nested objects.
 
 When storing values, Magnus will first: update the attribute as set in the HTML; and second: emit a parameters object containg the property name, together with its new and previous values. To listen for emitted changes, a callback needs to be attached to `events.data` on your controller using its `listen`-method, as seen below.
 
@@ -217,13 +234,15 @@ When storing values, Magnus will first: update the attribute as set in the HTML;
 ```
 
 ```typescript
-export class TalinController extends Magnus.Controller {
-  connect() {
+import {Controller} from 'magnus';
+
+export class Talin extends Controller {
+  connect(): void {
     // Add a callback to listen for data changes
     this.events.data.listen(this.dataChanged);
   }
 
-  dataChanged(change) {
+  dataChanged(change): void {
     // Called when any property's data has changed, where 'change' is a simple object of:
     // - change.property
     // - change.values:
@@ -232,11 +251,15 @@ export class TalinController extends Magnus.Controller {
   }
 
   // Custom method accessing your custom data property
-  onAlert() {
+  onAlert(): void {
     alert(this.data.myCoolProperty);
   }
 }
 ```
+
+#### Custom data models
+
+Magnus also lets you set a custom type for your data model to allow for nicer management of your controller's data. This can be done by extending the base controller with your type, e.g. `class Talin extends Controller<MyCustomDataModel>` where `MyCustomDataModel` is your nicely structured interface.
 
 ## The name
 

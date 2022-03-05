@@ -1,4 +1,4 @@
-import { Application } from './application';
-import { Controller } from './controller/controller';
+import {Application} from './application';
+import {Controller} from './controller/controller';
 
-export { Application, Controller };
+export {Application, Controller};

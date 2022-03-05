@@ -1,4 +1,4 @@
-import { Context } from '../controller/context';
+import {Context} from '../controller/context';
 
 export class TargetStore {
   private readonly targets: Map<string, Set<Element>>;
@@ -18,7 +18,7 @@ export class TargetStore {
   }
 
   clear(): void {
-    const targets: IterableIterator<Set<Element>> = this.targets.values();
+    const targets = this.targets.values();
 
     for (const elements of targets) {
       elements.clear();
@@ -34,7 +34,7 @@ export class TargetStore {
   }
 
   remove(name: string, element: Element): void {
-    const targets: Set<Element> | undefined = this.targets.get(name);
+    const targets = this.targets.get(name);
 
     if (targets == null) {
       return;

@@ -2,4 +2,3 @@ node_modules/
 dist/
 src/types.d.ts
 .eslintrc.js
-vite.config.js

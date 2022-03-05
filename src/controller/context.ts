@@ -1,10 +1,10 @@
-import { IObserver } from '../models';
-import { Application } from '../application';
-import { ControllerObserver } from '../observer/controller.observer';
-import { Store } from '../store/store';
-import { Controller, Constructor } from './controller';
-import { Events } from './events';
-import { Targets } from './targets';
+import {IObserver} from '../models';
+import {Application} from '../application';
+import {ControllerObserver} from '../observer/controller.observer';
+import {Store} from '../store/store';
+import {Controller, Constructor} from './controller';
+import {Events} from './events';
+import {Targets} from './targets';
 
 export class Context {
   readonly controller: Controller;
@@ -28,8 +28,6 @@ export class Context {
 
     this.observer.start();
 
-    if (this.controller.connect != null) {
-      this.controller.connect();
-    }
+    this.controller.connect?.call(this.controller);
   }
 }

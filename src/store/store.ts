@@ -1,7 +1,7 @@
-import { Context } from '../controller/context';
-import { ActionStore } from './action.store';
-import { DataStore } from './data.store';
-import { TargetStore } from './target.store';
+import {Context} from '../controller/context';
+import {ActionStore} from './action.store';
+import {DataStore} from './data.store';
+import {TargetStore} from './target.store';
 
 export class Store {
   readonly actions: ActionStore;

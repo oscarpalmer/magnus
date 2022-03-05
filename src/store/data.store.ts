@@ -1,7 +1,7 @@
-import { KeyValueStore } from '../models';
-import { debounce, getDataAttributeName, getStringValue } from '../helpers';
-import { Context } from '../controller/context';
-import { Controller } from '../controller/controller';
+import {KeyValueStore} from '../models';
+import {debounce, getDataAttributeName, getStringValue} from '../helpers';
+import {Context} from '../controller/context';
+import {Controller} from '../controller/controller';
 
 class DataStoreHandlers {
   private get controller(): Controller {
@@ -10,13 +10,13 @@ class DataStoreHandlers {
 
   constructor(private readonly store: DataStore) {}
 
-  get(target: KeyValueStore<unknown>, property: string | symbol): unknown {
+  get(target: KeyValueStore<unknown>, property: string|symbol): unknown {
     return Reflect.get(target, property);
   }
 
-  set(target: KeyValueStore<unknown>, property: string | symbol, value: unknown): boolean {
-    const oldValue: unknown = Reflect.get(target, property);
-    const set: boolean = Reflect.set(target, property, value);
+  set(target: KeyValueStore<unknown>, property: string|symbol, value: unknown): boolean {
+    const oldValue = Reflect.get(target, property);
+    const set = Reflect.set(target, property, value);
 
     if (set) {
       debounce(this.store.timers, property as string, () => {

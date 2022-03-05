@@ -1,4 +1,4 @@
-import { Context } from './context';
+import {Context} from './context';
 
 export class Targets {
   constructor(protected readonly context: Context) {}
@@ -7,11 +7,11 @@ export class Targets {
     return this.context.store.targets.has(name);
   }
 
-  get(name: string): Element[] {
-    return this.context.store.targets.get(name);
+  get<ElementType extends Element>(name: string): ElementType[] {
+    return this.context.store.targets.get(name) as ElementType[];
   }
 
-  find(selector: string): Element[] {
+  find<ElementType extends Element>(selector: string): ElementType[] {
     return Array.from(this.context.element.querySelectorAll(selector));
   }
 }

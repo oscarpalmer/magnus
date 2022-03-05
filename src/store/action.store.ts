@@ -1,5 +1,5 @@
-import { Action, ActionParameters } from '../models';
-import { getActionOptions } from '../helpers';
+import {Action, ActionParameters} from '../models';
+import {getActionOptions} from '../helpers';
 
 export class ActionStore {
   private readonly actions: Map<string, Action>;
@@ -9,7 +9,7 @@ export class ActionStore {
   }
 
   add(name: string, target: Element): void {
-    const action: Action|undefined = this.actions.get(name);
+    const action = this.actions.get(name);
 
     if (action == null) {
       return;
@@ -23,7 +23,7 @@ export class ActionStore {
   }
 
   clear(): void {
-    const actions: IterableIterator<Action> = this.actions.values();
+    const actions = this.actions.values();
 
     for (const action of actions) {
       if (action.target != null) {
@@ -57,7 +57,7 @@ export class ActionStore {
   }
 
   remove(name: string, target: Element): void {
-    const action: Action | undefined = this.actions.get(name);
+    const action = this.actions.get(name);
 
     if (action == null) {
       return;
@@ -75,8 +75,6 @@ export class ActionStore {
 
     this.actions.delete(name);
 
-    if (action.target != null) {
-      action.target.removeEventListener(action.type, action.callback, action.options);
-    }
+    action.target?.removeEventListener(action.type, action.callback, action.options);
   }
 }

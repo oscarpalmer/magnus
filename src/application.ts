@@ -1,6 +1,6 @@
-import { Constructor } from './controller/controller';
-import { ControllerStore } from './store/controller.store';
-import { DocumentObserver } from './observer/document.observer';
+import {Constructor} from './controller/controller';
+import {ControllerStore} from './store/controller.store';
+import {DocumentObserver} from './observer/document.observer';
 
 export class Application {
   private readonly controllers: ControllerStore;

@@ -1,7 +1,7 @@
-import { KeyValueStore } from '../models';
-import { Context } from './context';
-import { Events } from './events'
-import { Targets } from './targets';
+import {KeyValueStore} from '../models';
+import {Context} from './context';
+import {Events} from './events'
+import {Targets} from './targets';
 
 export type Constructor = new (context: Context) => Controller;
 
@@ -10,11 +10,11 @@ export interface Controller {
   disconnect?(): void;
 }
 
-export abstract class Controller {
+export abstract class Controller<DataModel = KeyValueStore<unknown>> {
   constructor (private readonly context: Context) {}
 
-  get data(): KeyValueStore<unknown> {
-    return this.context.store.data.proxy;
+  get data(): DataModel {
+    return (this.context.store.data.proxy as unknown) as DataModel;
   }
 
   get element(): Element {

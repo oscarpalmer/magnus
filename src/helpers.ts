@@ -1,6 +1,4 @@
-import { ActionOptions, ActionParameters, KeyValueStore } from './models';
-
-const actionOptions: string[] = ['capture', 'once', 'passive'];
+import {ActionOptions, ActionParameters, KeyValueStore} from './models';
 
 const actionPattern = /^(?:(?:(?<global>document|window)->(?:(?<globalEvent>\w+)@))|(?:(?<elementEvent>\w+)@))?(?<name>\w+)(?::(?<options>[\w+:]+))?$/;
 const camelCasedPattern = /([A-Z])/g;
@@ -22,36 +20,27 @@ export function debounce(timers: KeyValueStore<number>, name: string, callback: 
     delete timers[name];
 
     callback();
-  }, 250);
+  }, 250) as unknown as number;
 }
 
 export function getActionOptions(value: string): ActionOptions {
-  const options: ActionOptions = {
-    capture: false,
-    once: false,
-    passive: false,
+  const parts = value.split(':');
+
+  return {
+    capture: parts.indexOf('capture') > -1,
+    once: parts.indexOf('once') > -1,
+    passive: parts.indexOf('passive') > -1,
   };
-
-  const parts: string[] = value.split(':');
-
-  for (const option of actionOptions) {
-    if (parts.indexOf(option) > -1) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (options as any)[option] = true;
-    }
-  }
-
-  return options;
 }
 
 export function getActionParameters(element: Element, action: string): ActionParameters | undefined {
-  const matches: RegExpMatchArray|null = action.match(actionPattern);
+  const matches = action.match(actionPattern);
 
   if (matches == null || matches.groups == null) {
     return;
   }
 
-  const isGlobal: boolean = matches.groups.global != null;
+  const isGlobal = matches.groups.global != null;
 
   const parameters: ActionParameters = {
     action,
@@ -67,13 +56,13 @@ export function getActionParameters(element: Element, action: string): ActionPar
       ? element.ownerDocument
       : window;
 
-      if (parameters.target == null) {
-        return;
-      }
+    if (parameters.target == null) {
+      return;
+    }
   }
 
   if (!isGlobal && parameters.type == null) {
-    const type: string | undefined = getDefaultEventType(element);
+    const type = getDefaultEventType(element);
 
     if (type == null) {
       return;
@@ -93,12 +82,12 @@ export function getDashedName(value: string): string {
   return value.replace(camelCasedPattern, (_, character) => `-${character.toLowerCase()}`);
 }
 
-export function getDataAttributeName(prefix: string, property: string): string {
-  return `data-${prefix}-data-${getDashedName(property)}`;
+export function getDataAttributeName(controller: string, property: string): string {
+  return `data-${controller}-data-${getDashedName(property)}`;
 }
 
 function getDefaultEventType(element: Element): string | undefined {
-  const tagName: string = element.tagName.toLowerCase();
+  const tagName = element.tagName.toLowerCase();
 
   if (tagName === 'input') {
     return element.getAttribute('type') === 'submit'
@@ -120,8 +109,12 @@ export function getRawValue(value: string): unknown {
 }
 
 export function getStringValue(value: unknown): string {
+  if (typeof value === 'string') {
+    return value;
+  }
+
   if (typeof value !== 'object') {
-    return value as string;
+    return String(value);
   }
 
   try {

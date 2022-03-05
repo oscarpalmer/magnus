@@ -1,5 +1,5 @@
-import { Context } from './controller/context';
-import { Constructor } from './controller/controller';
+import {Context} from './controller/context';
+import {Constructor} from './controller/controller';
 
 export interface ActionParameters {
   action: string;
@@ -51,7 +51,7 @@ export interface IObserver {
 }
 
 export interface KeyValueStore<T> {
-  [key: string]: T;
+  [key: number|string|symbol]: T;
 }
 
 export interface StoredController {

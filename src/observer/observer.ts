@@ -1,4 +1,4 @@
-import { IObserver } from '../models';
+import {IObserver} from '../models';
 
 const observerAttributes = 'attributes';
 const observerChildList = 'childList';
@@ -28,11 +28,11 @@ export abstract class Observer implements IObserver {
   }
 
   protected getAttributes(oldAttribute: string, newAttribute: string): string[][] {
-    const oldAttributeValues: string[] = oldAttribute.split(' ');
-    const newAttributeValues: string[] = newAttribute.split(' ');
+    const oldAttributeValues = oldAttribute.split(' ');
+    const newAttributeValues = newAttribute.split(' ');
 
-    const addedValues: string[] = [];
-    const removedValues: string[] = [];
+    const addedValues = [];
+    const removedValues = [];
 
     for (const attribute of oldAttributeValues) {
       if (attribute !== '' && newAttributeValues.indexOf(attribute) === -1) {
@@ -51,7 +51,7 @@ export abstract class Observer implements IObserver {
 
   protected abstract getOptions(): MutationObserverInit;
 
-  protected abstract handleAttribute(element: Element, name: string, value: string, removedElement?: boolean): void;
+  protected abstract handleAttribute(element: Element, name: string, value: string, removed: boolean): void;
 
   protected abstract handleElement(element: Element, added: boolean): void;
 
@@ -70,7 +70,7 @@ export abstract class Observer implements IObserver {
         this.handleNodes(entry.addedNodes, true);
         this.handleNodes(entry.removedNodes, false);
       } else if (entry.type === observerAttributes) {
-        this.handleAttribute(entry.target as Element, entry.attributeName || '', entry.oldValue || '');
+        this.handleAttribute(entry.target as Element, entry.attributeName || '', entry.oldValue || '', false);
       }
     }
   }

@@ -1,11 +1,9 @@
-import { ActionParameters } from '../models';
-import { getActionParameters, getCamelCasedName, getRawValue } from '../helpers';
-import { Context } from '../controller/context';
-import { Observer, observerOptions } from './observer';
+import {getActionParameters, getCamelCasedName, getRawValue} from '../helpers';
+import {Context} from '../controller/context';
+import {Observer, observerOptions} from './observer';
 
 export class ControllerObserver extends Observer {
   private readonly actionAttribute: string;
-  private readonly attributes: string[];
   private readonly dataAttributePrefix: string;
   private readonly targetAttribute: string;
 
@@ -15,45 +13,40 @@ export class ControllerObserver extends Observer {
     this.actionAttribute = `data-${context.identifier}-action`;
     this.dataAttributePrefix = `data-${context.identifier}-data-`;
     this.targetAttribute = `data-${context.identifier}-target`;
-
-    this.attributes = [this.actionAttribute, this.targetAttribute];
   }
 
   protected getOptions(): MutationObserverInit {
     return Object.assign({}, observerOptions);
   }
 
-  protected handleAttribute(element: Element, name: string, value: string, removedElement?: boolean): void {
-    let newValue: string = element.getAttribute(name) || '';
+  protected handleAttribute(element: Element, name: string, value: string, removed: boolean): void {
+    let newValue = element.getAttribute(name) || '';
 
     if (newValue === value) {
       return;
     }
 
-    if (removedElement === true) {
+    if (removed) {
       value = newValue;
       newValue = '';
     }
 
-    if (element === this.context.element && this.attributes.indexOf(name) === -1) {
+    if (name.startsWith(this.dataAttributePrefix)) {
       this.handleData(name, newValue);
 
       return;
     }
 
-    const callback: (element: Element, value: string, added: boolean) => void = name === this.actionAttribute
+    this.handleChanges(element, value, newValue, name === this.actionAttribute
       ? this.handleAction
-      : this.handleTarget;
-
-    this.handleChanges(element, value, newValue, callback);
+      : this.handleTarget);
   }
 
   protected handleElement(element: Element, added: boolean): void {
     for (let index = 0; index < element.attributes.length; index += 1) {
-      const attribute: string = element.attributes[index].name;
+      const attribute = element.attributes[index].name;
 
-      if (this.attributes.indexOf(attribute) > -1
-          || (element === this.context.element && attribute.startsWith(this.dataAttributePrefix))) {
+      if (attribute === this.actionAttribute || attribute === this.targetAttribute || attribute.startsWith(this.dataAttributePrefix)) {
         this.handleAttribute(element, attribute, '', !added);
       }
     }
@@ -74,7 +67,7 @@ export class ControllerObserver extends Observer {
       return;
     }
 
-    const parameters: ActionParameters | undefined = getActionParameters(element, action);
+    const parameters = getActionParameters(element, action);
 
     if (parameters == null) {
       return;
@@ -98,10 +91,10 @@ export class ControllerObserver extends Observer {
     newValue: string,
     callback: (element: Element, value: string, added: boolean) => void,
   ): void {
-    const allAttributes: string[][] = this.getAttributes(oldValue, newValue);
+    const allAttributes = this.getAttributes(oldValue, newValue);
 
     for (const attributes of allAttributes) {
-      const added: boolean = allAttributes.indexOf(attributes) === 0;
+      const added = allAttributes.indexOf(attributes) === 0;
 
       for (const attribute of attributes) {
         callback.call(this, element, attribute, added);
@@ -110,13 +103,7 @@ export class ControllerObserver extends Observer {
   }
 
   private handleData(name: string, value: string): void {
-    const isDataAttribute: boolean = name.startsWith(this.dataAttributePrefix);
-
-    if (!isDataAttribute) {
-      return;
-    }
-
-    let property: string = name.substring(this.dataAttributePrefix.length, name.length);
+    let property = name.substring(this.dataAttributePrefix.length, name.length);
 
     if (property == null || property.length === 0) {
       return;

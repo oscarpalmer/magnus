@@ -1,5 +1,5 @@
-import { ControllerStore } from '../store/controller.store';
-import { Observer, observerOptions } from './observer';
+import {ControllerStore} from '../store/controller.store';
+import {Observer, observerOptions} from './observer';
 
 const dataControllerAttribute = 'data-controller';
 
@@ -16,14 +16,14 @@ export class DocumentObserver extends Observer {
     return options;
   }
 
-  protected handleAttribute(element: Element, name: string, value: string, removedElement?: boolean): void {
-    let newValue: string = element.getAttribute(name) || '';
+  protected handleAttribute(element: Element, name: string, value: string, removed: boolean): void {
+    let newValue = element.getAttribute(name) || '';
 
     if (newValue === value) {
       return;
     }
 
-    if (removedElement === true) {
+    if (removed) {
       value = newValue;
       newValue = '';
     }
@@ -38,10 +38,10 @@ export class DocumentObserver extends Observer {
   }
 
   private handleChanges(element: Element, newValue: string, oldValue: string): void {
-    const allAttributes: string[][] = this.getAttributes(oldValue, newValue);
+    const allAttributes = this.getAttributes(oldValue, newValue);
 
     for (const attributes of allAttributes) {
-      const added: boolean = allAttributes.indexOf(attributes) === 0;
+      const added = allAttributes.indexOf(attributes) === 0;
 
       for (const attribute of attributes) {
         if (added) {
