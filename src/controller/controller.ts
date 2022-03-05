@@ -13,10 +13,6 @@ export interface Controller {
 export abstract class Controller {
   constructor (private readonly context: Context) {}
 
-  get classes(): KeyValueStore<string> {
-    return this.context.store.classes.values;
-  }
-
   get data(): KeyValueStore<unknown> {
     return this.context.store.data.proxy;
   }

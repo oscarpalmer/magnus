@@ -238,27 +238,6 @@ export class TalinController extends Magnus.Controller {
 }
 ```
 
-### Classes
-
-Magnus can also manage a collection of CSS classes, which can be useful if a controller needs custom classes for certain scenarios, but when we also don't want to hardcode it in our controller.
-
-Classes can be set for a controller using attributes on your controller element, e.g. `data-talin-class-name`, where `name` is the name of the class to store, and its value should be the actual CSS class name. If the name contains dashes or underscores, it will be converted to its camel-cased variant in the controller, i.e. `data-talin-class-my-class` &rarr; `myClass`.
-
-#### Classes example
-
-```html
-<div data-controller="talin" data-talin-class-my-custom-class="my-custom-class"></div>
-```
-
-```typescript
-export class TalinController extends Magnus.Controller {
-  // Custom method accessing your custom CSS class
-  onToggle() {
-    this.element.classList.toggle(this.classes.myCustomClass);
-  }
-}
-```
-
 ## The name
 
 > … it was Magnus who created the schematics and diagrams needed to construct the mortal plane.

@@ -5,17 +5,16 @@ import { Observer, observerOptions } from './observer';
 
 export class ControllerObserver extends Observer {
   private readonly actionAttribute: string;
-  private readonly attributePattern: RegExp;
   private readonly attributes: string[];
+  private readonly dataAttributePrefix: string;
   private readonly targetAttribute: string;
 
   constructor(private readonly context: Context) {
     super(context.element);
 
     this.actionAttribute = `data-${context.identifier}-action`;
+    this.dataAttributePrefix = `data-${context.identifier}-data-`;
     this.targetAttribute = `data-${context.identifier}-target`;
-
-    this.attributePattern = new RegExp(`^data-${this.context.identifier}-(class|data)-([\\w+\\-_]+)$`);
 
     this.attributes = [this.actionAttribute, this.targetAttribute];
   }
@@ -25,20 +24,6 @@ export class ControllerObserver extends Observer {
   }
 
   protected handleAttribute(element: Element, name: string, value: string, removedElement?: boolean): void {
-    let property = '';
-    let type = 0;
-
-    if (element === this.context.element && this.attributes.indexOf(name) === -1) {
-      const matches: string[] | null = name.match(this.attributePattern);
-
-      if (matches == null || matches.length === 0) {
-        return;
-      }
-
-      property = getCamelCasedName(matches[2]);
-      type = matches[1] === 'class' ? 1 : 2;
-    }
-
     let newValue: string = element.getAttribute(name) || '';
 
     if (newValue === value) {
@@ -50,21 +35,8 @@ export class ControllerObserver extends Observer {
       newValue = '';
     }
 
-    if (type === 1) {
-      this.context.store.classes.set(property, newValue);
-
-      return;
-    }
-
-    if (type === 2) {
-      if (this.context.store.data.skip[property] == null) {
-        this.context.store.data.skip[property] = 0;
-        this.context.controller.data[property] = getRawValue(newValue);
-
-        return;
-      }
-
-      delete this.context.store.data.skip[property];
+    if (element === this.context.element && this.attributes.indexOf(name) === -1) {
+      this.handleData(name, newValue);
 
       return;
     }
@@ -81,7 +53,7 @@ export class ControllerObserver extends Observer {
       const attribute: string = element.attributes[index].name;
 
       if (this.attributes.indexOf(attribute) > -1
-          || (element === this.context.element && this.attributePattern.test(attribute))) {
+          || (element === this.context.element && attribute.startsWith(this.dataAttributePrefix))) {
         this.handleAttribute(element, attribute, '', !added);
       }
     }
@@ -135,6 +107,31 @@ export class ControllerObserver extends Observer {
         callback.call(this, element, attribute, added);
       }
     }
+  }
+
+  private handleData(name: string, value: string): void {
+    const isDataAttribute: boolean = name.startsWith(this.dataAttributePrefix);
+
+    if (!isDataAttribute) {
+      return;
+    }
+
+    let property: string = name.substring(this.dataAttributePrefix.length, name.length);
+
+    if (property == null || property.length === 0) {
+      return;
+    }
+
+    property = getCamelCasedName(property);
+
+    if (this.context.store.data.skip[property] == null) {
+      this.context.store.data.skip[property] = 0;
+      this.context.controller.data[property] = getRawValue(value);
+
+      return;
+    }
+
+    delete this.context.store.data.skip[property];
   }
 
   private handleTarget(element: Element, target: string, added: boolean): void {

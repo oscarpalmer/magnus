@@ -1,11 +1,26 @@
 var Magnus = (() => {
   var __defProp = Object.defineProperty;
+  var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+  var __getOwnPropNames = Object.getOwnPropertyNames;
+  var __hasOwnProp = Object.prototype.hasOwnProperty;
   var __markAsModule = (target) => __defProp(target, "__esModule", { value: true });
   var __export = (target, all) => {
-    __markAsModule(target);
     for (var name in all)
       __defProp(target, name, { get: all[name], enumerable: true });
   };
+  var __reExport = (target, module, copyDefault, desc) => {
+    if (module && typeof module === "object" || typeof module === "function") {
+      for (let key of __getOwnPropNames(module))
+        if (!__hasOwnProp.call(target, key) && (copyDefault || key !== "default"))
+          __defProp(target, key, { get: () => module[key], enumerable: !(desc = __getOwnPropDesc(module, key)) || desc.enumerable });
+    }
+    return target;
+  };
+  var __toCommonJS = /* @__PURE__ */ ((cache) => {
+    return (module, temp) => {
+      return cache && cache.get(module) || (temp = __reExport(__markAsModule({}), module, 1), cache && cache.set(module, temp), temp);
+    };
+  })(typeof WeakMap !== "undefined" ? /* @__PURE__ */ new WeakMap() : 0);
 
   // src/index.ts
   var src_exports = {};
@@ -16,7 +31,7 @@ var Magnus = (() => {
 
   // src/helpers.ts
   var actionOptions = ["capture", "once", "passive"];
-  var actionPattern = /^(?:(?:(?<global>document|window)->(?:(?<global_event>\w+)@))|(?:(?<element_event>\w+)@))?(?<name>\w+)(?::(?<options>[\w+:]+))?$/;
+  var actionPattern = /^(?:(?:(?<global>document|window)->(?:(?<globalEvent>\w+)@))|(?:(?<elementEvent>\w+)@))?(?<name>\w+)(?::(?<options>[\w+:]+))?$/;
   var camelCasedPattern = /([A-Z])/g;
   var dashedPattern = /(?:[_-])([a-z0-9])/g;
   var defaultEventTypes = {
@@ -58,7 +73,7 @@ var Magnus = (() => {
       action,
       name: matches.groups.name,
       options: matches.groups.options,
-      type: isGlobal ? matches.groups.global_event : matches.groups.element_event
+      type: isGlobal ? matches.groups.globalEvent : matches.groups.elementEvent
     };
     if (isGlobal) {
       parameters.target = matches.groups.global === "document" ? element.ownerDocument : window;
@@ -175,24 +190,14 @@ var Magnus = (() => {
       super(context.element);
       this.context = context;
       this.actionAttribute = `data-${context.identifier}-action`;
+      this.dataAttributePrefix = `data-${context.identifier}-data-`;
       this.targetAttribute = `data-${context.identifier}-target`;
-      this.attributePattern = new RegExp(`^data-${this.context.identifier}-(class|data)-([\\w+\\-_]+)$`);
       this.attributes = [this.actionAttribute, this.targetAttribute];
     }
     getOptions() {
       return Object.assign({}, observerOptions);
     }
     handleAttribute(element, name, value, removedElement) {
-      let property = "";
-      let type = 0;
-      if (element === this.context.element && this.attributes.indexOf(name) === -1) {
-        const matches = name.match(this.attributePattern);
-        if (matches == null || matches.length === 0) {
-          return;
-        }
-        property = getCamelCasedName(matches[2]);
-        type = matches[1] === "class" ? 1 : 2;
-      }
       let newValue = element.getAttribute(name) || "";
       if (newValue === value) {
         return;
@@ -201,17 +206,8 @@ var Magnus = (() => {
         value = newValue;
         newValue = "";
       }
-      if (type === 1) {
-        this.context.store.classes.set(property, newValue);
-        return;
-      }
-      if (type === 2) {
-        if (this.context.store.data.skip[property] == null) {
-          this.context.store.data.skip[property] = 0;
-          this.context.controller.data[property] = getRawValue(newValue);
-          return;
-        }
-        delete this.context.store.data.skip[property];
+      if (element === this.context.element && this.attributes.indexOf(name) === -1) {
+        this.handleData(name, newValue);
         return;
       }
       const callback = name === this.actionAttribute ? this.handleAction : this.handleTarget;
@@ -220,7 +216,7 @@ var Magnus = (() => {
     handleElement(element, added) {
       for (let index = 0; index < element.attributes.length; index += 1) {
         const attribute = element.attributes[index].name;
-        if (this.attributes.indexOf(attribute) > -1 || element === this.context.element && this.attributePattern.test(attribute)) {
+        if (this.attributes.indexOf(attribute) > -1 || element === this.context.element && attribute.startsWith(this.dataAttributePrefix)) {
           this.handleAttribute(element, attribute, "", !added);
         }
       }
@@ -256,6 +252,23 @@ var Magnus = (() => {
           callback.call(this, element, attribute, added);
         }
       }
+    }
+    handleData(name, value) {
+      const isDataAttribute = name.startsWith(this.dataAttributePrefix);
+      if (!isDataAttribute) {
+        return;
+      }
+      let property = name.substring(this.dataAttributePrefix.length, name.length);
+      if (property == null || property.length === 0) {
+        return;
+      }
+      property = getCamelCasedName(property);
+      if (this.context.store.data.skip[property] == null) {
+        this.context.store.data.skip[property] = 0;
+        this.context.controller.data[property] = getRawValue(value);
+        return;
+      }
+      delete this.context.store.data.skip[property];
     }
     handleTarget(element, target, added) {
       if (added) {
@@ -324,20 +337,6 @@ var Magnus = (() => {
       this.actions.delete(name);
       if (action.target != null) {
         action.target.removeEventListener(action.type, action.callback, action.options);
-      }
-    }
-  };
-
-  // src/store/classes.store.ts
-  var ClassesStore = class {
-    constructor() {
-      this.values = {};
-    }
-    set(name, value) {
-      if (value == null || value === "") {
-        delete this.values[name];
-      } else {
-        this.values[name] = value;
       }
     }
   };
@@ -436,7 +435,6 @@ var Magnus = (() => {
   var Store = class {
     constructor(context) {
       this.actions = new ActionStore();
-      this.classes = new ClassesStore();
       this.data = new DataStore(context);
       this.targets = new TargetStore(context);
     }
@@ -463,10 +461,10 @@ var Magnus = (() => {
       this.target = new Emitter(this.context);
     }
     dispatch(name, event) {
-      (event?.target ?? this.context.element).dispatchEvent(new CustomEvent(name, {
-        bubbles: event?.options?.bubbles ?? false,
-        cancelable: event?.options?.cancelable ?? false,
-        detail: event?.data
+      (event && event.target || this.context.element).dispatchEvent(new CustomEvent(name, {
+        bubbles: event && event.options && event.options.bubbles || false,
+        cancelable: event && event.options && event.options.cancelable || false,
+        detail: event && event.data
       }));
     }
   };
@@ -606,9 +604,6 @@ var Magnus = (() => {
     constructor(context) {
       this.context = context;
     }
-    get classes() {
-      return this.context.store.classes.values;
-    }
     get data() {
       return this.context.store.data.proxy;
     }
@@ -625,5 +620,5 @@ var Magnus = (() => {
       return this.context.targets;
     }
   };
-  return src_exports;
+  return __toCommonJS(src_exports);
 })();

@@ -2,7 +2,7 @@ import { ActionOptions, ActionParameters, KeyValueStore } from './models';
 
 const actionOptions: string[] = ['capture', 'once', 'passive'];
 
-const actionPattern = /^(?:(?:(?<global>document|window)->(?:(?<global_event>\w+)@))|(?:(?<element_event>\w+)@))?(?<name>\w+)(?::(?<options>[\w+:]+))?$/;
+const actionPattern = /^(?:(?:(?<global>document|window)->(?:(?<globalEvent>\w+)@))|(?:(?<elementEvent>\w+)@))?(?<name>\w+)(?::(?<options>[\w+:]+))?$/;
 const camelCasedPattern = /([A-Z])/g;
 const dashedPattern = /(?:[_-])([a-z0-9])/g;
 
@@ -58,8 +58,8 @@ export function getActionParameters(element: Element, action: string): ActionPar
     name: matches.groups.name,
     options: matches.groups.options,
     type: isGlobal
-      ? matches.groups.global_event
-      : matches.groups.element_event,
+      ? matches.groups.globalEvent
+      : matches.groups.elementEvent,
   };
 
   if (isGlobal) {

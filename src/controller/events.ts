@@ -24,10 +24,10 @@ export class Events {
   constructor(protected readonly context: Context) {}
 
   dispatch(name: string, event?: Dispatch): void {
-    (event?.target ?? this.context.element).dispatchEvent(new CustomEvent(name, {
-      bubbles: event?.options?.bubbles ?? false,
-      cancelable: event?.options?.cancelable ?? false,
-      detail: event?.data,
+    (event && event.target || this.context.element).dispatchEvent(new CustomEvent(name, {
+      bubbles: event && event.options && event.options.bubbles || false,
+      cancelable: event && event.options && event.options.cancelable || false,
+      detail: event && event.data,
     }));
   }
 }
