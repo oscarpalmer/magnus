@@ -1,3 +1,5 @@
+import {actionAttributePattern} from './attribute';
+
 export type EventParameters = {
 	callback: string;
 	options: AddEventListenerOptions;
@@ -5,26 +7,24 @@ export type EventParameters = {
 };
 
 const defaultEvents: Record<string, string> = {
-	a: 'click',
-	button: 'click',
-	details: 'toggle',
-	form: 'submit',
-	select: 'change',
-	textarea: 'input',
+	A: 'click',
+	BUTTON: 'click',
+	DETAILS: 'toggle',
+	FORM: 'submit',
+	SELECT: 'change',
+	TEXTAREA: 'input',
 };
 
-const pattern = /^(?:(\w+)@)?(\w+)(?::([a-z:]+))?$/i;
-
 export function getEventParameters(element: Element, action: string) {
-	const matches = action.match(pattern);
+	const matches = actionAttributePattern.exec(action);
 
 	if (matches != null) {
-		const [, type, callback, options] = matches;
+		const [, , , , event, , , callback, options] = matches;
 
 		const parameters: EventParameters = {
 			callback,
 			options: getOptions(options ?? ''),
-			type: type ?? getType(element),
+			type: (event ?? getType(element)) as never,
 		};
 
 		return parameters.type == null ? undefined : parameters;
@@ -42,9 +42,9 @@ function getOptions(options: string): AddEventListenerOptions {
 }
 
 function getType(element: Element): string | undefined {
-	if (element instanceof HTMLInputElement) {
-		return element.type === 'submit' ? 'submit' : 'input';
-	}
-
-	return defaultEvents[element.tagName.toLowerCase()];
+	return element instanceof HTMLInputElement
+		? element.type === 'submit'
+			? 'submit'
+			: 'input'
+		: defaultEvents[element.tagName];
 }

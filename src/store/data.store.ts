@@ -31,6 +31,17 @@ function setValue(
 			input.value !== stringified
 		) {
 			input.value = stringified;
+		} else if (
+			input instanceof HTMLSelectElement &&
+			input.value !== stringified
+		) {
+			if (
+				Array.from(input.options).findIndex(
+					option => option.value === stringified,
+				) > -1
+			) {
+				input.value = stringified;
+			}
 		}
 	}
 

@@ -24,12 +24,12 @@ export type AttributeHandleCallback = (
 ) => void;
 
 export type AttributeHandleParameters = {
-	added: boolean;
-	callbacks: Record<string, AttributeChangeCallback>;
-	element: Element;
-	name: string;
-	value: string;
-};
+		added: boolean;
+		callback: AttributeChangeCallback;
+		element: Element;
+		name: string;
+		value: string;
+	};
 
 export type AttributeChangesParameters = {
 	callback: AttributeChangeCallback;
@@ -39,8 +39,14 @@ export type AttributeChangesParameters = {
 	to: string;
 };
 
-export const attributeActionPattern = /^(?:(\w+)->)?(\w+)@(\w+)$/;
-export const attributeTargetPattern = /^(?:(\w+)->)?(\w+)?\.(\w+)$/;
+const attributes = ['action', 'input', 'output', 'target'];
+
+const callbacks: Record<string, AttributeChangeCallback> = {
+	action: handleActionAttribute,
+	input: handleInputAttribute,
+	output: handleOutputAttribute,
+	target: handleTargetAttribute,
+};
 
 function getChanges(from: string, to: string): string[][] {
 	const fromValues = from
@@ -74,33 +80,35 @@ function getChanges(from: string, to: string): string[][] {
 }
 
 export function handleAttributeChanges(
-	parameters: AttributeHandleParameters,
-): void {
-	const callback = parameters.callbacks[parameters.name];
+		parameters: AttributeHandleParameters,
+		initial: boolean,
+	): void {
+		if (parameters.callback == null) {
+			return;
+		}
 
-	if (callback == null) {
-		return;
+		let from = initial ? '' : parameters.value;
+
+		let to = initial
+			? parameters.value
+			: parameters.element.getAttribute(parameters.name) ?? '';
+
+		if (from === to) {
+			return;
+		}
+
+		if (!parameters.added) {
+			[from, to] = [to, from];
+		}
+
+		handleChanges({
+			from,
+			to,
+			callback: parameters.callback,
+			element: parameters.element,
+			name: parameters.name,
+		});
 	}
-
-	let from = parameters.value;
-	let to = parameters.element.getAttribute(parameters.name) ?? '';
-
-	if (from === to) {
-		return;
-	}
-
-	if (!parameters.added) {
-		[from, to] = [to, from];
-	}
-
-	handleChanges({
-		callback,
-		from,
-		to,
-		element: parameters.element,
-		name: parameters.name,
-	});
-}
 
 function handleChanges(parameters: AttributeChangesParameters): void {
 	const changes = getChanges(parameters.from, parameters.to);
@@ -128,36 +136,29 @@ export function handleControllerAttribute(
 }
 
 export function handleAttributes(context: Context): void {
-	const attributes = ['action', 'input', 'output', 'target'];
-	const callbacks = [
-		handleActionAttribute,
-		handleInputAttribute,
-		handleOutputAttribute,
-		handleTargetAttribute,
-	];
-	const values = [`->${context.identifier}@`, `->${context.identifier}.`];
+	const identifier = context.identifier.toLowerCase();
 
 	for (const attribute of attributes) {
-		const index = attributes.indexOf(attribute);
-		const callback = callbacks[index];
-		const value = index === 0 ? values[0] : values[1];
+		const callback = callbacks[attribute];
+		const elements = document.querySelectorAll(`[data-${attribute}]`);
 
-		const targets = document.querySelectorAll(
-			`[data-${attribute}*="${value}"]`,
-		);
+		for (const element of elements) {
+			const value = element.getAttribute(`data-${attribute}`);
 
-		if (targets.length === 0) {
-			continue;
-		}
-
-		for (const target of targets) {
-			const attributes = [...target.attributes];
-
-			for (const attribute of attributes) {
-				if (attribute.value.includes(value)) {
-					callback(target, '', attribute.value, true);
-				}
+			if (value == null || !value.toLowerCase().includes(identifier)) {
+				continue;
 			}
+
+			handleAttributeChanges(
+				{
+					callback,
+					element,
+					value,
+					added: true,
+					name: '',
+				},
+				true,
+			);
 		}
 	}
 }

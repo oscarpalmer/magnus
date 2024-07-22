@@ -16,16 +16,31 @@ class Controller {
     this.context = context;
   }
 }
-
+// node_modules/@oscarpalmer/atoms/dist/js/is.mjs
+var isNullableOrWhitespace = function(value) {
+  return value == null || /^\s*$/.test(getString(value));
+};
+// node_modules/@oscarpalmer/atoms/dist/js/string/index.mjs
+var getString = function(value) {
+  if (typeof value === "string") {
+    return value;
+  }
+  if (typeof value !== "object" || value == null) {
+    return String(value);
+  }
+  const valueOff = value.valueOf?.() ?? value;
+  const asString = valueOff?.toString?.() ?? String(valueOff);
+  return asString.startsWith("[object ") ? JSON.stringify(value) : asString;
+};
+var parse = function(value, reviver) {
+  try {
+    return JSON.parse(value, reviver);
+  } catch {
+  }
+};
 // src/observer/attributes/data.attribute.ts
 function handleDataAttribute(context, name, value) {
-  let data;
-  try {
-    data = JSON.parse(value);
-  } catch (_) {
-    data = value;
-  }
-  context.data.value[name] = data;
+  context.data.value[name] = parse(value) ?? value;
 }
 
 // src/observer/observer.ts
@@ -144,22 +159,6 @@ function createActions() {
     }
   });
 }
-// node_modules/@oscarpalmer/atoms/dist/js/string/index.mjs
-var getString = function(value) {
-  if (typeof value === "string") {
-    return value;
-  }
-  if (typeof value !== "object" || value == null) {
-    return String(value);
-  }
-  const valueOff = value.valueOf?.() ?? value;
-  const asString = valueOff?.toString?.() ?? String(valueOff);
-  return asString.startsWith("[object ") ? JSON.stringify(value) : asString;
-};
-// node_modules/@oscarpalmer/atoms/dist/js/is.mjs
-var isNullableOrWhitespace = function(value) {
-  return value == null || /^\s*$/.test(getString(value));
-};
 
 // src/store/data.store.ts
 var setValue = function(context, prefix, name, original, stringified) {
@@ -173,6 +172,10 @@ var setValue = function(context, prefix, name, original, stringified) {
   for (const input of inputs) {
     if ((input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement) && input.value !== stringified) {
       input.value = stringified;
+    } else if (input instanceof HTMLSelectElement && input.value !== stringified) {
+      if (Array.from(input.options).findIndex((option) => option.value === stringified) > -1) {
+        input.value = stringified;
+      }
     }
   }
   const outputs = context.targets.get(`output:${name}`);
@@ -297,15 +300,45 @@ function removeController(name, element) {
 }
 var controllers = new Map;
 
+// src/helpers/attribute.ts
+var parseActionAttribute = function(attribute2) {
+  const matches = actionAttributePattern.exec(attribute2);
+  if (matches == null) {
+    return;
+  }
+  const [, , , , , controller2, identifier, method] = matches;
+  return {
+    controller: controller2 == null ? identifier : controller2,
+    identifier: controller2 == null ? null : identifier,
+    name: method
+  };
+};
+function parseAttribute(type, value) {
+  return type === "action" ? parseActionAttribute(value) : parseTargetAttribute(value);
+}
+var parseTargetAttribute = function(attribute2) {
+  const matches = targetAttributePattern.exec(attribute2);
+  if (matches != null) {
+    const [, controller2, identifier, name] = matches;
+    return {
+      controller: controller2,
+      identifier,
+      name
+    };
+  }
+};
+var actionAttributePattern = /^(?:(?:((\w+)(?:#(\w+))?)@)?(\w+)->)?(\w+)(?:#(\w+))?@(\w+)(?::([a-z:]+))?/i;
+var targetAttributePattern = /^(\w+)(?:#(\w+))?\.(\w+)$/i;
+
 // src/helpers/event.ts
 function getEventParameters(element, action2) {
-  const matches = action2.match(pattern);
+  const matches = actionAttributePattern.exec(action2);
   if (matches != null) {
-    const [, type, callback, options2] = matches;
+    const [, , , , event, , , callback, options2] = matches;
     const parameters = {
       callback,
       options: getOptions(options2 ?? ""),
-      type: type ?? getType(element)
+      type: event ?? getType(element)
     };
     return parameters.type == null ? undefined : parameters;
   }
@@ -319,55 +352,53 @@ var getOptions = function(options2) {
   };
 };
 var getType = function(element) {
-  if (element instanceof HTMLInputElement) {
-    return element.type === "submit" ? "submit" : "input";
-  }
-  return defaultEvents[element.tagName.toLowerCase()];
+  return element instanceof HTMLInputElement ? element.type === "submit" ? "submit" : "input" : defaultEvents[element.tagName];
 };
 var defaultEvents = {
-  a: "click",
-  button: "click",
-  details: "toggle",
-  form: "submit",
-  select: "change",
-  textarea: "input"
+  A: "click",
+  BUTTON: "click",
+  DETAILS: "toggle",
+  FORM: "submit",
+  SELECT: "change",
+  TEXTAREA: "input"
 };
-var pattern = /^(?:(\w+)@)?(\w+)(?::([a-z:]+))?$/i;
 
 // src/observer/attributes/target.attribute.ts
 function handleInputAttribute(element, _, value, added) {
-  handleTarget(element, value, added, attributeTargetPattern, handleInput);
+  handleTarget("target", element, value, added, handleInput);
 }
 function handleOutputAttribute(element, _, value, added) {
-  handleTarget(element, value, added, attributeTargetPattern, handleOutput);
+  handleTarget("target", element, value, added, handleOutput);
 }
-function handleTarget(element, value, added, pattern2, callback) {
-  const [, identifier, controller3, name] = pattern2.exec(value) ?? [];
-  if (controller3 == null || name == null) {
+function handleTarget(type, element, value, added, callback) {
+  const parsed = parseAttribute(type, value);
+  if (parsed == null) {
     return;
   }
   let identified;
-  if (identifier == null) {
-    identified = element.closest(`[data-controller*="${controller3}"]`);
+  if (parsed.identifier == null) {
+    identified = element.closest(`[data-controller*="${parsed.controller}"]`);
   } else {
-    identified = document.querySelector(`#${identifier}`);
+    identified = document.querySelector(`#${parsed.identifier}`);
   }
   if (identified == null) {
     return;
   }
-  const context2 = controllers.get(controller3)?.instances.get(identified);
+  const context2 = controllers.get(parsed.controller)?.instances.get(identified);
   if (context2 != null) {
-    callback(context2, element, "", name, added);
+    callback(context2, element, "", type === "action" ? value : parsed.name, added);
   }
 }
 function handleTargetAttribute(element, _, value, added) {
-  handleTarget(element, value, added, attributeTargetPattern, handleTargetElement);
+  handleTarget("target", element, value, added, handleTargetElement);
 }
 var handleInput = function(context2, element, _, value, added) {
-  if (context2 != null && (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement)) {
-    const checkbox = element.getAttribute("type") === "checkbox";
-    handleAction(context2, element, "", "input", added, (event) => {
-      context2.data.value[value] = checkbox ? event.target.checked : event.target.value;
+  const isInput = element instanceof HTMLInputElement;
+  const isSelect = element instanceof HTMLSelectElement;
+  if (context2 != null && (isInput || isSelect || element instanceof HTMLTextAreaElement)) {
+    const isCheckbox = isInput && element.getAttribute("type") === "checkbox";
+    handleAction(context2, element, "", isSelect ? "change" : "input", added, (event) => {
+      context2.data.value[value] = isCheckbox ? event.target.checked : event.target.value;
     });
     handleTargetElement(context2, element, "", `input:${value}`, added);
   }
@@ -396,7 +427,15 @@ function handleAction(context2, element, _, value, added, handler) {
   if (!added) {
     return;
   }
-  const parameters = getEventParameters(element, value);
+  const parameters = handler == null ? getEventParameters(element, value) : {
+    callback: "",
+    options: {
+      capture: false,
+      once: false,
+      passive: true
+    },
+    type: value
+  };
   if (parameters == null) {
     return;
   }
@@ -413,7 +452,7 @@ function handleAction(context2, element, _, value, added, handler) {
   }
 }
 function handleActionAttribute(element, _, value, added) {
-  handleTarget(element, value, added, attributeActionPattern, handleAction);
+  handleTarget("action", element, value, added, handleAction);
 }
 
 // src/observer/attributes/index.ts
@@ -434,13 +473,12 @@ var getChanges = function(from, to) {
   }
   return attributes2;
 };
-function handleAttributeChanges(parameters) {
-  const callback = parameters.callbacks[parameters.name];
-  if (callback == null) {
+function handleAttributeChanges(parameters, initial) {
+  if (parameters.callback == null) {
     return;
   }
-  let from = parameters.value;
-  let to = parameters.element.getAttribute(parameters.name) ?? "";
+  let from = initial ? "" : parameters.value;
+  let to = initial ? parameters.value : parameters.element.getAttribute(parameters.name) ?? "";
   if (from === to) {
     return;
   }
@@ -448,9 +486,9 @@ function handleAttributeChanges(parameters) {
     [from, to] = [to, from];
   }
   handleChanges({
-    callback,
     from,
     to,
+    callback: parameters.callback,
     element: parameters.element,
     name: parameters.name
   });
@@ -472,34 +510,32 @@ function handleControllerAttribute(element, _, value, added) {
   }
 }
 function handleAttributes(context2) {
-  const attributes2 = ["action", "input", "output", "target"];
-  const callbacks = [
-    handleActionAttribute,
-    handleInputAttribute,
-    handleOutputAttribute,
-    handleTargetAttribute
-  ];
-  const values = [`->${context2.identifier}@`, `->${context2.identifier}.`];
-  for (const attribute2 of attributes2) {
-    const index = attributes2.indexOf(attribute2);
-    const callback = callbacks[index];
-    const value = index === 0 ? values[0] : values[1];
-    const targets = document.querySelectorAll(`[data-${attribute2}*="${value}"]`);
-    if (targets.length === 0) {
-      continue;
-    }
-    for (const target4 of targets) {
-      const attributes3 = [...target4.attributes];
-      for (const attribute3 of attributes3) {
-        if (attribute3.value.includes(value)) {
-          callback(target4, "", attribute3.value, true);
-        }
+  const identifier = context2.identifier.toLowerCase();
+  for (const attribute4 of attributes2) {
+    const callback = callbacks[attribute4];
+    const elements = document.querySelectorAll(`[data-${attribute4}]`);
+    for (const element of elements) {
+      const value = element.getAttribute(`data-${attribute4}`);
+      if (value == null || !value.toLowerCase().includes(identifier)) {
+        continue;
       }
+      handleAttributeChanges({
+        callback,
+        element,
+        value,
+        added: true,
+        name: ""
+      }, true);
     }
   }
 }
-var attributeActionPattern = /^(?:(\w+)->)?(\w+)@(\w+)$/;
-var attributeTargetPattern = /^(?:(\w+)->)?(\w+)?\.(\w+)$/;
+var attributes2 = ["action", "input", "output", "target"];
+var callbacks = {
+  action: handleActionAttribute,
+  input: handleInputAttribute,
+  output: handleOutputAttribute,
+  target: handleTargetAttribute
+};
 
 // src/observer/document.observer.ts
 function observeDocument() {
@@ -507,14 +543,14 @@ function observeDocument() {
   const inputAttribute = "data-input";
   const outputAttribute = "data-output";
   const targetAttribute = "data-target";
-  const attributes3 = [
+  const attributes4 = [
     actionAttribute,
     attribute,
     inputAttribute,
     outputAttribute,
     targetAttribute
   ];
-  const callbacks = {
+  const callbacks2 = {
     [actionAttribute]: handleActionAttribute,
     [attribute]: handleControllerAttribute,
     [inputAttribute]: handleInputAttribute,
@@ -523,15 +559,15 @@ function observeDocument() {
   };
   return createObserver(document.body, {
     ...options,
-    attributeFilter: attributes3
+    attributeFilter: attributes4
   }, (element, name, value, added) => {
     handleAttributeChanges({
       added,
-      callbacks,
       element,
       name,
-      value
-    });
+      value,
+      callback: callbacks2[name]
+    }, false);
   });
 }
 

@@ -1,7 +1,8 @@
 import type {Context} from '../../controller/context';
+import {parseAttribute} from '../../helpers/attribute';
 import {controllers} from '../../store/controller.store';
 import {handleAction} from './action.attribute';
-import {type AttributeHandleCallback, attributeTargetPattern} from './index';
+import type {AttributeHandleCallback} from './index';
 
 export function handleInputAttribute(
 	element: Element,
@@ -9,7 +10,7 @@ export function handleInputAttribute(
 	value: string,
 	added: boolean,
 ): void {
-	handleTarget(element, value, added, attributeTargetPattern, handleInput);
+	handleTarget('target', element, value, added, handleInput);
 }
 
 export function handleOutputAttribute(
@@ -18,40 +19,48 @@ export function handleOutputAttribute(
 	value: string,
 	added: boolean,
 ): void {
-	handleTarget(element, value, added, attributeTargetPattern, handleOutput);
+	handleTarget('target', element, value, added, handleOutput);
 }
 
 export function handleTarget(
-	element: Element,
-	value: string,
-	added: boolean,
-	pattern: RegExp,
-	callback: AttributeHandleCallback,
-): void {
-	const [, identifier, controller, name] = pattern.exec(value) ?? [];
+		type: 'action' | 'target',
+		element: Element,
+		value: string,
+		added: boolean,
+		callback: AttributeHandleCallback,
+	): void {
+		const parsed = parseAttribute(type, value);
 
-	if (controller == null || name == null) {
-		return;
+		if (parsed == null) {
+			return;
+		}
+
+		let identified: Element | null;
+
+		if (parsed.identifier == null) {
+			identified = element.closest(`[data-controller*="${parsed.controller}"]`);
+		} else {
+			identified = document.querySelector(`#${parsed.identifier}`);
+		}
+
+		if (identified == null) {
+			return;
+		}
+
+		const context = controllers
+			.get(parsed.controller)
+			?.instances.get(identified);
+
+		if (context != null) {
+			callback(
+				context,
+				element,
+				'',
+				type === 'action' ? value : parsed.name,
+				added,
+			);
+		}
 	}
-
-	let identified: Element | null;
-
-	if (identifier == null) {
-		identified = element.closest(`[data-controller*="${controller}"]`);
-	} else {
-		identified = document.querySelector(`#${identifier}`);
-	}
-
-	if (identified == null) {
-		return;
-	}
-
-	const context = controllers.get(controller)?.instances.get(identified);
-
-	if (context != null) {
-		callback(context, element, '', name, added);
-	}
-}
 
 export function handleTargetAttribute(
 	element: Element,
@@ -59,13 +68,7 @@ export function handleTargetAttribute(
 	value: string,
 	added: boolean,
 ): void {
-	handleTarget(
-		element,
-		value,
-		added,
-		attributeTargetPattern,
-		handleTargetElement,
-	);
+	handleTarget('target', element, value, added, handleTargetElement);
 }
 
 function handleInput(
@@ -75,18 +78,27 @@ function handleInput(
 	value: string,
 	added: boolean,
 ): void {
+	const isInput = element instanceof HTMLInputElement;
+	const isSelect = element instanceof HTMLSelectElement;
+
 	if (
 		context != null &&
-		(element instanceof HTMLInputElement ||
-			element instanceof HTMLTextAreaElement)
+		(isInput || isSelect || element instanceof HTMLTextAreaElement)
 	) {
-		const checkbox = element.getAttribute('type') === 'checkbox';
+		const isCheckbox = isInput && element.getAttribute('type') === 'checkbox';
 
-		handleAction(context, element, '', 'input', added, (event: Event) => {
-			context.data.value[value] = checkbox
-				? (event.target as HTMLInputElement).checked
-				: (event.target as HTMLInputElement).value;
-		});
+		handleAction(
+			context,
+			element,
+			'',
+			isSelect ? 'change' : 'input',
+			added,
+			(event: Event) => {
+				context.data.value[value] = isCheckbox
+					? (event.target as HTMLInputElement).checked
+					: (event.target as HTMLInputElement).value;
+			},
+		);
 
 		handleTargetElement(context, element, '', `input:${value}`, added);
 	}

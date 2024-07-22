@@ -1,12 +1,16 @@
 import {attribute} from '../controller/controller';
-import {handleAttributeChanges, handleControllerAttribute} from './attributes';
+import {
+	type AttributeChangeCallback,
+	handleAttributeChanges,
+	handleControllerAttribute,
+} from './attributes';
 import {handleActionAttribute} from './attributes/action.attribute';
 import {
 	handleInputAttribute,
 	handleOutputAttribute,
 	handleTargetAttribute,
 } from './attributes/target.attribute';
-import {createObserver, options, type Observer} from './observer';
+import {type Observer, createObserver, options} from './observer';
 
 export function observeDocument(): Observer {
 	const actionAttribute = 'data-action';
@@ -22,7 +26,7 @@ export function observeDocument(): Observer {
 		targetAttribute,
 	];
 
-	const callbacks = {
+	const callbacks: Record<string, AttributeChangeCallback> = {
 		[actionAttribute]: handleActionAttribute,
 		[attribute]: handleControllerAttribute,
 		[inputAttribute]: handleInputAttribute,
@@ -37,13 +41,16 @@ export function observeDocument(): Observer {
 			attributeFilter: attributes,
 		},
 		(element, name, value, added) => {
-			handleAttributeChanges({
-				added,
-				callbacks,
-				element,
-				name,
-				value,
-			});
+			handleAttributeChanges(
+				{
+					added,
+					element,
+					name,
+					value,
+					callback: callbacks[name],
+				},
+				false,
+			);
 		},
 	);
 }
