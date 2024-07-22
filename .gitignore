@@ -1,4 +1,9 @@
 node_modules/
 www/
 
+dist/**/*.js
+dist/**/*.mjs
+
 *.tsbuildinfo
+
+!dist/index.js

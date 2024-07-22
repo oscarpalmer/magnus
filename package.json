@@ -3,6 +3,9 @@
     "name": "Oscar Palmér",
     "url": "https://oscarpalmer.se"
   },
+  "dependencies": {
+    "@oscarpalmer/atoms": "^0.60.0"
+  },
   "description": "A JavaScript framework for developers who like HTML.",
   "devDependencies": {
     "@biomejs/biome": "^1.8.3",
@@ -14,11 +17,11 @@
     ".": {
       "types": "./types/index.d.ts",
       "bun": "./src/index.ts",
-      "import": "./dist/magnus.mjs",
-      "require": "./dist/magnus.js"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
     }
   },
-  "jsdelivr": "dist/magnus.iife.js",
+  "jsdelivr": "dist/index.js",
   "keywords": [
     "framework",
     "frontend",
@@ -26,20 +29,20 @@
     "stimulusjs"
   ],
   "license": "MIT",
-  "main": "dist/magnus.iife.js",
-  "module": "dist/magnus.esm.js",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
   "name": "magnus",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/oscarpalmer/magnus.git"
   },
   "scripts": {
-    "build": "npm run build:esm && npm run build:iife",
-    "build:esm": "esbuild ./src/index.ts --bundle --target=es2020 --platform=browser --outfile=./dist/magnus.esm.js --format=esm",
-    "build:iife": "esbuild ./src/index.ts --bundle --target=es2020 --platform=browser --outfile=./dist/magnus.iife.js --global-name=Magnus --format=iife",
-    "watch": ""
+    "build": "bun run clean && bunx bun ./.bun.ts && bunx bun ./.bun.ts --mjs && bun run types",
+    "clean": "rm -rf ./dist && rm -rf ./types && rm -rf ./tsconfig.tsbuildinfo",
+    "types": "bunx tsc -p ./tsconfig.json",
+    "watch": "bun build ./src/index.ts --outfile ./dist/index.js --watch"
   },
   "types": "src/types.d.ts",
-  "unpkg": "dist/magnus.iife.js",
+  "unpkg": "dist/index.js",
   "version": "0.30.0"
 }
