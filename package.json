@@ -31,7 +31,7 @@
 	"license": "MIT",
 	"main": "dist/index.js",
 	"module": "dist/index.mjs",
-	"name": "magnus",
+	"name": "@oscarpalmer/magnus",
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/oscarpalmer/magnus.git"

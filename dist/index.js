@@ -1,3 +1,20 @@
+// src/controller/index.ts
+class Controller {
+  context;
+  get element() {
+    return this.context.element;
+  }
+  get data() {
+    return this.context.data.value;
+  }
+  get identifier() {
+    return this.context.identifier;
+  }
+  constructor(context) {
+    this.context = context;
+  }
+}
+
 // node_modules/@oscarpalmer/atoms/dist/js/element/closest.mjs
 var closest = function(origin, selector, context) {
   const elements = [...(context ?? document).querySelectorAll(selector)];
@@ -260,14 +277,25 @@ function findContext(origin, controller, identifier) {
 }
 function removeController(name, element2) {
   const stored = controllers.get(name);
-  const instance = stored?.instances.get(element2);
-  if (instance != null) {
-    stored?.instances.delete(element2);
-    instance.actions.clear();
-    instance.targets.clear();
-    instance.controller.disconnected?.();
+  if (stored == null) {
+    return;
+  }
+  if (element2 == null) {
+    for (const [, context2] of stored.instances) {
+      removeInstance(stored, context2);
+    }
+  } else {
+    removeInstance(stored, stored.instances.get(element2));
   }
 }
+var removeInstance = function(controller, context2) {
+  if (context2 != null) {
+    context2.actions.clear();
+    context2.targets.clear();
+    context2.controller.disconnected?.();
+    controller?.instances.delete(context2.element);
+  }
+};
 var controllers = new Map;
 
 // src/helpers/element.ts
@@ -533,8 +561,9 @@ var callbacks = {
   target: handleTargetAttribute
 };
 
-// src/observer/observer.ts
+// src/observer/index.ts
 function createObserver() {
+  let running = false;
   let frame;
   const observer = new MutationObserver((entries) => {
     for (const entry of entries) {
@@ -548,6 +577,10 @@ function createObserver() {
   });
   const instance = Object.create({
     start() {
+      if (running) {
+        return;
+      }
+      running = true;
       observer.observe(document.body, {
         attributeFilter: attributes4,
         attributeOldValue: true,
@@ -558,9 +591,17 @@ function createObserver() {
       this.update();
     },
     stop() {
+      if (!running) {
+        return;
+      }
+      running = false;
+      cancelAnimationFrame(frame);
       observer.disconnect();
     },
     update() {
+      if (!running) {
+        return;
+      }
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
         handleNodes([document.body], true);
@@ -619,35 +660,31 @@ var callbacks2 = {
   [targetAttribute]: handleTargetAttribute
 };
 
-// src/index.ts
-function add(name, ctor) {
-  if (controllers.has(name)) {
-    throw new Error(`Controller '${name}' already exists`);
-  }
-  createController(name, ctor);
-  observer2.update();
-}
-
-// src/controller/controller.ts
-class Controller {
-  context2;
-  get element() {
-    return this.context.element;
-  }
-  get data() {
-    return this.context.data.value;
-  }
-  get identifier() {
-    return this.context.identifier;
-  }
-  constructor(context2) {
-    this.context = context2;
-  }
-}
-
-// src/index.ts
-var observer2 = createObserver();
+// src/magnus.ts
+var createMagnus = function() {
+  const observer2 = createObserver();
+  const instance = Object.create({
+    add(name, ctor) {
+      if (controllers.has(name)) {
+        throw new Error(`Controller '${name}' already exists`);
+      }
+      createController(name, ctor);
+      observer2.update();
+    },
+    remove(name) {
+      removeController(name);
+    },
+    start() {
+      observer2.start();
+    },
+    stop() {
+      observer2.stop();
+    }
+  });
+  return instance;
+};
+var magnus_default = createMagnus();
 export {
-  add,
+  magnus_default as magnus,
   Controller
 };

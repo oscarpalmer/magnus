@@ -2,7 +2,7 @@ import {handleAttributes} from '../observer/attributes';
 import {type Actions, createActions} from '../store/action.store';
 import {type Data, createData} from '../store/data.store';
 import {type Targets, createTargets} from '../store/target.store';
-import type {Controller, ControllerConstructor} from './controller';
+import type {Controller, ControllerConstructor} from './index';
 
 export type Context = {
 		readonly actions: Actions;

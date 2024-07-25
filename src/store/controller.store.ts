@@ -1,6 +1,6 @@
 import {closest} from '@oscarpalmer/atoms/element';
 import {type Context, createContext} from '../controller/context';
-import type {ControllerConstructor} from '../controller/controller';
+import type {ControllerConstructor} from '../controller/index';
 
 type StoredController = {
 	constructor: ControllerConstructor;
@@ -50,16 +50,29 @@ export function findContext(
 		: controllers.get(controller)?.instances.get(identified);
 }
 
-export function removeController(name: string, element: Element): void {
+export function removeController(name: string, element?: Element): void {
 	const stored = controllers.get(name);
-	const instance = stored?.instances.get(element);
 
-	if (instance != null) {
-		stored?.instances.delete(element);
+	if (stored == null) {
+		return;
+	}
 
-		instance.actions.clear();
-		instance.targets.clear();
+	if (element == null) {
+		for (const [, context] of stored.instances) {
+			removeInstance(stored, context);
+		}
+	} else {
+		removeInstance(stored, stored.instances.get(element));
+	}
+}
 
-		instance.controller.disconnected?.();
+function removeInstance(controller: StoredController, context?: Context): void {
+	if (context != null) {
+		context.actions.clear();
+		context.targets.clear();
+
+		context.controller.disconnected?.();
+
+		controller?.instances.delete(context.element);
 	}
 }

@@ -39,6 +39,7 @@ const callbacks: Record<string, AttributeChangeCallback> = {
 };
 
 export function createObserver(): Observer {
+	let running = false;
 	let frame: number;
 
 	const observer = new MutationObserver(entries => {
@@ -62,6 +63,12 @@ export function createObserver(): Observer {
 
 	const instance: Observer = Object.create({
 		start() {
+			if (running) {
+				return;
+			}
+
+			running = true;
+
 			observer.observe(document.body, {
 				attributeFilter: attributes,
 				attributeOldValue: true,
@@ -73,9 +80,21 @@ export function createObserver(): Observer {
 			this.update();
 		},
 		stop() {
+			if (!running) {
+				return;
+			}
+
+			running = false;
+
+			cancelAnimationFrame(frame);
+
 			observer.disconnect();
 		},
 		update() {
+			if (!running) {
+				return;
+			}
+
 			cancelAnimationFrame(frame);
 
 			frame = requestAnimationFrame(() => {
