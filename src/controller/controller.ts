@@ -1,8 +1,6 @@
 import type {PlainObject} from '@oscarpalmer/atoms/models';
 import type {Context} from './context';
 
-export const attribute = 'data-controller';
-
 export type ControllerConstructor = new (context: Context) => Controller;
 
 export abstract class Controller<Model extends PlainObject = PlainObject> {

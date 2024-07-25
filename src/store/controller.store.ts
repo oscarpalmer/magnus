@@ -1,3 +1,4 @@
+import {closest} from '@oscarpalmer/atoms/element';
 import {type Context, createContext} from '../controller/context';
 import type {ControllerConstructor} from '../controller/controller';
 
@@ -31,6 +32,24 @@ export function createController(
 	}
 }
 
+export function findContext(
+	origin: Element,
+	controller: string,
+	identifier?: string,
+): Context | undefined {
+	let identified: Element | null;
+
+	if (identifier == null) {
+		identified = closest(origin, `[data-controller*="${controller}"]`)[0];
+	} else {
+		identified = document.querySelector(`#${identifier}`);
+	}
+
+	return identified == null
+		? undefined
+		: controllers.get(controller)?.instances.get(identified);
+}
+
 export function removeController(name: string, element: Element): void {
 	const stored = controllers.get(name);
 	const instance = stored?.instances.get(element);
@@ -39,7 +58,6 @@ export function removeController(name: string, element: Element): void {
 		stored?.instances.delete(element);
 
 		instance.actions.clear();
-		instance.observer.stop();
 		instance.targets.clear();
 
 		instance.controller.disconnected?.();

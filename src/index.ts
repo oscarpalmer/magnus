@@ -1,8 +1,8 @@
 import type {ControllerConstructor} from './controller/controller';
-import {observeDocument} from './observer/document.observer';
+import {createObserver} from './observer/observer';
 import {controllers, createController} from './store/controller.store';
 
-const documentObserver = observeDocument();
+const observer = createObserver();
 
 export function add(name: string, ctor: ControllerConstructor): void {
 	if (controllers.has(name)) {
@@ -11,7 +11,7 @@ export function add(name: string, ctor: ControllerConstructor): void {
 
 	createController(name, ctor);
 
-	documentObserver.update();
+	observer.update();
 }
 
 export {Controller} from './controller/controller';

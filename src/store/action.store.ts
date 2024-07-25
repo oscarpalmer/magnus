@@ -6,18 +6,17 @@ type Action = {
 };
 
 export type Actions = {
-	add(name: string, element: Element): void;
-	clear(): void;
-	create(parameters: Parameters): void;
-	has(name: string): boolean;
-	remove(name: string, element: Element): void;
-};
+		add(name: string, target: EventTarget): void;
+		clear(): void;
+		create(parameters: Parameters): void;
+		has(name: string): boolean;
+		remove(name: string, target: EventTarget): void;
+	};
 
 type Parameters = {
 	callback: (event: Event) => void;
 	name: string;
 	options: AddEventListenerOptions;
-	target: EventTarget;
 	type: string;
 };
 
@@ -25,13 +24,13 @@ export function createActions() {
 	const store = new Map<string, Action>();
 
 	return Object.create({
-		add(name, element) {
+		add(name, target) {
 			const action = store.get(name);
 
 			if (action != null) {
-				action.targets.add(element);
+				action.targets.add(target);
 
-				element.addEventListener(action.type, action.callback, action.options);
+				target.addEventListener(action.type, action.callback, action.options);
 			}
 		},
 		clear() {
@@ -62,13 +61,13 @@ export function createActions() {
 		has(name) {
 			return store.has(name);
 		},
-		remove(name, element) {
+		remove(name, target) {
 			const action = store.get(name);
 
 			if (action != null) {
-				element.removeEventListener(action.type, action.callback);
+				target.removeEventListener(action.type, action.callback);
 
-				action.targets.delete(element);
+				action.targets.delete(target);
 
 				if (action.targets.size === 0) {
 					store.delete(name);

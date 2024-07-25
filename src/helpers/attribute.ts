@@ -1,28 +1,32 @@
 type ParsedAttribute = {
 	controller: string;
-	identifier: string | null;
+	identifier?: string;
 	name: string;
 };
 
-// ((external(#id)@)event->)controller(#id)@method(:options)
+// (event->)controller(#id)@method(:options)
 export const actionAttributePattern =
-	/^(?:(?:((\w+)(?:#(\w+))?)@)?(\w+)->)?(\w+)(?:#(\w+))?@(\w+)(?::([a-z:]+))?/i;
+	/^(?:(\w+)->)?(\w+)(?:#(\w+))?@(\w+)(?::([a-z:]+))?/i;
+
+// ((external(#id)@)event->)controller(#id)@method(:options)
+export const extendedActionAttributePattern =
+	/^(?:(?:(?:(\w+)(?:#(\w+))?)?@)?(\w+)->)?(\w+)(?:#(\w+))?@(\w+)(?::([a-z:]+))?/i;
 
 // controller(#id).target
 const targetAttributePattern = /^(\w+)(?:#(\w+))?\.(\w+)$/i;
 
 function parseActionAttribute(attribute: string): ParsedAttribute | undefined {
-	const matches = actionAttributePattern.exec(attribute);
+	const matches = extendedActionAttributePattern.exec(attribute);
 
 	if (matches == null) {
 		return;
 	}
 
-	const [, , , , , controller, identifier, method] = matches;
+	const [, , , , controller, identifier, method] = matches;
 
 	return {
 		controller: controller == null ? identifier : controller,
-		identifier: controller == null ? null : identifier,
+		identifier: controller == null ? undefined : identifier,
 		name: method,
 	};
 }

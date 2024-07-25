@@ -24,12 +24,12 @@ export type AttributeHandleCallback = (
 ) => void;
 
 export type AttributeHandleParameters = {
-		added: boolean;
-		callback: AttributeChangeCallback;
-		element: Element;
-		name: string;
-		value: string;
-	};
+	added: boolean;
+	callback: AttributeChangeCallback;
+	element: Element;
+	name: string;
+	value: string;
+};
 
 export type AttributeChangesParameters = {
 	callback: AttributeChangeCallback;
@@ -80,35 +80,35 @@ function getChanges(from: string, to: string): string[][] {
 }
 
 export function handleAttributeChanges(
-		parameters: AttributeHandleParameters,
-		initial: boolean,
-	): void {
-		if (parameters.callback == null) {
-			return;
-		}
-
-		let from = initial ? '' : parameters.value;
-
-		let to = initial
-			? parameters.value
-			: parameters.element.getAttribute(parameters.name) ?? '';
-
-		if (from === to) {
-			return;
-		}
-
-		if (!parameters.added) {
-			[from, to] = [to, from];
-		}
-
-		handleChanges({
-			from,
-			to,
-			callback: parameters.callback,
-			element: parameters.element,
-			name: parameters.name,
-		});
+	parameters: AttributeHandleParameters,
+	initial: boolean,
+): void {
+	if (parameters.callback == null) {
+		return;
 	}
+
+	let from = initial ? '' : parameters.value;
+
+	let to = initial
+		? parameters.value
+		: parameters.element.getAttribute(parameters.name) ?? '';
+
+	if (from === to) {
+		return;
+	}
+
+	if (!parameters.added) {
+		[from, to] = [to, from];
+	}
+
+	handleChanges({
+		from,
+		to,
+		callback: parameters.callback,
+		element: parameters.element,
+		name: parameters.name,
+	});
+}
 
 function handleChanges(parameters: AttributeChangesParameters): void {
 	const changes = getChanges(parameters.from, parameters.to);

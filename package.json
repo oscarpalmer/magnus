@@ -1,48 +1,48 @@
 {
-  "author": {
-    "name": "Oscar Palmér",
-    "url": "https://oscarpalmer.se"
-  },
-  "dependencies": {
-    "@oscarpalmer/atoms": "^0.60.0"
-  },
-  "description": "A JavaScript framework for developers who like HTML.",
-  "devDependencies": {
-    "@biomejs/biome": "^1.8.3",
-    "@types/bun": "^1.1.6",
-    "bun": "^1.1.20",
-    "typescript": "^5.5.3"
-  },
-  "exports": {
-    ".": {
-      "types": "./types/index.d.ts",
-      "bun": "./src/index.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
-    }
-  },
-  "jsdelivr": "dist/index.js",
-  "keywords": [
-    "framework",
-    "frontend",
-    "progressive enhancement",
-    "stimulusjs"
-  ],
-  "license": "MIT",
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "name": "magnus",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/oscarpalmer/magnus.git"
-  },
-  "scripts": {
-    "build": "bun run clean && bunx bun ./.bun.ts && bunx bun ./.bun.ts --mjs && bun run types",
-    "clean": "rm -rf ./dist && rm -rf ./types && rm -rf ./tsconfig.tsbuildinfo",
-    "types": "bunx tsc -p ./tsconfig.json",
-    "watch": "bun build ./src/index.ts --outfile ./dist/index.js --watch"
-  },
-  "types": "src/types.d.ts",
-  "unpkg": "dist/index.js",
-  "version": "0.30.0"
+	"author": {
+		"name": "Oscar Palmér",
+		"url": "https://oscarpalmer.se"
+	},
+	"dependencies": {
+		"@oscarpalmer/atoms": "^0.61.0"
+	},
+	"description": "A JavaScript framework for developers who like HTML.",
+	"devDependencies": {
+		"@biomejs/biome": "^1.8.3",
+		"@types/bun": "^1.1.6",
+		"bun": "^1.1.20",
+		"typescript": "^5.5.4"
+	},
+	"exports": {
+		".": {
+			"types": "./types/index.d.ts",
+			"bun": "./src/index.ts",
+			"import": "./dist/index.mjs",
+			"require": "./dist/index.js"
+		}
+	},
+	"jsdelivr": "dist/index.js",
+	"keywords": [
+		"framework",
+		"frontend",
+		"progressive enhancement",
+		"stimulusjs"
+	],
+	"license": "MIT",
+	"main": "dist/index.js",
+	"module": "dist/index.mjs",
+	"name": "magnus",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/oscarpalmer/magnus.git"
+	},
+	"scripts": {
+		"build": "bun run clean && bunx bun ./.bun.ts && bunx bun ./.bun.ts --mjs && bun run types",
+		"clean": "rm -rf ./dist && rm -rf ./types && rm -rf ./tsconfig.tsbuildinfo",
+		"types": "bunx tsc -p ./tsconfig.json",
+		"watch": "bun build ./src/index.ts --outfile ./dist/index.js --watch"
+	},
+	"types": "src/types.d.ts",
+	"unpkg": "dist/index.js",
+	"version": "0.30.0"
 }

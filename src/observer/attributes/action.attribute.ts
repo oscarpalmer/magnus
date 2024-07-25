@@ -1,21 +1,24 @@
 import type {PlainObject} from '@oscarpalmer/atoms/models';
 import type {Context} from '../../controller/context';
+import {findTarget} from '../../helpers/element';
 import {getEventParameters} from '../../helpers/event';
 import {handleTarget} from './target.attribute';
 
 export function handleAction(
 		context: Context,
 		element: Element,
-		_: string,
+		name: string,
 		value: string,
 		added: boolean,
 		handler?: (event: Event) => void,
 	): void {
-		if (context.actions.has(value)) {
+		const action = handler == null ? value : name;
+
+		if (context.actions.has(action)) {
 			if (added) {
-				context.actions.add(value, element);
+				context.actions.add(action, element);
 			} else {
-				context.actions.remove(value, element);
+				context.actions.remove(action, element);
 			}
 
 			return;
@@ -27,7 +30,7 @@ export function handleAction(
 
 		const parameters =
 			handler == null
-				? getEventParameters(element, value)
+				? getEventParameters(element, value, context.element === element)
 				: {
 						callback: '',
 						options: {
@@ -48,16 +51,28 @@ export function handleAction(
 				event: Event,
 			) => void);
 
-		if (typeof callback === 'function') {
+		if (typeof callback !== 'function') {
+			return;
+		}
+
+		const target =
+			parameters.external == null
+				? element
+				: findTarget(
+						element,
+						parameters.external.controller,
+						parameters.external.identifier,
+					);
+
+		if (target != null) {
 			context.actions.create({
 				callback: callback.bind(context.controller),
-				name: value,
+				name: action,
 				options: parameters.options,
-				target: element,
 				type: parameters.type,
 			});
 
-			context.actions.add(value, element);
+			context.actions.add(action, target);
 		}
 	}
 

@@ -1,40 +1,56 @@
-export type Observer = {
-	handleElement(element: Element, added: boolean): void;
-	handleNodes(nodes: NodeList | Node[], added: boolean): void;
+import {
+	type AttributeChangeCallback,
+	handleAttributeChanges,
+	handleControllerAttribute,
+} from './attributes';
+import {handleActionAttribute} from './attributes/action.attribute';
+import {
+	handleInputAttribute,
+	handleOutputAttribute,
+	handleTargetAttribute,
+} from './attributes/target.attribute';
+
+type Observer = {
 	start(): void;
 	stop(): void;
 	update(): void;
 };
 
-export const options: MutationObserverInit = {
-	attributeOldValue: true,
-	attributes: true,
-	childList: true,
-	subtree: true,
+const actionAttribute = 'data-action';
+const controllerAttribute = 'data-controller';
+const inputAttribute = 'data-input';
+const outputAttribute = 'data-output';
+const targetAttribute = 'data-target';
+
+const attributes = [
+	actionAttribute,
+	controllerAttribute,
+	inputAttribute,
+	outputAttribute,
+	targetAttribute,
+];
+
+const callbacks: Record<string, AttributeChangeCallback> = {
+	[actionAttribute]: handleActionAttribute,
+	[controllerAttribute]: handleControllerAttribute,
+	[inputAttribute]: handleInputAttribute,
+	[outputAttribute]: handleOutputAttribute,
+	[targetAttribute]: handleTargetAttribute,
 };
 
-export function createObserver(
-	element: Element,
-	options: MutationObserverInit,
-	attributeHandler: (
-		element: Element,
-		name: string,
-		value: string,
-		added: boolean,
-	) => void,
-): Observer {
+export function createObserver(): Observer {
 	let frame: number;
 
 	const observer = new MutationObserver(entries => {
 		for (const entry of entries) {
 			if (entry.type === 'childList') {
-				instance.handleNodes(entry.addedNodes, true);
-				instance.handleNodes(entry.removedNodes, false);
+				handleNodes(entry.addedNodes, true);
+				handleNodes(entry.removedNodes, false);
 			} else if (
 				entry.type === 'attributes' &&
 				entry.target instanceof Element
 			) {
-				attributeHandler(
+				handleAttribute(
 					entry.target,
 					entry.attributeName ?? '',
 					entry.oldValue ?? '',
@@ -45,23 +61,14 @@ export function createObserver(
 	});
 
 	const instance: Observer = Object.create({
-		handleElement(element: Element, added: boolean) {
-			const attributes = [...element.attributes];
-
-			for (const attribute of attributes) {
-				attributeHandler(element, attribute.name, '', added);
-			}
-		},
-		handleNodes(nodes, added) {
-			for (const node of nodes) {
-				if (node instanceof Element) {
-					this.handleElement(node, added);
-					this.handleNodes(node.childNodes, added);
-				}
-			}
-		},
 		start() {
-			observer.observe(element, options);
+			observer.observe(document.body, {
+				attributeFilter: attributes,
+				attributeOldValue: true,
+				attributes: true,
+				childList: true,
+				subtree: true,
+			});
 
 			this.update();
 		},
@@ -72,18 +79,53 @@ export function createObserver(
 			cancelAnimationFrame(frame);
 
 			frame = requestAnimationFrame(() => {
-				this.handleNodes([element], true);
+				handleNodes([document.body], true);
 			});
 		},
 	} as Observer);
 
-	if (element.ownerDocument.readyState === 'complete') {
+	if (document.body.ownerDocument.readyState === 'complete') {
 		instance.start();
 	} else {
-		element.ownerDocument.addEventListener('DOMContentLoaded', () => {
+		document.body.ownerDocument.addEventListener('DOMContentLoaded', () => {
 			instance.start();
 		});
 	}
 
 	return instance;
+}
+
+function handleAttribute(
+	element: Element,
+	name: string,
+	value: string,
+	added: boolean,
+): void {
+	handleAttributeChanges(
+		{
+			added,
+			element,
+			name,
+			value,
+			callback: callbacks[name],
+		},
+		false,
+	);
+}
+
+function handleElement(element: Element, added: boolean): void {
+	const attributes = [...element.attributes];
+
+	for (const attribute of attributes) {
+		handleAttribute(element, attribute.name, '', added);
+	}
+}
+
+function handleNodes(nodes: NodeList | Node[], added: boolean): void {
+	for (const node of nodes) {
+		if (node instanceof Element) {
+			handleElement(node, added);
+			handleNodes(node.childNodes, added);
+		}
+	}
 }
