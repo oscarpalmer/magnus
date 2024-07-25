@@ -24,7 +24,12 @@ function setValue(
 
 	const inputs = context.targets.get(`input:${name}`);
 
-	for (const input of inputs) {
+	let index = 0;
+	let length = inputs.length;
+
+	for (; index < length; index += 1) {
+		const input = inputs[index];
+
 		if (
 			(input instanceof HTMLInputElement ||
 				input instanceof HTMLTextAreaElement) &&
@@ -47,8 +52,10 @@ function setValue(
 
 	const outputs = context.targets.get(`output:${name}`);
 
-	for (const output of outputs) {
-		output.textContent = stringified;
+	length = outputs.length;
+
+	for (index = 0; index < length; index += 1) {
+		outputs[index].textContent = stringified;
 	}
 }
 

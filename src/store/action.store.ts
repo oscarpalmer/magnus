@@ -34,9 +34,20 @@ export function createActions() {
 			}
 		},
 		clear() {
-			for (const [, action] of store) {
-				for (const target of action.targets) {
-					target.removeEventListener(
+			const actions = [...store.values()];
+			const actionsLength = actions.length;
+
+			for (let actionIndex = 0; actionIndex < actionsLength; actionIndex += 1) {
+				const action = actions[actionIndex];
+				const targets = [...action.targets];
+				const targetsLength = targets.length;
+
+				for (
+					let targetIndex = 0;
+					targetIndex < targetsLength;
+					targetIndex += 1
+				) {
+					targets[targetIndex].removeEventListener(
 						action.type,
 						action.callback,
 						action.options,

@@ -108,9 +108,14 @@ function createActions() {
       }
     },
     clear() {
-      for (const [, action] of store) {
-        for (const target of action.targets) {
-          target.removeEventListener(action.type, action.callback, action.options);
+      const actions = [...store.values()];
+      const actionsLength = actions.length;
+      for (let actionIndex = 0;actionIndex < actionsLength; actionIndex += 1) {
+        const action = actions[actionIndex];
+        const targets = [...action.targets];
+        const targetsLength = targets.length;
+        for (let targetIndex = 0;targetIndex < targetsLength; targetIndex += 1) {
+          targets[targetIndex].removeEventListener(action.type, action.callback, action.options);
         }
         action.targets.clear();
       }
@@ -151,7 +156,10 @@ var setValue = function(context, prefix, name, original, stringified) {
     element.setAttribute(`${prefix}${name}`, stringified);
   }
   const inputs = context.targets.get(`input:${name}`);
-  for (const input of inputs) {
+  let index = 0;
+  let length = inputs.length;
+  for (;index < length; index += 1) {
+    const input = inputs[index];
     if ((input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement) && input.value !== stringified) {
       input.value = stringified;
     } else if (input instanceof HTMLSelectElement && input.value !== stringified) {
@@ -161,8 +169,9 @@ var setValue = function(context, prefix, name, original, stringified) {
     }
   }
   const outputs = context.targets.get(`output:${name}`);
-  for (const output of outputs) {
-    output.textContent = stringified;
+  length = outputs.length;
+  for (index = 0;index < length; index += 1) {
+    outputs[index].textContent = stringified;
   }
 };
 function createData(identifier, context) {
@@ -205,8 +214,10 @@ function createTargets() {
       targets.add(element);
     },
     clear() {
-      for (const [, targets] of store) {
-        targets.clear();
+      const targets = [...store.values()];
+      const { length } = targets;
+      for (let index = 0;index < length; index += 1) {
+        targets[index].clear();
       }
       store.clear();
     },
@@ -281,8 +292,10 @@ function removeController(name, element2) {
     return;
   }
   if (element2 == null) {
-    for (const [, context2] of stored.instances) {
-      removeInstance(stored, context2);
+    const instances = [...stored.instances.values()];
+    const { length } = instances;
+    for (let index = 0;index < length; index += 1) {
+      removeInstance(stored, instances[index]);
     }
   } else {
     removeInstance(stored, stored.instances.get(element2));
@@ -314,15 +327,14 @@ function findTarget(origin, name, id) {
 // src/helpers/attribute.ts
 var parseActionAttribute = function(attribute) {
   const matches = extendedActionAttributePattern.exec(attribute);
-  if (matches == null) {
-    return;
+  if (matches != null) {
+    const [, , , , controller2, identifier, method] = matches;
+    return {
+      controller: controller2 == null ? identifier : controller2,
+      identifier: controller2 == null ? undefined : identifier,
+      name: method
+    };
   }
-  const [, , , , controller2, identifier, method] = matches;
-  return {
-    controller: controller2 == null ? identifier : controller2,
-    identifier: controller2 == null ? undefined : identifier,
-    name: method
-  };
 };
 function parseAttribute(type, value) {
   return type === "action" ? parseActionAttribute(value) : parseTargetAttribute(value);
@@ -519,9 +531,13 @@ function handleAttributeChanges(parameters, initial) {
 }
 var handleChanges = function(parameters) {
   const changes = getChanges(parameters.from, parameters.to);
-  for (const changed of changes) {
+  const changesLength = changes.length;
+  for (let changesIndex = 0;changesIndex < changesLength; changesIndex += 1) {
+    const changed = changes[changesIndex];
     const added = changes.indexOf(changed) === 1;
-    for (const change of changed) {
+    const changedLength = changed.length;
+    for (let changedIndex = 0;changedIndex < changedLength; changedIndex += 1) {
+      const change = changed[changedIndex];
       parameters.callback(parameters.element, parameters.name, change, added);
     }
   }
@@ -535,25 +551,28 @@ function handleControllerAttribute(element3, _, value, added) {
 }
 function handleAttributes(context2) {
   const identifier = context2.identifier.toLowerCase();
-  for (const attribute3 of attributes2) {
+  for (let attributeIndex = 0;attributeIndex < attributesLength; attributeIndex += 1) {
+    const attribute3 = attributes2[attributeIndex];
     const callback = callbacks[attribute3];
     const elements = document.querySelectorAll(`[data-${attribute3}]`);
-    for (const element3 of elements) {
+    const { length } = elements;
+    for (let elementIndex = 0;elementIndex < length; elementIndex += 1) {
+      const element3 = elements[elementIndex];
       const value = element3.getAttribute(`data-${attribute3}`);
-      if (value == null || !value.toLowerCase().includes(identifier)) {
-        continue;
+      if (value?.toLowerCase().includes(identifier)) {
+        handleAttributeChanges({
+          callback,
+          element: element3,
+          value,
+          added: true,
+          name: ""
+        }, true);
       }
-      handleAttributeChanges({
-        callback,
-        element: element3,
-        value,
-        added: true,
-        name: ""
-      }, true);
     }
   }
 }
 var attributes2 = ["action", "input", "output", "target"];
+var attributesLength = attributes2.length;
 var callbacks = {
   action: handleActionAttribute,
   input: handleInputAttribute,
@@ -566,7 +585,9 @@ function createObserver() {
   let running = false;
   let frame;
   const observer = new MutationObserver((entries) => {
-    for (const entry of entries) {
+    const { length } = entries;
+    for (let index = 0;index < length; index += 1) {
+      const entry = entries[index];
       if (entry.type === "childList") {
         handleNodes(entry.addedNodes, true);
         handleNodes(entry.removedNodes, false);
@@ -628,12 +649,15 @@ var handleAttribute = function(element3, name, value, added) {
 };
 var handleElement = function(element3, added) {
   const attributes4 = [...element3.attributes];
-  for (const attribute3 of attributes4) {
-    handleAttribute(element3, attribute3.name, "", added);
+  const { length } = attributes4;
+  for (let index = 0;index < length; index += 1) {
+    handleAttribute(element3, attributes4[index].name, "", added);
   }
 };
 var handleNodes = function(nodes, added) {
-  for (const node of nodes) {
+  const { length } = nodes;
+  for (let index = 0;index < length; index += 1) {
+    const node = nodes[index];
     if (node instanceof Element) {
       handleElement(node, added);
       handleNodes(node.childNodes, added);

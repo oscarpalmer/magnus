@@ -21,8 +21,11 @@ export function createTargets(): Targets {
 			targets.add(element);
 		},
 		clear() {
-			for (const [, targets] of store) {
-				targets.clear();
+			const targets = [...store.values()];
+			const {length} = targets;
+
+			for (let index = 0; index < length; index += 1) {
+				targets[index].clear();
 			}
 
 			store.clear();

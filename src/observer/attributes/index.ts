@@ -41,6 +41,8 @@ export type AttributeChangesParameters = {
 
 const attributes = ['action', 'input', 'output', 'target'];
 
+const attributesLength = attributes.length;
+
 const callbacks: Record<string, AttributeChangeCallback> = {
 	action: handleActionAttribute,
 	input: handleInputAttribute,
@@ -112,11 +114,20 @@ export function handleAttributeChanges(
 
 function handleChanges(parameters: AttributeChangesParameters): void {
 	const changes = getChanges(parameters.from, parameters.to);
+	const changesLength = changes.length;
 
-	for (const changed of changes) {
+	for (let changesIndex = 0; changesIndex < changesLength; changesIndex += 1) {
+		const changed = changes[changesIndex];
 		const added = changes.indexOf(changed) === 1;
+		const changedLength = changed.length;
 
-		for (const change of changed) {
+		for (
+			let changedIndex = 0;
+			changedIndex < changedLength;
+			changedIndex += 1
+		) {
+			const change = changed[changedIndex];
+
 			parameters.callback(parameters.element, parameters.name, change, added);
 		}
 	}
@@ -138,27 +149,32 @@ export function handleControllerAttribute(
 export function handleAttributes(context: Context): void {
 	const identifier = context.identifier.toLowerCase();
 
-	for (const attribute of attributes) {
+	for (
+		let attributeIndex = 0;
+		attributeIndex < attributesLength;
+		attributeIndex += 1
+	) {
+		const attribute = attributes[attributeIndex];
 		const callback = callbacks[attribute];
 		const elements = document.querySelectorAll(`[data-${attribute}]`);
+		const {length} = elements;
 
-		for (const element of elements) {
+		for (let elementIndex = 0; elementIndex < length; elementIndex += 1) {
+			const element = elements[elementIndex];
 			const value = element.getAttribute(`data-${attribute}`);
 
-			if (value == null || !value.toLowerCase().includes(identifier)) {
-				continue;
+			if (value?.toLowerCase().includes(identifier)) {
+				handleAttributeChanges(
+					{
+						callback,
+						element,
+						value,
+						added: true,
+						name: '',
+					},
+					true,
+				);
 			}
-
-			handleAttributeChanges(
-				{
-					callback,
-					element,
-					value,
-					added: true,
-					name: '',
-				},
-				true,
-			);
 		}
 	}
 }

@@ -58,8 +58,11 @@ export function removeController(name: string, element?: Element): void {
 	}
 
 	if (element == null) {
-		for (const [, context] of stored.instances) {
-			removeInstance(stored, context);
+		const instances = [...stored.instances.values()];
+		const {length} = instances;
+
+		for (let index = 0; index < length; index += 1) {
+			removeInstance(stored, instances[index]);
 		}
 	} else {
 		removeInstance(stored, stored.instances.get(element));

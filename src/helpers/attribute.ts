@@ -18,17 +18,15 @@ const targetAttributePattern = /^(\w+)(?:#(\w+))?\.(\w+)$/i;
 function parseActionAttribute(attribute: string): ParsedAttribute | undefined {
 	const matches = extendedActionAttributePattern.exec(attribute);
 
-	if (matches == null) {
-		return;
+	if (matches != null) {
+		const [, , , , controller, identifier, method] = matches;
+
+		return {
+			controller: controller == null ? identifier : controller,
+			identifier: controller == null ? undefined : identifier,
+			name: method,
+		};
 	}
-
-	const [, , , , controller, identifier, method] = matches;
-
-	return {
-		controller: controller == null ? identifier : controller,
-		identifier: controller == null ? undefined : identifier,
-		name: method,
-	};
 }
 
 export function parseAttribute(

@@ -43,7 +43,11 @@ export function createObserver(): Observer {
 	let frame: number;
 
 	const observer = new MutationObserver(entries => {
-		for (const entry of entries) {
+		const {length} = entries;
+
+		for (let index = 0; index < length; index += 1) {
+			const entry = entries[index];
+
 			if (entry.type === 'childList') {
 				handleNodes(entry.addedNodes, true);
 				handleNodes(entry.removedNodes, false);
@@ -134,14 +138,19 @@ function handleAttribute(
 
 function handleElement(element: Element, added: boolean): void {
 	const attributes = [...element.attributes];
+	const {length} = attributes;
 
-	for (const attribute of attributes) {
-		handleAttribute(element, attribute.name, '', added);
+	for (let index = 0; index < length; index += 1) {
+		handleAttribute(element, attributes[index].name, '', added);
 	}
 }
 
 function handleNodes(nodes: NodeList | Node[], added: boolean): void {
-	for (const node of nodes) {
+	const {length} = nodes;
+
+	for (let index = 0; index < length; index += 1) {
+		const node = nodes[index];
+
 		if (node instanceof Element) {
 			handleElement(node, added);
 			handleNodes(node.childNodes, added);
