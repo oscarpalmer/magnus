@@ -4,23 +4,35 @@
 		"url": "https://oscarpalmer.se"
 	},
 	"dependencies": {
-		"@oscarpalmer/atoms": "^0.61.0"
+		"@oscarpalmer/atoms": "^0.65.0"
 	},
 	"description": "A JavaScript framework for developers who like HTML.",
 	"devDependencies": {
 		"@biomejs/biome": "^1.8.3",
 		"@types/bun": "^1.1.6",
-		"bun": "^1.1.20",
+		"bun": "^1.1.21",
+		"dts-bundle-generator": "^9.5.1",
 		"typescript": "^5.5.4"
 	},
 	"exports": {
 		".": {
-			"types": "./types/index.d.ts",
 			"bun": "./src/index.ts",
-			"import": "./dist/index.mjs",
-			"require": "./dist/index.js"
+			"import": {
+				"types": "./types/index.d.ts",
+				"default": "./dist/index.mjs"
+			},
+			"require": {
+				"types": "./types/index.d.cts",
+				"default": "./dist/index.js"
+			}
 		}
 	},
+	"files": [
+		"dist/index.js",
+		"dist/**/*.mjs",
+		"src",
+		"types"
+	],
 	"jsdelivr": "dist/index.js",
 	"keywords": [
 		"framework",
@@ -39,10 +51,13 @@
 	"scripts": {
 		"build": "bun run clean && bunx bun ./.bun.ts && bunx bun ./.bun.ts --mjs && bun run types",
 		"clean": "rm -rf ./dist && rm -rf ./types && rm -rf ./tsconfig.tsbuildinfo",
-		"types": "bunx tsc -p ./tsconfig.json",
+		"types": "bun run types:cjs && bun run types:esm",
+		"types:cjs": "bunx dts-bundle-generator --out-file ./types/index.d.cts --external-inlines '@oscarpalmer/atoms' 'type-fest' --no-check --silent ./src/index.ts",
+		"types:esm": "bunx tsc -p ./tsconfig.json",
 		"watch": "bun build ./src/index.ts --outfile ./dist/index.js --watch"
 	},
-	"types": "src/types.d.ts",
+	"type": "module",
+	"types": "types/index.d.ts",
 	"unpkg": "dist/index.js",
 	"version": "0.30.0"
 }

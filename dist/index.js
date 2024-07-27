@@ -16,7 +16,7 @@ class Controller {
 }
 
 // node_modules/@oscarpalmer/atoms/dist/js/element/closest.mjs
-var closest = function(origin, selector, context) {
+function closest(origin, selector, context) {
   const elements = [...(context ?? document).querySelectorAll(selector)];
   const { length } = elements;
   if (length === 0) {
@@ -39,7 +39,7 @@ var closest = function(origin, selector, context) {
     });
   }
   return minimum == null ? [] : distances.filter((found) => found.distance === minimum).map((found) => found.element);
-};
+}
 var calculateDistance = function(origin, target) {
   const comparison = origin.compareDocumentPosition(target);
   const children = [...origin.parentElement?.children ?? []];
@@ -81,7 +81,7 @@ var traverse = function(from, to) {
   return -1e6;
 };
 // node_modules/@oscarpalmer/atoms/dist/js/string/index.mjs
-var getString = function(value) {
+function getString(value) {
   if (typeof value === "string") {
     return value;
   }
@@ -91,11 +91,11 @@ var getString = function(value) {
   const valueOff = value.valueOf?.() ?? value;
   const asString = valueOff?.toString?.() ?? String(valueOff);
   return asString.startsWith("[object ") ? JSON.stringify(value) : asString;
-};
+}
 // node_modules/@oscarpalmer/atoms/dist/js/is.mjs
-var isNullableOrWhitespace = function(value) {
+function isNullableOrWhitespace(value) {
   return value == null || /^\s*$/.test(getString(value));
-};
+}
 // src/store/action.store.ts
 function createActions() {
   const store = new Map;
@@ -148,7 +148,7 @@ function createActions() {
 }
 
 // src/store/data.store.ts
-var setValue = function(context, prefix, name, original, stringified) {
+function setValue(context, prefix, name, original, stringified) {
   const { element } = context;
   if (isNullableOrWhitespace(original)) {
     element.removeAttribute(`${prefix}${name}`);
@@ -173,7 +173,7 @@ var setValue = function(context, prefix, name, original, stringified) {
   for (index = 0;index < length; index += 1) {
     outputs[index].textContent = stringified;
   }
-};
+}
 function createData(identifier, context) {
   const frames = {};
   const prefix = `data-${identifier}-`;
@@ -301,14 +301,14 @@ function removeController(name, element2) {
     removeInstance(stored, stored.instances.get(element2));
   }
 }
-var removeInstance = function(controller, context2) {
+function removeInstance(controller, context2) {
   if (context2 != null) {
     context2.actions.clear();
     context2.targets.clear();
     context2.controller.disconnected?.();
     controller?.instances.delete(context2.element);
   }
-};
+}
 var controllers = new Map;
 
 // src/helpers/element.ts
@@ -325,7 +325,7 @@ function findTarget(origin, name, id) {
 }
 
 // src/helpers/attribute.ts
-var parseActionAttribute = function(attribute) {
+function parseActionAttribute(attribute) {
   const matches = extendedActionAttributePattern.exec(attribute);
   if (matches != null) {
     const [, , , , controller2, identifier, method] = matches;
@@ -335,11 +335,11 @@ var parseActionAttribute = function(attribute) {
       name: method
     };
   }
-};
+}
 function parseAttribute(type, value) {
   return type === "action" ? parseActionAttribute(value) : parseTargetAttribute(value);
 }
-var parseTargetAttribute = function(attribute) {
+function parseTargetAttribute(attribute) {
   const matches = targetAttributePattern.exec(attribute);
   if (matches != null) {
     const [, controller2, identifier, name] = matches;
@@ -349,7 +349,7 @@ var parseTargetAttribute = function(attribute) {
       name
     };
   }
-};
+}
 var actionAttributePattern = /^(?:(\w+)->)?(\w+)(?:#(\w+))?@(\w+)(?::([a-z:]+))?/i;
 var extendedActionAttributePattern = /^(?:(?:(?:(\w+)(?:#(\w+))?)?@)?(\w+)->)?(\w+)(?:#(\w+))?@(\w+)(?::([a-z:]+))?/i;
 var targetAttributePattern = /^(\w+)(?:#(\w+))?\.(\w+)$/i;
@@ -373,7 +373,7 @@ function getEventParameters(element2, action2, isParent) {
     return parameters.type == null ? undefined : parameters;
   }
 }
-var getMatches = function(matches, isParent) {
+function getMatches(matches, isParent) {
   return {
     callback: matches[isParent ? 6 : 4],
     controller: matches[isParent ? 1 : -1],
@@ -381,18 +381,18 @@ var getMatches = function(matches, isParent) {
     identifier: matches[isParent ? 2 : -1],
     options: matches[isParent ? 7 : 5]
   };
-};
-var getOptions = function(options) {
+}
+function getOptions(options) {
   const items = options.toLowerCase().split(":");
   return {
     capture: items.includes("capture") || items.includes("c"),
     once: items.includes("once") || items.includes("o"),
     passive: !items.includes("active") && !items.includes("a")
   };
-};
-var getType = function(element2) {
+}
+function getType(element2) {
   return element2 instanceof HTMLInputElement ? element2.type === "submit" ? "submit" : "input" : defaultEvents[element2.tagName];
-};
+}
 var defaultEvents = {
   A: "click",
   BUTTON: "click",
@@ -422,7 +422,7 @@ function handleTarget(type, element2, value, added, callback) {
 function handleTargetAttribute(element2, _, value, added) {
   handleTarget("target", element2, value, added, handleTargetElement);
 }
-var handleInput = function(context2, element2, _, value, added) {
+function handleInput(context2, element2, _, value, added) {
   const isInput = element2 instanceof HTMLInputElement;
   const isSelect = element2 instanceof HTMLSelectElement;
   if (context2 != null && (isInput || isSelect || element2 instanceof HTMLTextAreaElement)) {
@@ -434,17 +434,17 @@ var handleInput = function(context2, element2, _, value, added) {
     });
     handleTargetElement(context2, element2, "", name, added);
   }
-};
-var handleOutput = function(context2, element2, _, value, added) {
+}
+function handleOutput(context2, element2, _, value, added) {
   handleTargetElement(context2, element2, "", `output:${value}`, added);
-};
-var handleTargetElement = function(context2, element2, _, value, added) {
+}
+function handleTargetElement(context2, element2, _, value, added) {
   if (added) {
     context2.targets.add(value, element2);
   } else {
     context2.targets.remove(value, element2);
   }
-};
+}
 
 // src/observer/attributes/action.attribute.ts
 function handleAction(context2, element3, name, value, added, handler) {
@@ -492,7 +492,7 @@ function handleActionAttribute(element3, _, value, added) {
 }
 
 // src/observer/attributes/index.ts
-var getChanges = function(from, to) {
+function getChanges(from, to) {
   const fromValues = from.split(/\s+/).map((part) => part.trim()).filter((part) => part.length > 0);
   const toValues = to.split(/\s+/).map((part) => part.trim()).filter((part) => part.length > 0);
   const attributes2 = [[], []];
@@ -508,7 +508,7 @@ var getChanges = function(from, to) {
     }
   }
   return attributes2;
-};
+}
 function handleAttributeChanges(parameters, initial) {
   if (parameters.callback == null) {
     return;
@@ -529,7 +529,7 @@ function handleAttributeChanges(parameters, initial) {
     name: parameters.name
   });
 }
-var handleChanges = function(parameters) {
+function handleChanges(parameters) {
   const changes = getChanges(parameters.from, parameters.to);
   const changesLength = changes.length;
   for (let changesIndex = 0;changesIndex < changesLength; changesIndex += 1) {
@@ -541,7 +541,7 @@ var handleChanges = function(parameters) {
       parameters.callback(parameters.element, parameters.name, change, added);
     }
   }
-};
+}
 function handleControllerAttribute(element3, _, value, added) {
   if (added) {
     addController(value, element3);
@@ -638,7 +638,7 @@ function createObserver() {
   }
   return instance;
 }
-var handleAttribute = function(element3, name, value, added) {
+function handleAttribute(element3, name, value, added) {
   handleAttributeChanges({
     added,
     element: element3,
@@ -646,15 +646,15 @@ var handleAttribute = function(element3, name, value, added) {
     value,
     callback: callbacks2[name]
   }, false);
-};
-var handleElement = function(element3, added) {
+}
+function handleElement(element3, added) {
   const attributes4 = [...element3.attributes];
   const { length } = attributes4;
   for (let index = 0;index < length; index += 1) {
     handleAttribute(element3, attributes4[index].name, "", added);
   }
-};
-var handleNodes = function(nodes, added) {
+}
+function handleNodes(nodes, added) {
   const { length } = nodes;
   for (let index = 0;index < length; index += 1) {
     const node = nodes[index];
@@ -663,7 +663,7 @@ var handleNodes = function(nodes, added) {
       handleNodes(node.childNodes, added);
     }
   }
-};
+}
 var actionAttribute = "data-action";
 var controllerAttribute = "data-controller";
 var inputAttribute = "data-input";
@@ -685,7 +685,7 @@ var callbacks2 = {
 };
 
 // src/magnus.ts
-var createMagnus = function() {
+function createMagnus() {
   const observer2 = createObserver();
   const instance = Object.create({
     add(name, ctor) {
@@ -706,7 +706,7 @@ var createMagnus = function() {
     }
   });
   return instance;
-};
+}
 var magnus_default = createMagnus();
 export {
   magnus_default as magnus,
