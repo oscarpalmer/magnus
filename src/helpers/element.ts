@@ -15,7 +15,9 @@ export function findTarget(
 		default:
 			return (
 				findContext(origin, name, id)?.element ??
-				(noId ? (document.querySelector(`#${name}`) as EventTarget) : undefined)
+				(noId
+					? (origin.ownerDocument.querySelector(`#${id}`) as EventTarget)
+					: undefined)
 			);
 	}
 }

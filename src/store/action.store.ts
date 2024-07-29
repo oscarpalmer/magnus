@@ -1,24 +1,4 @@
-type Action = {
-	callback: (event: Event) => void;
-	options: AddEventListenerOptions;
-	targets: Set<EventTarget>;
-	type: string;
-};
-
-export type Actions = {
-		add(name: string, target: EventTarget): void;
-		clear(): void;
-		create(parameters: Parameters): void;
-		has(name: string): boolean;
-		remove(name: string, target: EventTarget): void;
-	};
-
-type Parameters = {
-	callback: (event: Event) => void;
-	name: string;
-	options: AddEventListenerOptions;
-	type: string;
-};
+import type {Action, Actions} from '../models';
 
 export function createActions() {
 	const store = new Map<string, Action>();

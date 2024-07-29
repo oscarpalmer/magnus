@@ -1,24 +1,26 @@
 import type {PlainObject} from '@oscarpalmer/atoms/models';
-import type {Context} from '../../controller/context';
 import {findTarget} from '../../helpers/element';
 import {getEventParameters} from '../../helpers/event';
+import type {
+	AttributeHandleCallbackCustomParameters,
+	Context,
+} from '../../models';
 import {handleTarget} from './target.attribute';
 
 export function handleAction(
 		context: Context,
 		element: Element,
-		name: string,
 		value: string,
 		added: boolean,
-		handler?: (event: Event) => void,
+		custom?: AttributeHandleCallbackCustomParameters,
 	): void {
-		const action = handler == null ? value : name;
+		const action = custom?.event ?? value;
 
-		if (context.actions.has(action)) {
+		if (context.actions.has(value)) {
 			if (added) {
-				context.actions.add(action, element);
+				context.actions.add(value, element);
 			} else {
-				context.actions.remove(action, element);
+				context.actions.remove(value, element);
 			}
 
 			return;
@@ -29,7 +31,7 @@ export function handleAction(
 		}
 
 		const parameters =
-			handler == null
+			custom?.handler == null
 				? getEventParameters(element, value, context.element === element)
 				: {
 						callback: '',
@@ -38,7 +40,7 @@ export function handleAction(
 							once: false,
 							passive: true,
 						},
-						type: value,
+						type: action,
 					};
 
 		if (parameters == null) {
@@ -46,7 +48,7 @@ export function handleAction(
 		}
 
 		const callback =
-			handler ??
+			custom?.handler ??
 			((context.controller as unknown as PlainObject)[parameters.callback] as (
 				event: Event,
 			) => void);
@@ -58,29 +60,24 @@ export function handleAction(
 		const target =
 			parameters.external == null
 				? element
-				: findTarget(
-						element,
-						parameters.external.controller,
-						parameters.external.identifier,
-					);
+				: findTarget(element, parameters.external.name, parameters.external.id);
 
 		if (target != null) {
 			context.actions.create({
 				callback: callback.bind(context.controller),
-				name: action,
+				name: value,
 				options: parameters.options,
 				type: parameters.type,
 			});
 
-			context.actions.add(action, target);
+			context.actions.add(value, target);
 		}
 	}
 
 export function handleActionAttribute(
-	element: Element,
-	_: string,
-	value: string,
-	added: boolean,
-): void {
-	handleTarget('action', element, value, added, handleAction);
-}
+		element: Element,
+		value: string,
+		added: boolean,
+	): void {
+		handleTarget('action', element, value, added, handleAction);
+	}

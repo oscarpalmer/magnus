@@ -1,27 +1,8 @@
+import type {EventMatches, EventParameters} from '../models';
 import {
 	actionAttributePattern,
 	extendedActionAttributePattern,
 } from './attribute';
-
-export type EventParameters = {
-		callback: string;
-		external?: ExternalController;
-		options: AddEventListenerOptions;
-		type: string;
-	};
-
-type ExternalController = {
-	controller: string;
-	identifier?: string;
-};
-
-type Matches = {
-	callback: string;
-	controller?: string;
-	event?: string;
-	identifier?: string;
-	options?: string;
-};
 
 const defaultEvents: Record<string, string> = {
 	A: 'click',
@@ -50,10 +31,10 @@ export function getEventParameters(
 			type: (matches.event ?? getType(element)) as never,
 		};
 
-		if (typeof matches.controller === 'string') {
+		if (typeof matches.name === 'string') {
 			parameters.external = {
-				controller: matches.controller,
-				identifier: matches.identifier,
+				name: matches.name,
+				id: matches.id,
 			};
 		}
 
@@ -61,12 +42,12 @@ export function getEventParameters(
 	}
 }
 
-function getMatches(matches: RegExpExecArray, isParent: boolean): Matches {
+function getMatches(matches: RegExpExecArray, isParent: boolean): EventMatches {
 	return {
 		callback: matches[isParent ? 6 : 4],
-		controller: matches[isParent ? 1 : -1],
 		event: matches[isParent ? 3 : 1],
-		identifier: matches[isParent ? 2 : -1],
+		id: matches[isParent ? 2 : -1],
+		name: matches[isParent ? 1 : -1],
 		options: matches[isParent ? 7 : 5],
 	};
 }

@@ -32,19 +32,28 @@ isObject('hello');
 */
 export type UnknownRecord = Record<PropertyKey, unknown>;
 export type PlainObject = UnknownRecord;
-export type Actions = {
-	add(name: string, target: EventTarget): void;
-	clear(): void;
-	create(parameters: Parameters$1): void;
-	has(name: string): boolean;
-	remove(name: string, target: EventTarget): void;
-};
-type Parameters$1 = {
+export type ActionParameters = {
 	callback: (event: Event) => void;
 	name: string;
 	options: AddEventListenerOptions;
 	type: string;
 };
+export type Actions = {
+	add(name: string, target: EventTarget): void;
+	clear(): void;
+	create(parameters: ActionParameters): void;
+	has(name: string): boolean;
+	remove(name: string, target: EventTarget): void;
+};
+export type Context = {
+	readonly actions: Actions;
+	readonly controller: Controller;
+	readonly data: Data;
+	readonly element: Element;
+	readonly name: string;
+	readonly targets: Targets;
+};
+export type ControllerConstructor = new (context: Context) => Controller;
 export type Data = {
 	value: PlainObject;
 };
@@ -54,20 +63,11 @@ export type Targets = {
 	get(name: string): Element[];
 	remove(name: string, element: Element): void;
 };
-export type Context = {
-	readonly actions: Actions;
-	readonly controller: Controller;
-	readonly data: Data;
-	readonly element: Element;
-	readonly identifier: string;
-	readonly targets: Targets;
-};
-export type ControllerConstructor = new (context: Context) => Controller;
 export declare abstract class Controller<Model extends PlainObject = PlainObject> {
 	protected readonly context: Context;
 	get element(): Element;
 	get data(): Model;
-	get identifier(): string;
+	get name(): string;
 	constructor(context: Context);
 	abstract connected(): void;
 	abstract disconnected(): void;

@@ -1,7 +1,5 @@
 import type {PlainObject} from '@oscarpalmer/atoms/models';
-import type {Context} from './context';
-
-export type ControllerConstructor = new (context: Context) => Controller;
+import type {Context} from '../models';
 
 export abstract class Controller<Model extends PlainObject = PlainObject> {
 	get element(): Element {
@@ -12,8 +10,8 @@ export abstract class Controller<Model extends PlainObject = PlainObject> {
 		return this.context.data.value as Model;
 	}
 
-	get identifier(): string {
-		return this.context.identifier;
+	get name(): string {
+		return this.context.name;
 	}
 
 	constructor(protected readonly context: Context) {}

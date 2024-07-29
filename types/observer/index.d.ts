@@ -1,7 +1,2 @@
-type Observer = {
-    start(): void;
-    stop(): void;
-    update(): void;
-};
+import type { Observer } from '../models';
 export declare function createObserver(): Observer;
-export {};

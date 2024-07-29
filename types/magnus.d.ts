@@ -1,4 +1,4 @@
-import type { ControllerConstructor } from './controller/index';
+import type { ControllerConstructor } from './models';
 type Magnus = {
     add(name: string, ctor: ControllerConstructor): void;
     remove(name: string): void;

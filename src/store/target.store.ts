@@ -1,9 +1,4 @@
-export type Targets = {
-	add(name: string, element: Element): void;
-	clear(): void;
-	get(name: string): Element[];
-	remove(name: string, element: Element): void;
-};
+import type {Targets} from '../models';
 
 export function createTargets(): Targets {
 	const store = new Map<string, Set<Element>>();

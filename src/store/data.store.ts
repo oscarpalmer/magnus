@@ -1,11 +1,6 @@
 import {isNullableOrWhitespace} from '@oscarpalmer/atoms/is';
-import type {PlainObject} from '@oscarpalmer/atoms/models';
 import {getString} from '@oscarpalmer/atoms/string';
-import type {Context} from '../controller/context';
-
-export type Data = {
-	value: PlainObject;
-};
+import type {Context, Data} from '../models';
 
 function setValue(
 	context: Context,
@@ -59,40 +54,42 @@ function setValue(
 	}
 }
 
-export function createData(identifier: string, context: Context): Data {
+export function createData(controller: string, context: Context): Data {
 	const frames: Record<string, number> = {};
-	const prefix = `data-${identifier}-`;
+	const prefix = `data-${controller}-`;
+
+	const proxied = new Proxy(
+		{},
+		{
+			set(target, property, value) {
+				const previous = getString(Reflect.get(target, property));
+				const next = getString(value);
+
+				if (Object.is(previous, next)) {
+					return true;
+				}
+
+				const result = Reflect.set(target, property, value);
+
+				if (result) {
+					const name = String(property);
+
+					cancelAnimationFrame(frames[name]);
+
+					frames[name] = requestAnimationFrame(() => {
+						setValue(context, prefix, name, value, next);
+					});
+				}
+
+				return result;
+			},
+		},
+	);
 
 	const instance = Object.create(null);
 
 	Object.defineProperty(instance, 'value', {
-		value: new Proxy(
-			{},
-			{
-				set(target, property, value) {
-					const previous = getString(Reflect.get(target, property));
-					const next = getString(value);
-
-					if (Object.is(previous, next)) {
-						return true;
-					}
-
-					const result = Reflect.set(target, property, value);
-
-					if (result) {
-						const name = String(property);
-
-						cancelAnimationFrame(frames[name]);
-
-						frames[name] = requestAnimationFrame(() => {
-							setValue(context, prefix, name, value, next);
-						});
-					}
-
-					return result;
-				},
-			},
-		),
+		value: proxied,
 	});
 
 	return instance;

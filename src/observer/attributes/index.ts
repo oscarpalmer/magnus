@@ -1,47 +1,16 @@
-import type {Context} from '../../controller/context';
+import type {
+	AttributeChangeCallback,
+	AttributeChangesParameters,
+	AttributeHandleParameters,
+	Context,
+} from '../../models';
 import {addController, removeController} from '../../store/controller.store';
 import {handleActionAttribute} from './action.attribute';
 import {
 	handleInputAttribute,
 	handleOutputAttribute,
-	handleTargetAttribute,
-} from './target.attribute';
-
-export type AttributeChangeCallback = (
-	element: Element,
-	name: string,
-	value: string,
-	added: boolean,
-) => void;
-
-export type AttributeHandleCallback = (
-	context: Context,
-	element: Element,
-	name: string,
-	value: string,
-	added: boolean,
-	handler?: (event: Event) => void,
-) => void;
-
-export type AttributeHandleParameters = {
-	added: boolean;
-	callback: AttributeChangeCallback;
-	element: Element;
-	name: string;
-	value: string;
-};
-
-export type AttributeChangesParameters = {
-	callback: AttributeChangeCallback;
-	element: Element;
-	from: string;
-	name: string;
-	to: string;
-};
-
-const attributes = ['action', 'input', 'output', 'target'];
-
-const attributesLength = attributes.length;
+} from './input-output.attribute';
+import {handleTargetAttribute} from './target.attribute';
 
 const callbacks: Record<string, AttributeChangeCallback> = {
 	action: handleActionAttribute,
@@ -49,6 +18,10 @@ const callbacks: Record<string, AttributeChangeCallback> = {
 	output: handleOutputAttribute,
 	target: handleTargetAttribute,
 };
+
+const attributes = Object.keys(callbacks);
+
+const attributesLength = attributes.length;
 
 function getChanges(from: string, to: string): string[][] {
 	const fromValues = from
@@ -128,14 +101,13 @@ function handleChanges(parameters: AttributeChangesParameters): void {
 		) {
 			const change = changed[changedIndex];
 
-			parameters.callback(parameters.element, parameters.name, change, added);
+			parameters.callback(parameters.element, change, added);
 		}
 	}
 }
 
 export function handleControllerAttribute(
 	element: Element,
-	_: string,
 	value: string,
 	added: boolean,
 ): void {
@@ -147,7 +119,7 @@ export function handleControllerAttribute(
 }
 
 export function handleAttributes(context: Context): void {
-	const identifier = context.identifier.toLowerCase();
+	const name = context.name.toLowerCase();
 
 	for (
 		let attributeIndex = 0;
@@ -163,7 +135,7 @@ export function handleAttributes(context: Context): void {
 			const element = elements[elementIndex];
 			const value = element.getAttribute(`data-${attribute}`);
 
-			if (value?.toLowerCase().includes(identifier)) {
+			if (value?.toLowerCase().includes(name)) {
 				handleAttributeChanges(
 					{
 						callback,

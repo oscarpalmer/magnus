@@ -1,11 +1,6 @@
 import {closest} from '@oscarpalmer/atoms/element';
-import {type Context, createContext} from '../controller/context';
-import type {ControllerConstructor} from '../controller/index';
-
-type StoredController = {
-	constructor: ControllerConstructor;
-	instances: Map<Element, Context>;
-};
+import {createContext} from '../controller/context';
+import type {Context, ControllerConstructor, StoredController} from '../models';
 
 export const controllers = new Map<string, StoredController>();
 
@@ -34,20 +29,20 @@ export function createController(
 
 export function findContext(
 	origin: Element,
-	controller: string,
-	identifier?: string,
+	name: string,
+	id?: string,
 ): Context | undefined {
-	let identified: Element | null;
+	let found: Element | null;
 
-	if (identifier == null) {
-		identified = closest(origin, `[data-controller*="${controller}"]`)[0];
+	if (id == null) {
+		found = closest(origin, `[data-controller*="${name}"]`)[0];
 	} else {
-		identified = document.querySelector(`#${identifier}`);
+		found = document.querySelector(`#${id}`);
 	}
 
-	return identified == null
+	return found == null
 		? undefined
-		: controllers.get(controller)?.instances.get(identified);
+		: controllers.get(name)?.instances.get(found);
 }
 
 export function removeController(name: string, element?: Element): void {

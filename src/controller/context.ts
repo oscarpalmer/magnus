@@ -1,17 +1,8 @@
+import type {Context, ControllerConstructor} from '../models';
 import {handleAttributes} from '../observer/attributes';
-import {type Actions, createActions} from '../store/action.store';
-import {type Data, createData} from '../store/data.store';
-import {type Targets, createTargets} from '../store/target.store';
-import type {Controller, ControllerConstructor} from './index';
-
-export type Context = {
-		readonly actions: Actions;
-		readonly controller: Controller;
-		readonly data: Data;
-		readonly element: Element;
-		readonly identifier: string;
-		readonly targets: Targets;
-	};
+import {createActions} from '../store/action.store';
+import {createData} from '../store/data.store';
+import {createTargets} from '../store/target.store';
 
 export function createContext(
 	name: string,
@@ -30,7 +21,7 @@ export function createContext(
 		element: {
 			value: element,
 		},
-		identifier: {
+		name: {
 			value: name,
 		},
 		targets: {

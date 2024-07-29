@@ -1,42 +1,21 @@
-import {
-	type AttributeChangeCallback,
-	handleAttributeChanges,
-	handleControllerAttribute,
-} from './attributes';
+import type {AttributeChangeCallback, Observer} from '../models';
+import {handleAttributeChanges, handleControllerAttribute} from './attributes';
 import {handleActionAttribute} from './attributes/action.attribute';
 import {
 	handleInputAttribute,
 	handleOutputAttribute,
-	handleTargetAttribute,
-} from './attributes/target.attribute';
-
-type Observer = {
-	start(): void;
-	stop(): void;
-	update(): void;
-};
-
-const actionAttribute = 'data-action';
-const controllerAttribute = 'data-controller';
-const inputAttribute = 'data-input';
-const outputAttribute = 'data-output';
-const targetAttribute = 'data-target';
-
-const attributes = [
-	actionAttribute,
-	controllerAttribute,
-	inputAttribute,
-	outputAttribute,
-	targetAttribute,
-];
+} from './attributes/input-output.attribute';
+import {handleTargetAttribute} from './attributes/target.attribute';
 
 const callbacks: Record<string, AttributeChangeCallback> = {
-	[actionAttribute]: handleActionAttribute,
-	[controllerAttribute]: handleControllerAttribute,
-	[inputAttribute]: handleInputAttribute,
-	[outputAttribute]: handleOutputAttribute,
-	[targetAttribute]: handleTargetAttribute,
+	'data-action': handleActionAttribute,
+	'data-controller': handleControllerAttribute,
+	'data-input': handleInputAttribute,
+	'data-output': handleOutputAttribute,
+	'data-target': handleTargetAttribute,
 };
+
+const attributes = Object.keys(callbacks);
 
 export function createObserver(): Observer {
 	let running = false;

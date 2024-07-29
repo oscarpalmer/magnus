@@ -1,8 +1,4 @@
-type ParsedAttribute = {
-	controller: string;
-	identifier?: string;
-	name: string;
-};
+import type {ParsedAttribute} from '../models';
 
 // (event->)controller(#id)@method(:options)
 export const actionAttributePattern =
@@ -19,12 +15,12 @@ function parseActionAttribute(attribute: string): ParsedAttribute | undefined {
 	const matches = extendedActionAttributePattern.exec(attribute);
 
 	if (matches != null) {
-		const [, , , , controller, identifier, method] = matches;
+		const [, , , , name, id, method] = matches;
 
 		return {
-			controller: controller == null ? identifier : controller,
-			identifier: controller == null ? undefined : identifier,
-			name: method,
+			id: name == null ? undefined : id,
+			name: name == null ? id : name,
+			value: method,
 		};
 	}
 }
@@ -42,12 +38,12 @@ function parseTargetAttribute(attribute: string): ParsedAttribute | undefined {
 	const matches = targetAttributePattern.exec(attribute);
 
 	if (matches != null) {
-		const [, controller, identifier, name] = matches;
+		const [, name, id, value] = matches;
 
 		return {
-			controller,
-			identifier,
+			id,
 			name,
+			value,
 		};
 	}
 }

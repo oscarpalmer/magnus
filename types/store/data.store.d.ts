@@ -1,6 +1,2 @@
-import type { PlainObject } from '@oscarpalmer/atoms/models';
-import type { Context } from '../controller/context';
-export type Data = {
-    value: PlainObject;
-};
-export declare function createData(identifier: string, context: Context): Data;
+import type { Context, Data } from '../models';
+export declare function createData(controller: string, context: Context): Data;

@@ -1,4 +1,4 @@
-import type {ControllerConstructor} from './controller/index';
+import type {ControllerConstructor} from './models';
 import {createObserver} from './observer';
 import {
 	controllers,
