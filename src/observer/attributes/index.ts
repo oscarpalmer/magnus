@@ -128,14 +128,14 @@ export function handleAttributes(context: Context): void {
 	) {
 		const attribute = attributes[attributeIndex];
 		const callback = callbacks[attribute];
-		const elements = document.querySelectorAll(`[data-${attribute}]`);
+		const elements = document.querySelectorAll(`[data-${attribute}*="${name}"]`);
 		const {length} = elements;
 
 		for (let elementIndex = 0; elementIndex < length; elementIndex += 1) {
 			const element = elements[elementIndex];
 			const value = element.getAttribute(`data-${attribute}`);
 
-			if (value?.toLowerCase().includes(name)) {
+			if (value != null) {
 				handleAttributeChanges(
 					{
 						callback,

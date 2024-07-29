@@ -66,6 +66,8 @@ export function removeController(name: string, element?: Element): void {
 
 function removeInstance(controller: StoredController, context?: Context): void {
 	if (context != null) {
+		context.observer.stop();
+
 		context.actions.clear();
 		context.targets.clear();
 

@@ -1,5 +1,5 @@
 import type {ControllerConstructor} from './models';
-import {createObserver} from './observer';
+import {observerDocument} from './observer/document.observer';
 import {
 	controllers,
 	createController,
@@ -14,7 +14,7 @@ type Magnus = {
 };
 
 function createMagnus(): Magnus {
-	const observer = createObserver();
+	const observer = observerDocument();
 
 	const instance = Object.create({
 		add(name: string, ctor: ControllerConstructor): void {

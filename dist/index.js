@@ -15,8 +15,81 @@ class Controller {
   }
 }
 
+// src/observer/index.ts
+function createObserver(element, options, handler) {
+  let running = false;
+  let frame;
+  const observer = new MutationObserver((entries) => {
+    const { length } = entries;
+    for (let index = 0;index < length; index += 1) {
+      const entry = entries[index];
+      if (entry.type === "childList") {
+        handleNodes(entry.addedNodes, true, handler);
+        handleNodes(entry.removedNodes, false, handler);
+      } else if (entry.type === "attributes" && entry.target instanceof Element) {
+        handler(entry.target, entry.attributeName ?? "", entry.oldValue ?? "", true);
+      }
+    }
+  });
+  const instance = Object.create({
+    start() {
+      if (running) {
+        return;
+      }
+      running = true;
+      observer.observe(element, options);
+      this.update();
+    },
+    stop() {
+      if (!running) {
+        return;
+      }
+      running = false;
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+    },
+    update() {
+      if (!running) {
+        return;
+      }
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        handleNodes([element], true, handler);
+      });
+    }
+  });
+  if (element.ownerDocument.readyState === "complete") {
+    instance.start();
+  } else {
+    element.ownerDocument.addEventListener("DOMContentLoaded", () => {
+      instance.start();
+    });
+  }
+  return instance;
+}
+function handleElement(element, added, handler) {
+  const attributes = [...element.attributes];
+  const { length } = attributes;
+  for (let index = 0;index < length; index += 1) {
+    handler(element, attributes[index].name, "", added);
+  }
+}
+function handleNodes(nodes, added, handler) {
+  const { length } = nodes;
+  for (let index = 0;index < length; index += 1) {
+    const node = nodes[index];
+    if (node instanceof Element) {
+      handleElement(node, added, handler);
+      handleNodes(node.childNodes, added, handler);
+    }
+  }
+}
+
 // node_modules/@oscarpalmer/atoms/dist/js/element/closest.mjs
 function calculateDistance(origin, target) {
+  if (origin === target || origin.parentElement === target) {
+    return 0;
+  }
   const comparison = origin.compareDocumentPosition(target);
   const children = [...origin.parentElement?.children ?? []];
   switch (true) {
@@ -31,6 +104,9 @@ function calculateDistance(origin, target) {
   }
 }
 function closest(origin, selector, context) {
+  if (origin.matches(selector)) {
+    return [origin];
+  }
   const elements = [...(context ?? document).querySelectorAll(selector)];
   const { length } = elements;
   if (length === 0) {
@@ -102,13 +178,34 @@ function parse(value2, reviver) {
 function isNullableOrWhitespace(value2) {
   return value2 == null || /^\s*$/.test(getString(value2));
 }
+// src/observer/controller.observer.ts
+function observeController(name, element) {
+  const prefix = `data-${name}-`;
+  let context;
+  return createObserver(element, {
+    attributes: true
+  }, (element2, attribute) => {
+    if (attribute.startsWith(prefix)) {
+      context ??= findContext(element2, name);
+      const property = attribute.slice(prefix.length);
+      if (context != null) {
+        const previous = context.data.value[property];
+        const next = element2.getAttribute(attribute) ?? "";
+        if (!Object.is(previous, next)) {
+          context.data.value[property] = next;
+        }
+      }
+    }
+  });
+}
+
 // src/store/action.store.ts
 function createActions() {
   const store = new Map;
   return Object.create({
     add(name, target) {
       const action = store.get(name);
-      if (action != null) {
+      if (action != null && !action.targets.has(target)) {
         action.targets.add(target);
         target.addEventListener(action.type, action.callback, action.options);
       }
@@ -180,9 +277,9 @@ function setValue2(context, prefix, name, original, stringified) {
     outputs[index].textContent = stringified;
   }
 }
-function createData(controller, context) {
+function createData(controller2, context) {
   const frames = {};
-  const prefix = `data-${controller}-`;
+  const prefix = `data-${controller2}-`;
   const proxied = new Proxy({}, {
     set(target, property, value2) {
       const previous = getString(Reflect.get(target, property));
@@ -254,26 +351,29 @@ function createContext(name, element, ctor) {
     name: {
       value: name
     },
+    observer: {
+      value: observeController(name, element)
+    },
     targets: {
       value: createTargets()
     }
   });
-  const controller = new ctor(context);
+  const controller3 = new ctor(context);
   Object.defineProperties(context, {
     controller: {
-      value: controller
+      value: controller3
     }
   });
   handleAttributes(context);
-  controller.connected?.();
+  controller3.connected?.();
   return context;
 }
 
 // src/store/controller.store.ts
 function addController(name, element2) {
-  const controller = controllers.get(name);
-  if (controller != null && !controller.instances.has(element2)) {
-    controller.instances.set(element2, createContext(name, element2, controller.constructor));
+  const controller3 = controllers.get(name);
+  if (controller3 != null && !controller3.instances.has(element2)) {
+    controller3.instances.set(element2, createContext(name, element2, controller3.constructor));
   }
 }
 function createController(name, ctor) {
@@ -308,12 +408,13 @@ function removeController(name, element2) {
     removeInstance(stored, stored.instances.get(element2));
   }
 }
-function removeInstance(controller, context2) {
+function removeInstance(controller3, context2) {
   if (context2 != null) {
+    context2.observer.stop();
     context2.actions.clear();
     context2.targets.clear();
     context2.controller.disconnected?.();
-    controller?.instances.delete(context2.element);
+    controller3?.instances.delete(context2.element);
   }
 }
 var controllers = new Map;
@@ -581,12 +682,12 @@ function handleAttributes(context2) {
   for (let attributeIndex = 0;attributeIndex < attributesLength; attributeIndex += 1) {
     const attribute3 = attributes2[attributeIndex];
     const callback = callbacks[attribute3];
-    const elements = document.querySelectorAll(`[data-${attribute3}]`);
+    const elements = document.querySelectorAll(`[data-${attribute3}*="${name}"]`);
     const { length } = elements;
     for (let elementIndex = 0;elementIndex < length; elementIndex += 1) {
       const element3 = elements[elementIndex];
       const value2 = element3.getAttribute(`data-${attribute3}`);
-      if (value2?.toLowerCase().includes(name)) {
+      if (value2 != null) {
         handleAttributeChanges({
           callback,
           element: element3,
@@ -607,89 +708,22 @@ var callbacks = {
 var attributes2 = Object.keys(callbacks);
 var attributesLength = attributes2.length;
 
-// src/observer/index.ts
-function createObserver() {
-  let running = false;
-  let frame;
-  const observer = new MutationObserver((entries) => {
-    const { length } = entries;
-    for (let index = 0;index < length; index += 1) {
-      const entry = entries[index];
-      if (entry.type === "childList") {
-        handleNodes(entry.addedNodes, true);
-        handleNodes(entry.removedNodes, false);
-      } else if (entry.type === "attributes" && entry.target instanceof Element) {
-        handleAttribute(entry.target, entry.attributeName ?? "", entry.oldValue ?? "", true);
-      }
-    }
+// src/observer/document.observer.ts
+function observerDocument() {
+  return createObserver(document.body, {
+    attributeFilter: attributes4,
+    attributes: true,
+    childList: true,
+    subtree: true
+  }, (element3, name, value2, added) => {
+    handleAttributeChanges({
+      added,
+      element: element3,
+      name,
+      value: value2,
+      callback: callbacks2[name]
+    }, false);
   });
-  const instance = Object.create({
-    start() {
-      if (running) {
-        return;
-      }
-      running = true;
-      observer.observe(document.body, {
-        attributeFilter: attributes4,
-        attributeOldValue: true,
-        attributes: true,
-        childList: true,
-        subtree: true
-      });
-      this.update();
-    },
-    stop() {
-      if (!running) {
-        return;
-      }
-      running = false;
-      cancelAnimationFrame(frame);
-      observer.disconnect();
-    },
-    update() {
-      if (!running) {
-        return;
-      }
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(() => {
-        handleNodes([document.body], true);
-      });
-    }
-  });
-  if (document.body.ownerDocument.readyState === "complete") {
-    instance.start();
-  } else {
-    document.body.ownerDocument.addEventListener("DOMContentLoaded", () => {
-      instance.start();
-    });
-  }
-  return instance;
-}
-function handleAttribute(element3, name, value2, added) {
-  handleAttributeChanges({
-    added,
-    element: element3,
-    name,
-    value: value2,
-    callback: callbacks2[name]
-  }, false);
-}
-function handleElement(element3, added) {
-  const attributes4 = [...element3.attributes];
-  const { length } = attributes4;
-  for (let index = 0;index < length; index += 1) {
-    handleAttribute(element3, attributes4[index].name, "", added);
-  }
-}
-function handleNodes(nodes, added) {
-  const { length } = nodes;
-  for (let index = 0;index < length; index += 1) {
-    const node = nodes[index];
-    if (node instanceof Element) {
-      handleElement(node, added);
-      handleNodes(node.childNodes, added);
-    }
-  }
 }
 var callbacks2 = {
   "data-action": handleActionAttribute,
@@ -702,23 +736,23 @@ var attributes4 = Object.keys(callbacks2);
 
 // src/magnus.ts
 function createMagnus() {
-  const observer2 = createObserver();
+  const observer = observerDocument();
   const instance = Object.create({
     add(name, ctor) {
       if (controllers.has(name)) {
         throw new Error(`Controller '${name}' already exists`);
       }
       createController(name, ctor);
-      observer2.update();
+      observer.update();
     },
     remove(name) {
       removeController(name);
     },
     start() {
-      observer2.start();
+      observer.start();
     },
     stop() {
-      observer2.stop();
+      observer.stop();
     }
   });
   return instance;

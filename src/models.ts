@@ -66,13 +66,14 @@ export type AttributeHandleParameters = {
 //
 
 export type Context = {
-	readonly actions: Actions;
-	readonly controller: Controller;
-	readonly data: Data;
-	readonly element: Element;
-	readonly name: string;
-	readonly targets: Targets;
-};
+		readonly actions: Actions;
+		readonly controller: Controller;
+		readonly data: Data;
+		readonly element: Element;
+		readonly name: string;
+		readonly observer: Observer;
+		readonly targets: Targets;
+	};
 
 //
 
@@ -115,6 +116,13 @@ export type Observer = {
 	stop(): void;
 	update(): void;
 };
+
+export type ObserverCallback = (
+	element: Element,
+	name: string,
+	value: string,
+	added: boolean,
+) => void;
 
 //
 

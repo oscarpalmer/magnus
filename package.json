@@ -4,7 +4,7 @@
 		"url": "https://oscarpalmer.se"
 	},
 	"dependencies": {
-		"@oscarpalmer/atoms": "^0.66.0"
+		"@oscarpalmer/atoms": "^0.67.0"
 	},
 	"description": "A JavaScript framework for developers who like HTML.",
 	"devDependencies": {

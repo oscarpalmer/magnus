@@ -1,5 +1,6 @@
 import type {Context, ControllerConstructor} from '../models';
 import {handleAttributes} from '../observer/attributes';
+import {observeController} from '../observer/controller.observer';
 import {createActions} from '../store/action.store';
 import {createData} from '../store/data.store';
 import {createTargets} from '../store/target.store';
@@ -23,6 +24,9 @@ export function createContext(
 		},
 		name: {
 			value: name,
+		},
+		observer: {
+			value: observeController(name, element),
 		},
 		targets: {
 			value: createTargets(),

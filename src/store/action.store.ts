@@ -7,7 +7,7 @@ export function createActions() {
 		add(name, target) {
 			const action = store.get(name);
 
-			if (action != null) {
+			if (action != null && !action.targets.has(target)) {
 				action.targets.add(target);
 
 				target.addEventListener(action.type, action.callback, action.options);
