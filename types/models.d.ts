@@ -48,6 +48,7 @@ export type Context = {
     readonly data: Data;
     readonly element: Element;
     readonly name: string;
+    readonly observer: Observer;
     readonly targets: Targets;
 };
 export type ControllerConstructor = new (context: Context) => Controller;
@@ -77,6 +78,7 @@ export type Observer = {
     stop(): void;
     update(): void;
 };
+export type ObserverCallback = (element: Element, name: string, value: string, added: boolean) => void;
 export type ParsedAttribute = {
     id?: string;
     name: string;

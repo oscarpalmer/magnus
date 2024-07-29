@@ -51,11 +51,17 @@ export type Context = {
 	readonly data: Data;
 	readonly element: Element;
 	readonly name: string;
+	readonly observer: Observer;
 	readonly targets: Targets;
 };
 export type ControllerConstructor = new (context: Context) => Controller;
 export type Data = {
 	value: PlainObject;
+};
+export type Observer = {
+	start(): void;
+	stop(): void;
+	update(): void;
 };
 export type Targets = {
 	add(name: string, element: Element): void;
