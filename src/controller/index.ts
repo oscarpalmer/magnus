@@ -1,5 +1,5 @@
 import type {PlainObject} from '@oscarpalmer/atoms/models';
-import type {Context} from '../models';
+import type {Context} from './context';
 
 export abstract class Controller<Model extends PlainObject = PlainObject> {
 	get element(): Element {

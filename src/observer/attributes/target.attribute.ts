@@ -1,5 +1,6 @@
+import type {Context} from '../../controller/context';
 import {parseAttribute} from '../../helpers/attribute';
-import type {AttributeHandleCallback, Context} from '../../models';
+import type {AttributeHandleCallback} from '../../models';
 import {findContext} from '../../store/controller.store';
 
 export function handleTarget(

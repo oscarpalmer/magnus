@@ -1,26 +1,12 @@
-import type {GenericCallback, PlainObject} from '@oscarpalmer/atoms/models';
+import type {GenericCallback} from '@oscarpalmer/atoms/models';
 import type {Controller} from './controller';
-
-export type Action = {
-	callback: (event: Event) => void;
-	options: AddEventListenerOptions;
-	targets: Set<EventTarget>;
-	type: string;
-};
+import type {Context} from './controller/context';
 
 export type ActionParameters = {
 	callback: (event: Event) => void;
 	name: string;
 	options: AddEventListenerOptions;
 	type: string;
-};
-
-export type Actions = {
-	add(name: string, target: EventTarget): void;
-	clear(): void;
-	create(parameters: ActionParameters): void;
-	has(name: string): boolean;
-	remove(name: string, target: EventTarget): void;
 };
 
 //
@@ -65,25 +51,9 @@ export type AttributeHandleParameters = {
 
 //
 
-export type Context = {
-		readonly actions: Actions;
-		readonly controller: Controller;
-		readonly data: Data;
-		readonly element: Element;
-		readonly name: string;
-		readonly observer: Observer;
-		readonly targets: Targets;
-	};
-
-//
-
 export type ControllerConstructor = new (context: Context) => Controller;
 
 //
-
-export type Data = {
-	value: PlainObject;
-};
 
 export type DataType = 'boolean' | 'parseable' | 'string';
 
@@ -111,12 +81,6 @@ export type EventMatches = {
 
 //
 
-export type Observer = {
-	start(): void;
-	stop(): void;
-	update(): void;
-};
-
 export type ObserverCallback = (
 	element: Element,
 	name: string,
@@ -130,20 +94,4 @@ export type ParsedAttribute = {
 	id?: string;
 	name: string;
 	value: string;
-};
-
-//
-
-export type StoredController = {
-	constructor: ControllerConstructor;
-	instances: Map<Element, Context>;
-};
-
-//
-
-export type Targets = {
-	add(name: string, element: Element): void;
-	clear(): void;
-	get(name: string): Element[];
-	remove(name: string, element: Element): void;
 };

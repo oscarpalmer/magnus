@@ -6,38 +6,29 @@ import {
 	removeController,
 } from './store/controller.store';
 
-type Magnus = {
-	add(name: string, ctor: ControllerConstructor): void;
-	remove(name: string): void;
-	start(): void;
-	stop(): void;
-};
-
-function createMagnus(): Magnus {
-	const observer = observerDocument();
-
-	const instance = Object.create({
-		add(name: string, ctor: ControllerConstructor): void {
-			if (controllers.has(name)) {
-				throw new Error(`Controller '${name}' already exists`);
-			}
-
+export class Magnus {
+	add(name: string, ctor: ControllerConstructor): void {
+		if (!controllers.has(name)) {
 			createController(name, ctor);
 
 			observer.update();
-		},
-		remove(name: string): void {
-			removeController(name);
-		},
-		start() {
-			observer.start();
-		},
-		stop() {
-			observer.stop();
-		},
-	});
+		}
+	}
 
-	return instance;
+	remove(name: string): void {
+		removeController(name);
+	}
+
+	start(): void {
+		observer.start();
+	}
+
+	stop(): void {
+		observer.stop();
+	}
 }
 
-export default createMagnus();
+const magnus = new Magnus();
+const observer = observerDocument();
+
+export default magnus;

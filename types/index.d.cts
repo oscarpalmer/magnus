@@ -38,37 +38,49 @@ export type ActionParameters = {
 	options: AddEventListenerOptions;
 	type: string;
 };
-export type Actions = {
+export type ControllerConstructor = new (context: Context) => Controller;
+export type ObserverCallback = (element: Element, name: string, value: string, added: boolean) => void;
+declare class Observer {
+	private readonly element;
+	private readonly options;
+	private readonly handler;
+	private frame;
+	private readonly observer;
+	private running;
+	constructor(element: Element, options: MutationObserverInit, handler: ObserverCallback);
+	start(): void;
+	stop(): void;
+	update(): void;
+}
+declare class Actions {
+	private readonly store;
 	add(name: string, target: EventTarget): void;
 	clear(): void;
 	create(parameters: ActionParameters): void;
 	has(name: string): boolean;
 	remove(name: string, target: EventTarget): void;
-};
-export type Context = {
-	readonly actions: Actions;
-	readonly controller: Controller;
-	readonly data: Data;
-	readonly element: Element;
-	readonly name: string;
-	readonly observer: Observer;
-	readonly targets: Targets;
-};
-export type ControllerConstructor = new (context: Context) => Controller;
-export type Data = {
-	value: PlainObject;
-};
-export type Observer = {
-	start(): void;
-	stop(): void;
-	update(): void;
-};
-export type Targets = {
+}
+declare class Data {
+	readonly value: PlainObject;
+	constructor(context: Context);
+}
+declare class Targets {
+	private readonly store;
 	add(name: string, element: Element): void;
 	clear(): void;
 	get(name: string): Element[];
 	remove(name: string, element: Element): void;
-};
+}
+declare class Context {
+	readonly name: string;
+	readonly element: Element;
+	readonly actions: Actions;
+	readonly controller: InstanceType<ControllerConstructor>;
+	readonly data: Data;
+	readonly observer: Observer;
+	readonly targets: Targets;
+	constructor(name: string, element: Element, ctor: ControllerConstructor);
+}
 export declare abstract class Controller<Model extends PlainObject = PlainObject> {
 	protected readonly context: Context;
 	get element(): Element;
@@ -78,16 +90,12 @@ export declare abstract class Controller<Model extends PlainObject = PlainObject
 	abstract connected(): void;
 	abstract disconnected(): void;
 }
-export type Magnus = {
+declare class Magnus {
 	add(name: string, ctor: ControllerConstructor): void;
 	remove(name: string): void;
 	start(): void;
 	stop(): void;
-};
-declare const _default: Magnus;
-
-export {
-	_default as magnus,
-};
+}
+export declare const magnus: Magnus;
 
 export {};

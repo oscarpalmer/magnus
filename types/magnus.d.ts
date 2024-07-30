@@ -1,9 +1,9 @@
 import type { ControllerConstructor } from './models';
-type Magnus = {
+export declare class Magnus {
     add(name: string, ctor: ControllerConstructor): void;
     remove(name: string): void;
     start(): void;
     stop(): void;
-};
-declare const _default: Magnus;
-export default _default;
+}
+declare const magnus: Magnus;
+export default magnus;

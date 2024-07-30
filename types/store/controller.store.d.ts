@@ -1,4 +1,10 @@
-import type { Context, ControllerConstructor, StoredController } from '../models';
+import { Context } from '../controller/context';
+import type { ControllerConstructor } from '../models';
+export declare class StoredController {
+    readonly ctor: ControllerConstructor;
+    readonly instances: Map<Element, Context>;
+    constructor(ctor: ControllerConstructor);
+}
 export declare const controllers: Map<string, StoredController>;
 export declare function addController(name: string, element: Element): void;
 export declare function createController(name: string, ctor: ControllerConstructor): void;

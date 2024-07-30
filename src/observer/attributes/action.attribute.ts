@@ -1,10 +1,8 @@
 import type {PlainObject} from '@oscarpalmer/atoms/models';
+import type {Context} from '../../controller/context';
 import {findTarget} from '../../helpers/element';
 import {getEventParameters} from '../../helpers/event';
-import type {
-	AttributeHandleCallbackCustomParameters,
-	Context,
-} from '../../models';
+import type {AttributeHandleCallbackCustomParameters} from '../../models';
 import {handleTarget} from './target.attribute';
 
 export function handleAction(

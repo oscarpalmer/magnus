@@ -1,8 +1,8 @@
+import type {Context} from '../../controller/context';
 import type {
 	AttributeChangeCallback,
 	AttributeChangesParameters,
 	AttributeHandleParameters,
-	Context,
 } from '../../models';
 import {addController, removeController} from '../../store/controller.store';
 import {handleActionAttribute} from './action.attribute';

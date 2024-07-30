@@ -1,5 +1,6 @@
 import {parse} from '@oscarpalmer/atoms/string';
-import type {Context, DataType} from '../../models';
+import type {Context} from '../../controller/context';
+import type {DataType} from '../../models';
 import {handleAction} from './action.attribute';
 import {handleTarget, handleTargetElement} from './target.attribute';
 

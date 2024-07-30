@@ -1,5 +1,4 @@
-import {createObserver} from './index';
-import type {AttributeChangeCallback, Observer} from '../models';
+import type {AttributeChangeCallback} from '../models';
 import {handleAttributeChanges, handleControllerAttribute} from './attributes';
 import {handleActionAttribute} from './attributes/action.attribute';
 import {
@@ -7,6 +6,7 @@ import {
 	handleOutputAttribute,
 } from './attributes/input-output.attribute';
 import {handleTargetAttribute} from './attributes/target.attribute';
+import {type Observer, createObserver} from './index';
 
 const callbacks: Record<string, AttributeChangeCallback> = {
 	'data-action': handleActionAttribute,

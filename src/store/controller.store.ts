@@ -1,6 +1,15 @@
 import {closest} from '@oscarpalmer/atoms/element';
-import {createContext} from '../controller/context';
-import type {Context, ControllerConstructor, StoredController} from '../models';
+import {Context} from '../controller/context';
+import type {ControllerConstructor} from '../models';
+
+export class StoredController {
+	readonly ctor: ControllerConstructor;
+	readonly instances = new Map<Element, Context>();
+
+	constructor(ctor: ControllerConstructor) {
+		this.ctor = ctor;
+	}
+}
 
 export const controllers = new Map<string, StoredController>();
 
@@ -8,10 +17,7 @@ export function addController(name: string, element: Element): void {
 	const controller = controllers.get(name);
 
 	if (controller != null && !controller.instances.has(element)) {
-		controller.instances.set(
-			element,
-			createContext(name, element, controller.constructor),
-		);
+		controller.instances.set(element, new Context(name, element, controller.ctor));
 	}
 }
 
@@ -20,10 +26,7 @@ export function createController(
 	ctor: ControllerConstructor,
 ): void {
 	if (!controllers.has(name)) {
-		controllers.set(name, {
-			constructor: ctor,
-			instances: new Map(),
-		});
+		controllers.set(name, new StoredController(ctor));
 	}
 }
 

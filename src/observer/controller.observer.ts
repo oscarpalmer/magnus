@@ -1,6 +1,6 @@
-import {createObserver} from './index';
-import type {Context, Observer} from '../models';
+import {createObserver, type Observer} from './index';
 import {findContext} from '../store/controller.store';
+import type {Context} from '../controller/context';
 
 export function observeController(name: string, element: Element): Observer {
 	const prefix = `data-${name}-`;

@@ -1,49 +1,32 @@
-import type {Context, ControllerConstructor} from '../models';
+import type {ControllerConstructor} from '../models';
+import type {Observer} from '../observer';
 import {handleAttributes} from '../observer/attributes';
 import {observeController} from '../observer/controller.observer';
-import {createActions} from '../store/action.store';
-import {createData} from '../store/data.store';
-import {createTargets} from '../store/target.store';
+import {Actions} from '../store/action.store';
+import {Data} from '../store/data.store';
+import {Targets} from '../store/target.store';
 
-export function createContext(
-	name: string,
-	element: Element,
-	ctor: ControllerConstructor,
-): Context {
-	const context = Object.create(null);
+export class Context {
+	readonly actions: Actions;
+	readonly controller: InstanceType<ControllerConstructor>;
+	readonly data: Data;
+	readonly observer: Observer;
+	readonly targets: Targets;
 
-	Object.defineProperties(context, {
-		actions: {
-			value: createActions(),
-		},
-		data: {
-			value: createData(name, context),
-		},
-		element: {
-			value: element,
-		},
-		name: {
-			value: name,
-		},
-		observer: {
-			value: observeController(name, element),
-		},
-		targets: {
-			value: createTargets(),
-		},
-	});
+	constructor(
+		readonly name: string,
+		readonly element: Element,
+		ctor: ControllerConstructor,
+	) {
+		this.actions = new Actions();
+		this.data = new Data(this);
+		this.observer = observeController(name, element);
+		this.targets = new Targets();
 
-	const controller = new ctor(context);
+		this.controller = new ctor(this);
 
-	Object.defineProperties(context, {
-		controller: {
-			value: controller,
-		},
-	});
+		handleAttributes(this);
 
-	handleAttributes(context);
-
-	controller.connected?.();
-
-	return context;
+		this.controller.connected?.();
+	}
 }

@@ -1,71 +1,82 @@
-import type {Observer, ObserverCallback} from '../models';
+import type {ObserverCallback} from '../models';
+
+export class Observer {
+	private frame!: number;
+	private readonly observer: MutationObserver;
+	private running = false;
+
+	constructor(
+		private readonly element: Element,
+		private readonly options: MutationObserverInit,
+		private readonly handler: ObserverCallback,
+	) {
+		this.observer = new MutationObserver(entries => {
+			const {length} = entries;
+
+			for (let index = 0; index < length; index += 1) {
+				const entry = entries[index];
+
+				if (entry.type === 'childList') {
+					handleNodes(entry.addedNodes, true, handler);
+					handleNodes(entry.removedNodes, false, handler);
+				} else if (
+					entry.type === 'attributes' &&
+					entry.target instanceof Element
+				) {
+					handler(
+						entry.target,
+						entry.attributeName ?? '',
+						entry.oldValue ?? '',
+						true,
+					);
+				}
+			}
+		});
+	}
+
+	start() {
+		if (this.running) {
+			return;
+		}
+
+		this.running = true;
+
+		this.observer.observe(this.element, this.options);
+
+		this.update();
+	}
+
+	stop() {
+		if (!this.running) {
+			return;
+		}
+
+		this.running = false;
+
+		cancelAnimationFrame(this.frame);
+
+		this.observer.disconnect();
+	}
+
+	update() {
+		if (!this.running) {
+			return;
+		}
+
+		cancelAnimationFrame(this.frame);
+
+		this.frame = requestAnimationFrame(() => {
+			handleNodes([this.element], true, this.handler);
+		});
+	}
+}
 
 export function createObserver(
 	element: Element,
 	options: MutationObserverInit,
 	handler: ObserverCallback,
 ): Observer {
-	let running = false;
-	let frame: number;
-
-	const observer = new MutationObserver(entries => {
-		const {length} = entries;
-
-		for (let index = 0; index < length; index += 1) {
-			const entry = entries[index];
-
-			if (entry.type === 'childList') {
-				handleNodes(entry.addedNodes, true, handler);
-				handleNodes(entry.removedNodes, false, handler);
-			} else if (
-				entry.type === 'attributes' &&
-				entry.target instanceof Element
-			) {
-				handler(
-					entry.target,
-					entry.attributeName ?? '',
-					entry.oldValue ?? '',
-					true,
-				);
-			}
-		}
-	});
-
-	const instance: Observer = Object.create({
-		start() {
-			if (running) {
-				return;
-			}
-
-			running = true;
-
-			observer.observe(element, options);
-
-			this.update();
-		},
-		stop() {
-			if (!running) {
-				return;
-			}
-
-			running = false;
-
-			cancelAnimationFrame(frame);
-
-			observer.disconnect();
-		},
-		update() {
-			if (!running) {
-				return;
-			}
-
-			cancelAnimationFrame(frame);
-
-			frame = requestAnimationFrame(() => {
-				handleNodes([element], true, handler);
-			});
-		},
-	} as Observer);
+	const instance = new Observer(element, options, handler);
 
 	if (element.ownerDocument.readyState === 'complete') {
 		instance.start();

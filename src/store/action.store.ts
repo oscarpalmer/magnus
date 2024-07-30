@@ -1,69 +1,75 @@
-import type {Action, Actions} from '../models';
+import type {ActionParameters} from '../models';
 
-export function createActions() {
-	const store = new Map<string, Action>();
+export class Action {
+	readonly callback: (event: Event) => void;
+	readonly options: AddEventListenerOptions;
+	readonly targets = new Set<EventTarget>();
+	readonly type: string;
 
-	return Object.create({
-		add(name, target) {
-			const action = store.get(name);
+	constructor(parameters: ActionParameters) {
+		this.callback = parameters.callback;
+		this.options = parameters.options;
+		this.type = parameters.type;
+	}
+}
 
-			if (action != null && !action.targets.has(target)) {
-				action.targets.add(target);
+export class Actions {
+	private readonly store = new Map<string, Action>();
 
-				target.addEventListener(action.type, action.callback, action.options);
+	add(name: string, target: EventTarget): void {
+		const action = this.store.get(name);
+
+		if (action != null && !action.targets.has(target)) {
+			action.targets.add(target);
+
+			target.addEventListener(action.type, action.callback, action.options);
+		}
+	}
+
+	clear(): void {
+		const actions = [...this.store.values()];
+		const actionsLength = actions.length;
+
+		for (let actionIndex = 0; actionIndex < actionsLength; actionIndex += 1) {
+			const action = actions[actionIndex];
+			const targets = [...action.targets];
+			const targetsLength = targets.length;
+
+			for (let targetIndex = 0; targetIndex < targetsLength; targetIndex += 1) {
+				targets[targetIndex].removeEventListener(
+					action.type,
+					action.callback,
+					action.options,
+				);
 			}
-		},
-		clear() {
-			const actions = [...store.values()];
-			const actionsLength = actions.length;
 
-			for (let actionIndex = 0; actionIndex < actionsLength; actionIndex += 1) {
-				const action = actions[actionIndex];
-				const targets = [...action.targets];
-				const targetsLength = targets.length;
+			action.targets.clear();
+		}
 
-				for (
-					let targetIndex = 0;
-					targetIndex < targetsLength;
-					targetIndex += 1
-				) {
-					targets[targetIndex].removeEventListener(
-						action.type,
-						action.callback,
-						action.options,
-					);
-				}
+		this.store.clear();
+	}
 
-				action.targets.clear();
+	create(parameters: ActionParameters): void {
+		if (!this.store.has(parameters.name)) {
+			this.store.set(parameters.name, new Action(parameters));
+		}
+	}
+
+	has(name: string): boolean {
+		return this.store.has(name);
+	}
+
+	remove(name: string, target: EventTarget): void {
+		const action = this.store.get(name);
+
+		if (action != null) {
+			target.removeEventListener(action.type, action.callback);
+
+			action.targets.delete(target);
+
+			if (action.targets.size === 0) {
+				this.store.delete(name);
 			}
-
-			store.clear();
-		},
-		create(parameters) {
-			if (!store.has(parameters.name)) {
-				store.set(parameters.name, {
-					callback: parameters.callback,
-					options: parameters.options,
-					targets: new Set(),
-					type: parameters.type,
-				});
-			}
-		},
-		has(name) {
-			return store.has(name);
-		},
-		remove(name, target) {
-			const action = store.get(name);
-
-			if (action != null) {
-				target.removeEventListener(action.type, action.callback);
-
-				action.targets.delete(target);
-
-				if (action.targets.size === 0) {
-					store.delete(name);
-				}
-			}
-		},
-	} as Actions);
+		}
+	}
 }

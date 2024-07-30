@@ -1,2 +1,6 @@
-import type { Context, Data } from '../models';
-export declare function createData(controller: string, context: Context): Data;
+import type { PlainObject } from '@oscarpalmer/atoms/models';
+import type { Context } from '../controller/context';
+export declare class Data {
+    readonly value: PlainObject;
+    constructor(context: Context);
+}
