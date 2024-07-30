@@ -83,17 +83,44 @@ declare class Context {
 }
 export declare abstract class Controller<Model extends PlainObject = PlainObject> {
 	protected readonly context: Context;
+	/**
+	 * The controller's primary element
+	 */
 	get element(): Element;
+	/**
+	 * Controller data
+	 */
 	get data(): Model;
+	/**
+	 * Controller name
+	 */
 	get name(): string;
 	constructor(context: Context);
+	/**
+	 * Called when the controller is connected
+	 */
 	abstract connected(): void;
+	/**
+	 * Called when the controller is disconnected
+	 */
 	abstract disconnected(): void;
 }
 declare class Magnus {
+	/**
+	 * Adds a named controller to observe
+	 */
 	add(name: string, ctor: ControllerConstructor): void;
+	/**
+	 * Removes a named controller from observation
+	 */
 	remove(name: string): void;
+	/**
+	 * Starts the observer
+	 */
 	start(): void;
+	/**
+	 * Stops the observer
+	 */
 	stop(): void;
 }
 export declare const magnus: Magnus;

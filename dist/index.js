@@ -596,10 +596,10 @@ function getDataType(element3) {
   }
 }
 function handleInputAttribute(element3, value2, added) {
-  handleTarget("target", element3, value2, added, handleInput);
+  handleTarget("input", element3, value2, added, handleInput);
 }
 function handleOutputAttribute(element3, value2, added) {
-  handleTarget("target", element3, value2, added, handleOutput);
+  handleTarget("output", element3, value2, added, handleOutput);
 }
 function handleInput(context2, element3, value2, added) {
   const type = getDataType(element3);

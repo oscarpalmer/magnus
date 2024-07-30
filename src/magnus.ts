@@ -7,6 +7,9 @@ import {
 } from './store/controller.store';
 
 export class Magnus {
+	/**
+	 * Adds a named controller to observe
+	 */
 	add(name: string, ctor: ControllerConstructor): void {
 		if (!controllers.has(name)) {
 			createController(name, ctor);
@@ -15,14 +18,23 @@ export class Magnus {
 		}
 	}
 
+	/**
+	 * Removes a named controller from observation
+	 */
 	remove(name: string): void {
 		removeController(name);
 	}
 
+	/**
+	 * Starts the observer
+	 */
 	start(): void {
 		observer.start();
 	}
 
+	/**
+	 * Stops the observer
+	 */
 	stop(): void {
 		observer.stop();
 	}

@@ -26,13 +26,13 @@ function parseActionAttribute(attribute: string): ParsedAttribute | undefined {
 }
 
 export function parseAttribute(
-	type: 'action' | 'target',
-	value: string,
-): ParsedAttribute | undefined {
-	return type === 'action'
-		? parseActionAttribute(value)
-		: parseTargetAttribute(value);
-}
+		type: 'action' | 'input' | 'output' | 'target',
+		value: string,
+	): ParsedAttribute | undefined {
+		return type === 'action'
+			? parseActionAttribute(value)
+			: parseTargetAttribute(value);
+	}
 
 function parseTargetAttribute(attribute: string): ParsedAttribute | undefined {
 	const matches = targetAttributePattern.exec(attribute);

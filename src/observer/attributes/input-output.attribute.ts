@@ -33,7 +33,7 @@ export function handleInputAttribute(
 	value: string,
 	added: boolean,
 ): void {
-	handleTarget('target', element, value, added, handleInput);
+	handleTarget('input', element, value, added, handleInput);
 }
 
 export function handleOutputAttribute(
@@ -41,7 +41,7 @@ export function handleOutputAttribute(
 	value: string,
 	added: boolean,
 ): void {
-	handleTarget('target', element, value, added, handleOutput);
+	handleTarget('output', element, value, added, handleOutput);
 }
 
 function handleInput(

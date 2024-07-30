@@ -4,7 +4,7 @@ import type {AttributeHandleCallback} from '../../models';
 import {findContext} from '../../store/controller.store';
 
 export function handleTarget(
-	type: 'action' | 'target',
+	type: 'action' | 'input' | 'output' | 'target',
 	element: Element,
 	value: string,
 	added: boolean,
