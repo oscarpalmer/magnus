@@ -24,8 +24,14 @@ export class Targets {
 		this.store.clear();
 	}
 
-	get(name: string): Element[] {
-		return [...(this.store.get(name) ?? [])];
+	get(name: string): Element[];
+
+	get(name: string, single: true): Element | undefined;
+
+	get(name: string, single?: boolean): Element | Element[] | undefined {
+		const targets = [...(this.store.get(name) ?? [])];
+
+		return single === true ? targets[0] : targets;
 	}
 
 	remove(name: string, element: Element): void {

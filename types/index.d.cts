@@ -69,6 +69,7 @@ declare class Targets {
 	add(name: string, element: Element): void;
 	clear(): void;
 	get(name: string): Element[];
+	get(name: string, single: true): Element | undefined;
 	remove(name: string, element: Element): void;
 }
 declare class Context {
@@ -81,7 +82,7 @@ declare class Context {
 	readonly targets: Targets;
 	constructor(name: string, element: Element, ctor: ControllerConstructor);
 }
-export declare abstract class Controller<Model extends PlainObject = PlainObject> {
+export declare abstract class Controller<Data extends PlainObject = PlainObject> {
 	protected readonly context: Context;
 	/**
 	 * The controller's primary element
@@ -90,7 +91,7 @@ export declare abstract class Controller<Model extends PlainObject = PlainObject
 	/**
 	 * Controller data
 	 */
-	get data(): Model;
+	get data(): Data;
 	/**
 	 * Controller name
 	 */

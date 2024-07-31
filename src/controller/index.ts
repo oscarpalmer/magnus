@@ -1,7 +1,8 @@
 import type {PlainObject} from '@oscarpalmer/atoms/models';
+import type {Targets} from '../store/target.store';
 import type {Context} from './context';
 
-export abstract class Controller<Model extends PlainObject = PlainObject> {
+export abstract class Controller<Data extends PlainObject = PlainObject> {
 	/**
 	 * The controller's primary element
 	 */
@@ -12,8 +13,8 @@ export abstract class Controller<Model extends PlainObject = PlainObject> {
 	/**
 	 * Controller data
 	 */
-	get data(): Model {
-		return this.context.data.value as Model;
+	get data(): Data {
+		return this.context.data.value as Data;
 	}
 
 	/**

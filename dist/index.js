@@ -108,6 +108,71 @@ function parse(value2, reviver) {
 function isNullableOrWhitespace(value2) {
   return value2 == null || /^\s*$/.test(getString(value2));
 }
+// src/store/data.store.ts
+function setAttribute(element, name, original, stringified) {
+  if (isNullableOrWhitespace(original)) {
+    element.removeAttribute(name);
+  } else {
+    element.setAttribute(name, stringified);
+  }
+}
+function setElementContents(elements, _, value2) {
+  const { length } = elements;
+  for (let index = 0;index < length; index += 1) {
+    elements[index].textContent = value2;
+  }
+}
+function setElementValues2(elements, value2) {
+  const { length } = elements;
+  for (let index = 0;index < length; index += 1) {
+    const element = elements[index];
+    if ((element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) && element.value !== value2) {
+      element.value = value2;
+    } else if (element instanceof HTMLSelectElement && element.value !== value2) {
+      if (Array.from(element.options).findIndex((option) => option.value === value2) > -1) {
+        element.value = value2;
+      }
+    }
+  }
+}
+function setValue2(context, prefix, name, original, stringified) {
+  setAttribute(context.element, `${prefix}${name}`, original, stringified);
+  setElementContents(context.targets.get(`output:${name}`), original, stringified);
+  setElementValues2(context.targets.get(`input:${name}`), stringified);
+}
+function setValueFromAttribute(context, name, value2) {
+  const parsed = value2 == null ? null : parse(value2) ?? value2;
+  if (!Object.is(getString(context.data.value[name]), value2)) {
+    context.data.value[name] = parsed;
+  }
+}
+
+class Data {
+  value;
+  constructor(context) {
+    const frames = {};
+    const prefix = `data-${context.name}-`;
+    this.value = new Proxy({}, {
+      set(target, property, next) {
+        const previous = Reflect.get(target, property);
+        const nextAsString = getString(next);
+        if (Object.is(getString(previous), nextAsString)) {
+          return true;
+        }
+        const result = Reflect.set(target, property, next);
+        if (result) {
+          const name = String(property);
+          cancelAnimationFrame(frames[name]);
+          frames[name] = requestAnimationFrame(() => {
+            setValue2(context, prefix, name, next, next == null ? "" : nextAsString);
+          });
+        }
+        return result;
+      }
+    });
+  }
+}
+
 // src/observer/index.ts
 function createObserver(element, options, handler) {
   const instance = new Observer(element, options, handler);
@@ -198,13 +263,8 @@ function observeController(name, element) {
   }, (element2, attribute) => {
     if (attribute.startsWith(prefix)) {
       context ??= findContext(element2, name);
-      const property = attribute.slice(prefix.length);
       if (context != null) {
-        const previous = context.data.value[property];
-        const next = element2.getAttribute(attribute) ?? "";
-        if (!Object.is(previous, next)) {
-          context.data.value[property] = next;
-        }
+        setValueFromAttribute(context, attribute.slice(prefix.length), element2.getAttribute(attribute) ?? "");
       }
     }
   });
@@ -266,60 +326,6 @@ class Actions {
   }
 }
 
-// src/store/data.store.ts
-function setValue2(context, prefix, name, original, stringified) {
-  const { element } = context;
-  if (isNullableOrWhitespace(original)) {
-    element.removeAttribute(`${prefix}${name}`);
-  } else {
-    element.setAttribute(`${prefix}${name}`, stringified);
-  }
-  const inputs = context.targets.get(`input:${name}`);
-  let index = 0;
-  let length = inputs.length;
-  for (;index < length; index += 1) {
-    const input = inputs[index];
-    if ((input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement) && input.value !== stringified) {
-      input.value = stringified;
-    } else if (input instanceof HTMLSelectElement && input.value !== stringified) {
-      if (Array.from(input.options).findIndex((option) => option.value === stringified) > -1) {
-        input.value = stringified;
-      }
-    }
-  }
-  const outputs = context.targets.get(`output:${name}`);
-  length = outputs.length;
-  for (index = 0;index < length; index += 1) {
-    outputs[index].textContent = stringified;
-  }
-}
-
-class Data {
-  value;
-  constructor(context) {
-    const frames = {};
-    const prefix = `data-${context.name}-`;
-    this.value = new Proxy({}, {
-      set(target, property, value2) {
-        const previous = getString(Reflect.get(target, property));
-        const next = getString(value2);
-        if (Object.is(previous, next)) {
-          return true;
-        }
-        const result = Reflect.set(target, property, value2);
-        if (result) {
-          const name = String(property);
-          cancelAnimationFrame(frames[name]);
-          frames[name] = requestAnimationFrame(() => {
-            setValue2(context, prefix, name, value2, next);
-          });
-        }
-        return result;
-      }
-    });
-  }
-}
-
 // src/store/target.store.ts
 class Targets {
   store = new Map;
@@ -339,8 +345,9 @@ class Targets {
     }
     this.store.clear();
   }
-  get(name) {
-    return [...this.store.get(name) ?? []];
+  get(name, single) {
+    const targets = [...this.store.get(name) ?? []];
+    return single === true ? targets[0] : targets;
   }
   remove(name, element) {
     this.store.get(name)?.delete(element);
@@ -518,13 +525,20 @@ var defaultEvents = {
 // src/observer/attributes/target.attribute.ts
 function handleTarget(type, element2, value2, added, callback) {
   const parsed = parseAttribute(type, value2);
-  if (parsed == null) {
-    return;
+  let count2 = 0;
+  function step() {
+    if (parsed == null || count2 >= 10) {
+      return;
+    }
+    const context2 = findContext(element2, parsed.name, parsed.id);
+    if (context2 == null) {
+      count2 += 1;
+      requestAnimationFrame(step);
+    } else {
+      callback(context2, element2, type === "action" ? value2 : parsed.value, added);
+    }
   }
-  const context2 = findContext(element2, parsed.name, parsed.id);
-  if (context2 != null) {
-    callback(context2, element2, type === "action" ? value2 : parsed.value, added);
-  }
+  step();
 }
 function handleTargetAttribute(element2, value2, added) {
   handleTarget("target", element2, value2, added, handleTargetElement);
@@ -684,12 +698,19 @@ function handleControllerAttribute(element3, value2, added) {
 }
 function handleAttributes(context2) {
   const name = context2.name.toLowerCase();
+  const prefix = `data-${name}-`;
+  const dataAttributes = [...context2.element.attributes].filter((attribute3) => attribute3.name.startsWith(prefix));
+  const { length } = dataAttributes;
+  for (let index = 0;index < length; index += 1) {
+    const attribute3 = dataAttributes[index];
+    setValueFromAttribute(context2, attribute3.name.slice(prefix.length), attribute3.value);
+  }
   for (let attributeIndex = 0;attributeIndex < attributesLength; attributeIndex += 1) {
     const attribute3 = attributes2[attributeIndex];
     const callback = callbacks[attribute3];
     const elements = document.querySelectorAll(`[data-${attribute3}*="${name}"]`);
-    const { length } = elements;
-    for (let elementIndex = 0;elementIndex < length; elementIndex += 1) {
+    const { length: length2 } = elements;
+    for (let elementIndex = 0;elementIndex < length2; elementIndex += 1) {
       const element3 = elements[elementIndex];
       const value2 = element3.getAttribute(`data-${attribute3}`);
       if (value2 != null) {

@@ -5,6 +5,7 @@ import type {
 	AttributeHandleParameters,
 } from '../../models';
 import {addController, removeController} from '../../store/controller.store';
+import {setValueFromAttribute} from '../../store/data.store';
 import {handleActionAttribute} from './action.attribute';
 import {
 	handleInputAttribute,
@@ -120,6 +121,23 @@ export function handleControllerAttribute(
 
 export function handleAttributes(context: Context): void {
 	const name = context.name.toLowerCase();
+	const prefix = `data-${name}-`;
+
+	const dataAttributes = [...context.element.attributes].filter(attribute =>
+		attribute.name.startsWith(prefix),
+	);
+
+	const {length} = dataAttributes;
+
+	for (let index = 0; index < length; index += 1) {
+		const attribute = dataAttributes[index];
+
+		setValueFromAttribute(
+			context,
+			attribute.name.slice(prefix.length),
+			attribute.value,
+		);
+	}
 
 	for (
 		let attributeIndex = 0;

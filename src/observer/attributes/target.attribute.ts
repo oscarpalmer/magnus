@@ -12,15 +12,30 @@ export function handleTarget(
 ): void {
 	const parsed = parseAttribute(type, value);
 
-	if (parsed == null) {
-		return;
+	let count = 0;
+
+	function step() {
+		if (parsed == null || count >= 10) {
+			return;
+		}
+
+		const context = findContext(element, parsed.name, parsed.id);
+
+		if (context == null) {
+			count += 1;
+
+			requestAnimationFrame(step);
+		} else {
+			callback(
+				context,
+				element,
+				type === 'action' ? value : parsed.value,
+				added,
+			);
+		}
 	}
 
-	const context = findContext(element, parsed.name, parsed.id);
-
-	if (context != null) {
-		callback(context, element, type === 'action' ? value : parsed.value, added);
-	}
+	step();
 }
 
 export function handleTargetAttribute(

@@ -1,6 +1,7 @@
-import {createObserver, type Observer} from './index';
-import {findContext} from '../store/controller.store';
 import type {Context} from '../controller/context';
+import {findContext} from '../store/controller.store';
+import {setValueFromAttribute} from '../store/data.store';
+import {type Observer, createObserver} from './index';
 
 export function observeController(name: string, element: Element): Observer {
 	const prefix = `data-${name}-`;
@@ -16,15 +17,12 @@ export function observeController(name: string, element: Element): Observer {
 			if (attribute.startsWith(prefix)) {
 				context ??= findContext(element, name);
 
-				const property = attribute.slice(prefix.length);
-
 				if (context != null) {
-					const previous = context.data.value[property];
-					const next = element.getAttribute(attribute) ?? '';
-
-					if (!Object.is(previous, next)) {
-						context.data.value[property] = next;
-					}
+					setValueFromAttribute(
+						context,
+						attribute.slice(prefix.length),
+						element.getAttribute(attribute) ?? '',
+					);
 				}
 			}
 		},
