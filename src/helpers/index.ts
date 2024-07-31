@@ -10,8 +10,10 @@ export function findTarget(
 	switch (true) {
 		case noId && /^document$/i.test(name):
 			return document;
+
 		case noId && /^window$/i.test(name):
 			return window;
+
 		default:
 			return (
 				findContext(origin, name, id)?.element ??

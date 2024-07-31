@@ -18,9 +18,9 @@ export type AttributeChangeCallback = (
 ) => void;
 
 export type AttributeChangesParameters = {
-	callback: AttributeChangeCallback;
 	element: Element;
 	from: string;
+	handler: AttributeChangeCallback | undefined;
 	name: string;
 	to: string;
 };
@@ -43,11 +43,13 @@ export type AttributeHandleCallbackCustomParameters = {
 
 export type AttributeHandleParameters = {
 	added: boolean;
-	callback: AttributeChangeCallback;
 	element: Element;
+	handler: AttributeChangeCallback | undefined;
 	name: string;
 	value: string;
 };
+
+export type AttributeType = 'action' | 'input' | 'output' | 'target';
 
 //
 

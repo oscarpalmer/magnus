@@ -1,10 +1,7 @@
+import {controllers} from './constants';
 import type {ControllerConstructor} from './models';
 import {observerDocument} from './observer/document.observer';
-import {
-	controllers,
-	createController,
-	removeController,
-} from './store/controller.store';
+import {createController, removeController} from './store/controller.store';
 
 export class Magnus {
 	/**

@@ -5,7 +5,6 @@ export declare class StoredController {
     readonly instances: Map<Element, Context>;
     constructor(ctor: ControllerConstructor);
 }
-export declare const controllers: Map<string, StoredController>;
 export declare function addController(name: string, element: Element): void;
 export declare function createController(name: string, ctor: ControllerConstructor): void;
 export declare function findContext(origin: Element, name: string, id?: string): Context | undefined;

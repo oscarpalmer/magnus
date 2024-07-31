@@ -1,5 +1,4 @@
 import type {PlainObject} from '@oscarpalmer/atoms/models';
-import type {Targets} from '../store/target.store';
 import type {Context} from './context';
 
 export abstract class Controller<Data extends PlainObject = PlainObject> {

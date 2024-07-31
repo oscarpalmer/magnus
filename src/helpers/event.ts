@@ -1,17 +1,9 @@
-import type {EventMatches, EventParameters} from '../models';
 import {
 	actionAttributePattern,
+	defaultEvents,
 	extendedActionAttributePattern,
-} from './attribute';
-
-const defaultEvents: Record<string, string> = {
-	A: 'click',
-	BUTTON: 'click',
-	DETAILS: 'toggle',
-	FORM: 'submit',
-	SELECT: 'change',
-	TEXTAREA: 'input',
-};
+} from '../constants';
+import type {EventMatches, EventParameters} from '../models';
 
 export function getEventParameters(
 	element: Element,

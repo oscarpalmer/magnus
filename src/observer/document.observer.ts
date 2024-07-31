@@ -1,24 +1,15 @@
-import type {AttributeChangeCallback} from '../models';
-import {handleAttributeChanges, handleControllerAttribute} from './attributes';
-import {handleActionAttribute} from './attributes/action.attribute';
-import {
-	handleInputAttribute,
-	handleOutputAttribute,
-} from './attributes/input-output.attribute';
-import {handleTargetAttribute} from './attributes/target.attribute';
+import {attributeTypes, controllerAttribute} from '../constants';
+import type {AttributeType} from '../models';
+import {handleControllerAttribute} from './attributes';
+import {handleAttributeChanges} from './changes.attribute';
 import {type Observer, createObserver} from './index';
 
-const callbacks: Record<string, AttributeChangeCallback> = {
-	'data-action': handleActionAttribute,
-	'data-controller': handleControllerAttribute,
-	'data-input': handleInputAttribute,
-	'data-output': handleOutputAttribute,
-	'data-target': handleTargetAttribute,
-};
-
-const attributes = Object.keys(callbacks);
-
 export function observerDocument(): Observer {
+	const attributes = [
+		controllerAttribute,
+		...attributeTypes.map(type => `data-${type}`),
+	];
+
 	return createObserver(
 		document.body,
 		{
@@ -28,16 +19,22 @@ export function observerDocument(): Observer {
 			subtree: true,
 		},
 		(element, name, value, added) => {
-			handleAttributeChanges(
-				{
-					added,
-					element,
-					name,
-					value,
-					callback: callbacks[name],
-				},
-				false,
-			);
+			if (attributes.includes(name)) {
+				handleAttributeChanges(
+					name.slice(5) as AttributeType,
+					{
+						added,
+						element,
+						name,
+						value,
+						handler:
+							name === controllerAttribute
+								? handleControllerAttribute
+								: undefined,
+					},
+					false,
+				);
+			}
 		},
 	);
 }

@@ -15,6 +15,46 @@ class Controller {
   }
 }
 
+// src/helpers/event.ts
+function getEventParameters(element, action, isParent) {
+  const results = (isParent ? extendedActionAttributePattern : actionAttributePattern).exec(action);
+  if (results != null) {
+    const matches = getMatches(results, isParent);
+    const parameters = {
+      callback: matches.callback,
+      options: getOptions(matches.options ?? ""),
+      type: matches.event ?? getType(element)
+    };
+    if (typeof matches.name === "string") {
+      parameters.external = {
+        name: matches.name,
+        id: matches.id
+      };
+    }
+    return parameters.type == null ? undefined : parameters;
+  }
+}
+function getMatches(matches, isParent) {
+  return {
+    callback: matches[isParent ? 6 : 4],
+    event: matches[isParent ? 3 : 1],
+    id: matches[isParent ? 2 : -1],
+    name: matches[isParent ? 1 : -1],
+    options: matches[isParent ? 7 : 5]
+  };
+}
+function getOptions(options) {
+  const items = options.toLowerCase().split(":");
+  return {
+    capture: items.includes("capture") || items.includes("c"),
+    once: items.includes("once") || items.includes("o"),
+    passive: !items.includes("active") && !items.includes("a")
+  };
+}
+function getType(element) {
+  return element instanceof HTMLInputElement ? element.type === "submit" ? "submit" : "input" : defaultEvents[element.tagName];
+}
+
 // node_modules/@oscarpalmer/atoms/dist/js/element/closest.mjs
 function calculateDistance(origin, target) {
   if (origin === target || origin.parentElement === target) {
@@ -173,6 +213,149 @@ class Data {
   }
 }
 
+// src/helpers/attribute.ts
+function parseActionAttribute(attribute) {
+  const matches = extendedActionAttributePattern.exec(attribute);
+  if (matches != null) {
+    const [, , , , name, id, method] = matches;
+    return {
+      id: name == null ? undefined : id,
+      name: name == null ? id : name,
+      value: method
+    };
+  }
+}
+function parseAttribute(type, value2) {
+  return type === "action" ? parseActionAttribute(value2) : parseTargetAttribute(value2);
+}
+function parseTargetAttribute(attribute) {
+  const matches = targetAttributePattern.exec(attribute);
+  if (matches != null) {
+    const [, name, id, value2] = matches;
+    return {
+      id,
+      name,
+      value: value2
+    };
+  }
+}
+
+// src/observer/attributes/target.attribute.ts
+function handleTargetAttribute(type, element, value2, added) {
+  const callback = attributeCallbacks[type];
+  const parsed = parseAttribute(type, value2);
+  let count2 = 0;
+  function step() {
+    if (parsed == null || count2 >= 10) {
+      return;
+    }
+    const context = findContext(element, parsed.name, parsed.id);
+    if (context == null) {
+      count2 += 1;
+      requestAnimationFrame(step);
+    } else {
+      callback?.(context, element, type === "action" ? value2 : parsed.value, added);
+    }
+  }
+  step();
+}
+function handleTargetElement(context, element, value2, added) {
+  if (added) {
+    context.targets.add(value2, element);
+  } else {
+    context.targets.remove(value2, element);
+  }
+}
+
+// src/observer/changes.attribute.ts
+function getChanges(from, to) {
+  const fromValues = from.split(/\s+/).map((part) => part.trim()).filter((part) => part.length > 0);
+  const toValues = to.split(/\s+/).map((part) => part.trim()).filter((part) => part.length > 0);
+  const attributes = [[], []];
+  for (let outer = 0;outer < 2; outer += 1) {
+    const values = outer === 0 ? fromValues : toValues;
+    const other = outer === 1 ? fromValues : toValues;
+    const { length } = values;
+    for (let inner = 0;inner < length; inner += 1) {
+      const value2 = values[inner];
+      if (!other.includes(value2)) {
+        attributes[outer].push(value2);
+      }
+    }
+  }
+  return attributes;
+}
+function handleAttributeChanges(type, parameters, initial) {
+  let from = initial ? "" : parameters.value;
+  let to = initial ? parameters.value : parameters.element.getAttribute(parameters.name) ?? "";
+  if (from === to) {
+    return;
+  }
+  if (!parameters.added) {
+    [from, to] = [to, from];
+  }
+  handleChanges(type, {
+    from,
+    to,
+    element: parameters.element,
+    handler: parameters.handler,
+    name: parameters.name
+  });
+}
+function handleChanges(type, parameters) {
+  const changes = getChanges(parameters.from, parameters.to);
+  const changesLength = changes.length;
+  for (let changesIndex = 0;changesIndex < changesLength; changesIndex += 1) {
+    const changed = changes[changesIndex];
+    const added = changes.indexOf(changed) === 1;
+    const changedLength = changed.length;
+    for (let changedIndex = 0;changedIndex < changedLength; changedIndex += 1) {
+      if (parameters.handler == null) {
+        handleTargetAttribute(type, parameters.element, changed[changedIndex], added);
+      } else {
+        parameters.handler(parameters.element, changed[changedIndex], added);
+      }
+    }
+  }
+}
+
+// src/observer/attributes/index.ts
+function handleControllerAttribute(element, value2, added) {
+  if (added) {
+    addController(value2, element);
+  } else {
+    removeController(value2, element);
+  }
+}
+function handleAttributes(context) {
+  const name = context.name.toLowerCase();
+  const prefix = `data-${name}-`;
+  const attributes = [...context.element.attributes].filter((attribute2) => attribute2.name.startsWith(prefix));
+  const { length } = attributes;
+  for (let index = 0;index < length; index += 1) {
+    const attribute2 = attributes[index];
+    setValueFromAttribute(context, attribute2.name.slice(prefix.length), attribute2.value);
+  }
+  for (let typeIndex = 0;typeIndex < attributeTypesLength; typeIndex += 1) {
+    const type = attributeTypes[typeIndex];
+    const elements = document.querySelectorAll(`[data-${type}*="${name}"]`);
+    const { length: length2 } = elements;
+    for (let elementIndex = 0;elementIndex < length2; elementIndex += 1) {
+      const element = elements[elementIndex];
+      const value2 = element.getAttribute(`data-${type}`);
+      if (value2 != null) {
+        handleAttributeChanges(type, {
+          element,
+          value: value2,
+          added: true,
+          handler: undefined,
+          name: ""
+        }, true);
+      }
+    }
+  }
+}
+
 // src/observer/index.ts
 function createObserver(element, options, handler) {
   const instance = new Observer(element, options, handler);
@@ -260,11 +443,11 @@ function observeController(name, element) {
   let context;
   return createObserver(element, {
     attributes: true
-  }, (element2, attribute) => {
-    if (attribute.startsWith(prefix)) {
+  }, (element2, attribute2) => {
+    if (attribute2.startsWith(prefix)) {
       context ??= findContext(element2, name);
       if (context != null) {
-        setValueFromAttribute(context, attribute.slice(prefix.length), element2.getAttribute(attribute) ?? "");
+        setValueFromAttribute(context, attribute2.slice(prefix.length), element2.getAttribute(attribute2) ?? "");
       }
     }
   });
@@ -285,11 +468,11 @@ class Action {
 
 class Actions {
   store = new Map;
-  add(name, target) {
+  add(name, target2) {
     const action = this.store.get(name);
-    if (action != null && !action.targets.has(target)) {
-      action.targets.add(target);
-      target.addEventListener(action.type, action.callback, action.options);
+    if (action != null && !action.targets.has(target2)) {
+      action.targets.add(target2);
+      target2.addEventListener(action.type, action.callback, action.options);
     }
   }
   clear() {
@@ -314,11 +497,11 @@ class Actions {
   has(name) {
     return this.store.has(name);
   }
-  remove(name, target) {
+  remove(name, target2) {
     const action = this.store.get(name);
     if (action != null) {
-      target.removeEventListener(action.type, action.callback);
-      action.targets.delete(target);
+      target2.removeEventListener(action.type, action.callback);
+      action.targets.delete(target2);
       if (action.targets.size === 0) {
         this.store.delete(name);
       }
@@ -378,9 +561,9 @@ class Context {
 
 // src/store/controller.store.ts
 function addController(name, element2) {
-  const controller3 = controllers.get(name);
-  if (controller3 != null && !controller3.instances.has(element2)) {
-    controller3.instances.set(element2, new Context(name, element2, controller3.ctor));
+  const controller5 = controllers.get(name);
+  if (controller5 != null && !controller5.instances.has(element2)) {
+    controller5.instances.set(element2, new Context(name, element2, controller5.ctor));
   }
 }
 function createController(name, ctor) {
@@ -412,13 +595,13 @@ function removeController(name, element2) {
     removeInstance(stored, stored.instances.get(element2));
   }
 }
-function removeInstance(controller3, context2) {
+function removeInstance(controller5, context2) {
   if (context2 != null) {
     context2.observer.stop();
     context2.actions.clear();
     context2.targets.clear();
     context2.controller.disconnected?.();
-    controller3?.instances.delete(context2.element);
+    controller5?.instances.delete(context2.element);
   }
 }
 
@@ -429,9 +612,8 @@ class StoredController {
     this.ctor = ctor;
   }
 }
-var controllers = new Map;
 
-// src/helpers/element.ts
+// src/helpers/index.ts
 function findTarget(origin, name, id) {
   const noId = id == null;
   switch (true) {
@@ -444,128 +626,21 @@ function findTarget(origin, name, id) {
   }
 }
 
-// src/helpers/attribute.ts
-function parseActionAttribute(attribute) {
-  const matches = extendedActionAttributePattern.exec(attribute);
-  if (matches != null) {
-    const [, , , , name, id, method] = matches;
-    return {
-      id: name == null ? undefined : id,
-      name: name == null ? id : name,
-      value: method
-    };
-  }
-}
-function parseAttribute(type, value2) {
-  return type === "action" ? parseActionAttribute(value2) : parseTargetAttribute(value2);
-}
-function parseTargetAttribute(attribute) {
-  const matches = targetAttributePattern.exec(attribute);
-  if (matches != null) {
-    const [, name, id, value2] = matches;
-    return {
-      id,
-      name,
-      value: value2
-    };
-  }
-}
-var actionAttributePattern = /^(?:(\w+)->)?(\w+)(?:#(\w+))?@(\w+)(?::([a-z:]+))?/i;
-var extendedActionAttributePattern = /^(?:(?:(?:(\w+)(?:#(\w+))?)?@)?(\w+)->)?(\w+)(?:#(\w+))?@(\w+)(?::([a-z:]+))?/i;
-var targetAttributePattern = /^(\w+)(?:#(\w+))?\.(\w+)$/i;
-
-// src/helpers/event.ts
-function getEventParameters(element2, action2, isParent) {
-  const results = (isParent ? extendedActionAttributePattern : actionAttributePattern).exec(action2);
-  if (results != null) {
-    const matches = getMatches(results, isParent);
-    const parameters = {
-      callback: matches.callback,
-      options: getOptions(matches.options ?? ""),
-      type: matches.event ?? getType(element2)
-    };
-    if (typeof matches.name === "string") {
-      parameters.external = {
-        name: matches.name,
-        id: matches.id
-      };
-    }
-    return parameters.type == null ? undefined : parameters;
-  }
-}
-function getMatches(matches, isParent) {
-  return {
-    callback: matches[isParent ? 6 : 4],
-    event: matches[isParent ? 3 : 1],
-    id: matches[isParent ? 2 : -1],
-    name: matches[isParent ? 1 : -1],
-    options: matches[isParent ? 7 : 5]
-  };
-}
-function getOptions(options) {
-  const items = options.toLowerCase().split(":");
-  return {
-    capture: items.includes("capture") || items.includes("c"),
-    once: items.includes("once") || items.includes("o"),
-    passive: !items.includes("active") && !items.includes("a")
-  };
-}
-function getType(element2) {
-  return element2 instanceof HTMLInputElement ? element2.type === "submit" ? "submit" : "input" : defaultEvents[element2.tagName];
-}
-var defaultEvents = {
-  A: "click",
-  BUTTON: "click",
-  DETAILS: "toggle",
-  FORM: "submit",
-  SELECT: "change",
-  TEXTAREA: "input"
-};
-
-// src/observer/attributes/target.attribute.ts
-function handleTarget(type, element2, value2, added, callback) {
-  const parsed = parseAttribute(type, value2);
-  let count2 = 0;
-  function step() {
-    if (parsed == null || count2 >= 10) {
-      return;
-    }
-    const context2 = findContext(element2, parsed.name, parsed.id);
-    if (context2 == null) {
-      count2 += 1;
-      requestAnimationFrame(step);
-    } else {
-      callback(context2, element2, type === "action" ? value2 : parsed.value, added);
-    }
-  }
-  step();
-}
-function handleTargetAttribute(element2, value2, added) {
-  handleTarget("target", element2, value2, added, handleTargetElement);
-}
-function handleTargetElement(context2, element2, value2, added) {
-  if (added) {
-    context2.targets.add(value2, element2);
-  } else {
-    context2.targets.remove(value2, element2);
-  }
-}
-
 // src/observer/attributes/action.attribute.ts
-function handleAction(context2, element3, value2, added, custom) {
+function handleActionAttribute(context2, element2, value2, added, custom) {
   const action2 = custom?.event ?? value2;
   if (context2.actions.has(value2)) {
     if (added) {
-      context2.actions.add(value2, element3);
+      context2.actions.add(value2, element2);
     } else {
-      context2.actions.remove(value2, element3);
+      context2.actions.remove(value2, element2);
     }
     return;
   }
   if (!added) {
     return;
   }
-  const parameters = custom?.handler == null ? getEventParameters(element3, value2, context2.element === element3) : {
+  const parameters = custom?.handler == null ? getEventParameters(element2, value2, context2.element === element2) : {
     callback: "",
     options: {
       capture: false,
@@ -581,7 +656,7 @@ function handleAction(context2, element3, value2, added, custom) {
   if (typeof callback !== "function") {
     return;
   }
-  const target3 = parameters.external == null ? element3 : findTarget(element3, parameters.external.name, parameters.external.id);
+  const target3 = parameters.external == null ? element2 : findTarget(element2, parameters.external.name, parameters.external.id);
   if (target3 != null) {
     context2.actions.create({
       callback: callback.bind(context2.controller),
@@ -592,173 +667,99 @@ function handleAction(context2, element3, value2, added, custom) {
     context2.actions.add(value2, target3);
   }
 }
-function handleActionAttribute(element3, value2, added) {
-  handleTarget("action", element3, value2, added, handleAction);
-}
 
 // src/observer/attributes/input-output.attribute.ts
-function getDataType(element3) {
+function getDataType(element2) {
   switch (true) {
-    case (element3 instanceof HTMLInputElement && !ignoredTypes.has(element3.type)):
-      return element3.type === "checkbox" ? "boolean" : parseableTypes.has(element3.type) ? "parseable" : "string";
-    case element3 instanceof HTMLSelectElement:
+    case (element2 instanceof HTMLInputElement && !ignoredInputTypes.has(element2.type)):
+      return element2.type === "checkbox" ? "boolean" : parseableInputTypes.has(element2.type) ? "parseable" : "string";
+    case element2 instanceof HTMLSelectElement:
       return "parseable";
-    case element3 instanceof HTMLTextAreaElement:
+    case element2 instanceof HTMLTextAreaElement:
       return "string";
     default:
       return;
   }
 }
-function handleInputAttribute(element3, value2, added) {
-  handleTarget("input", element3, value2, added, handleInput);
-}
-function handleOutputAttribute(element3, value2, added) {
-  handleTarget("output", element3, value2, added, handleOutput);
-}
-function handleInput(context2, element3, value2, added) {
-  const type = getDataType(element3);
+function handleInputAttribute(context2, element2, value2, added) {
+  const type = getDataType(element2);
   if (context2 != null && type != null) {
-    const event2 = element3 instanceof HTMLSelectElement ? "change" : "input";
+    const event2 = element2 instanceof HTMLSelectElement ? "change" : "input";
     const name = `input:${value2}`;
-    handleAction(context2, element3, name, added, {
+    handleActionAttribute(context2, element2, name, added, {
       event: event2,
       handler: () => {
-        setDataValue(type, context2, element3, value2);
+        setDataValue(type, context2, element2, value2);
       }
     });
-    handleTargetElement(context2, element3, name, added);
+    handleTargetElement(context2, element2, name, added);
   }
 }
-function handleOutput(context2, element3, value2, added) {
-  handleTargetElement(context2, element3, `output:${value2}`, added);
+function handleOutputAttribute(context2, element2, value2, added) {
+  handleTargetElement(context2, element2, `output:${value2}`, added);
 }
-function setDataValue(type, context2, element3, name) {
-  context2.data.value[name] = type === "boolean" ? element3.checked : type === "parseable" ? parse(element3.value) ?? element3.value : element3.value;
+function setDataValue(type, context2, element2, name) {
+  context2.data.value[name] = type === "boolean" ? element2.checked : type === "parseable" ? parse(element2.value) ?? element2.value : element2.value;
 }
-var ignoredTypes = new Set(["button", "image", "submit", "reset"]);
-var parseableTypes = new Set(["number", "radio", "range", "week"]);
 
-// src/observer/attributes/index.ts
-function getChanges(from, to) {
-  const fromValues = from.split(/\s+/).map((part) => part.trim()).filter((part) => part.length > 0);
-  const toValues = to.split(/\s+/).map((part) => part.trim()).filter((part) => part.length > 0);
-  const attributes2 = [[], []];
-  for (let outer = 0;outer < 2; outer += 1) {
-    const values = outer === 0 ? fromValues : toValues;
-    const other = outer === 1 ? fromValues : toValues;
-    const { length } = values;
-    for (let inner = 0;inner < length; inner += 1) {
-      const value2 = values[inner];
-      if (!other.includes(value2)) {
-        attributes2[outer].push(value2);
-      }
-    }
-  }
-  return attributes2;
-}
-function handleAttributeChanges(parameters, initial) {
-  if (parameters.callback == null) {
-    return;
-  }
-  let from = initial ? "" : parameters.value;
-  let to = initial ? parameters.value : parameters.element.getAttribute(parameters.name) ?? "";
-  if (from === to) {
-    return;
-  }
-  if (!parameters.added) {
-    [from, to] = [to, from];
-  }
-  handleChanges({
-    from,
-    to,
-    callback: parameters.callback,
-    element: parameters.element,
-    name: parameters.name
-  });
-}
-function handleChanges(parameters) {
-  const changes = getChanges(parameters.from, parameters.to);
-  const changesLength = changes.length;
-  for (let changesIndex = 0;changesIndex < changesLength; changesIndex += 1) {
-    const changed = changes[changesIndex];
-    const added = changes.indexOf(changed) === 1;
-    const changedLength = changed.length;
-    for (let changedIndex = 0;changedIndex < changedLength; changedIndex += 1) {
-      const change = changed[changedIndex];
-      parameters.callback(parameters.element, change, added);
-    }
-  }
-}
-function handleControllerAttribute(element3, value2, added) {
-  if (added) {
-    addController(value2, element3);
-  } else {
-    removeController(value2, element3);
-  }
-}
-function handleAttributes(context2) {
-  const name = context2.name.toLowerCase();
-  const prefix = `data-${name}-`;
-  const dataAttributes = [...context2.element.attributes].filter((attribute3) => attribute3.name.startsWith(prefix));
-  const { length } = dataAttributes;
-  for (let index = 0;index < length; index += 1) {
-    const attribute3 = dataAttributes[index];
-    setValueFromAttribute(context2, attribute3.name.slice(prefix.length), attribute3.value);
-  }
-  for (let attributeIndex = 0;attributeIndex < attributesLength; attributeIndex += 1) {
-    const attribute3 = attributes2[attributeIndex];
-    const callback = callbacks[attribute3];
-    const elements = document.querySelectorAll(`[data-${attribute3}*="${name}"]`);
-    const { length: length2 } = elements;
-    for (let elementIndex = 0;elementIndex < length2; elementIndex += 1) {
-      const element3 = elements[elementIndex];
-      const value2 = element3.getAttribute(`data-${attribute3}`);
-      if (value2 != null) {
-        handleAttributeChanges({
-          callback,
-          element: element3,
-          value: value2,
-          added: true,
-          name: ""
-        }, true);
-      }
-    }
-  }
-}
-var callbacks = {
+// src/constants.ts
+var attributeCallbacks = {
   action: handleActionAttribute,
   input: handleInputAttribute,
   output: handleOutputAttribute,
-  target: handleTargetAttribute
+  target: handleTargetElement
 };
-var attributes2 = Object.keys(callbacks);
-var attributesLength = attributes2.length;
+var attributeTypes = Object.keys(attributeCallbacks);
+var attributeTypesLength = attributeTypes.length;
+var controllerAttribute = "data-controller";
+var controllers = new Map;
+var actionAttributePattern = /^(?:(\w+)->)?(\w+)(?:#(\w+))?@(\w+)(?::([a-z:]+))?/i;
+var extendedActionAttributePattern = /^(?:(?:(?:(\w+)(?:#(\w+))?)?@)?(\w+)->)?(\w+)(?:#(\w+))?@(\w+)(?::([a-z:]+))?/i;
+var targetAttributePattern = /^(\w+)(?:#(\w+))?\.(\w+)$/i;
+var defaultEvents = {
+  A: "click",
+  BUTTON: "click",
+  DETAILS: "toggle",
+  FORM: "submit",
+  SELECT: "change",
+  TEXTAREA: "input"
+};
+var ignoredInputTypes = new Set([
+  "button",
+  "image",
+  "submit",
+  "reset"
+]);
+var parseableInputTypes = new Set([
+  "number",
+  "radio",
+  "range",
+  "week"
+]);
 
 // src/observer/document.observer.ts
 function observerDocument() {
+  const attributes3 = [
+    controllerAttribute,
+    ...attributeTypes.map((type) => `data-${type}`)
+  ];
   return createObserver(document.body, {
-    attributeFilter: attributes4,
+    attributeFilter: attributes3,
     attributes: true,
     childList: true,
     subtree: true
-  }, (element3, name, value2, added) => {
-    handleAttributeChanges({
-      added,
-      element: element3,
-      name,
-      value: value2,
-      callback: callbacks2[name]
-    }, false);
+  }, (element2, name, value2, added) => {
+    if (attributes3.includes(name)) {
+      handleAttributeChanges(name.slice(5), {
+        added,
+        element: element2,
+        name,
+        value: value2,
+        handler: name === controllerAttribute ? handleControllerAttribute : undefined
+      }, false);
+    }
   });
 }
-var callbacks2 = {
-  "data-action": handleActionAttribute,
-  "data-controller": handleControllerAttribute,
-  "data-input": handleInputAttribute,
-  "data-output": handleOutputAttribute,
-  "data-target": handleTargetAttribute
-};
-var attributes4 = Object.keys(callbacks2);
 
 // src/magnus.ts
 class Magnus {

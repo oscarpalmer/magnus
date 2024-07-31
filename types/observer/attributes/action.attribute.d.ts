@@ -1,4 +1,3 @@
 import type { Context } from '../../controller/context';
 import type { AttributeHandleCallbackCustomParameters } from '../../models';
-export declare function handleAction(context: Context, element: Element, value: string, added: boolean, custom?: AttributeHandleCallbackCustomParameters): void;
-export declare function handleActionAttribute(element: Element, value: string, added: boolean): void;
+export declare function handleActionAttribute(context: Context, element: Element, value: string, added: boolean, custom?: AttributeHandleCallbackCustomParameters): void;

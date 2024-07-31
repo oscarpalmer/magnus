@@ -1,4 +1,5 @@
 import {closest} from '@oscarpalmer/atoms/element';
+import {controllers} from '../constants';
 import {Context} from '../controller/context';
 import type {ControllerConstructor} from '../models';
 
@@ -11,13 +12,14 @@ export class StoredController {
 	}
 }
 
-export const controllers = new Map<string, StoredController>();
-
 export function addController(name: string, element: Element): void {
 	const controller = controllers.get(name);
 
 	if (controller != null && !controller.instances.has(element)) {
-		controller.instances.set(element, new Context(name, element, controller.ctor));
+		controller.instances.set(
+			element,
+			new Context(name, element, controller.ctor),
+		);
 	}
 }
 

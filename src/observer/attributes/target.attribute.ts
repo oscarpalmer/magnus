@@ -1,15 +1,16 @@
+import {attributeCallbacks} from '../../constants';
 import type {Context} from '../../controller/context';
 import {parseAttribute} from '../../helpers/attribute';
-import type {AttributeHandleCallback} from '../../models';
+import type {AttributeType} from '../../models';
 import {findContext} from '../../store/controller.store';
 
-export function handleTarget(
-	type: 'action' | 'input' | 'output' | 'target',
+export function handleTargetAttribute(
+	type: AttributeType,
 	element: Element,
 	value: string,
 	added: boolean,
-	callback: AttributeHandleCallback,
 ): void {
+	const callback = attributeCallbacks[type];
 	const parsed = parseAttribute(type, value);
 
 	let count = 0;
@@ -26,7 +27,7 @@ export function handleTarget(
 
 			requestAnimationFrame(step);
 		} else {
-			callback(
+			callback?.(
 				context,
 				element,
 				type === 'action' ? value : parsed.value,
@@ -36,14 +37,6 @@ export function handleTarget(
 	}
 
 	step();
-}
-
-export function handleTargetAttribute(
-	element: Element,
-	value: string,
-	added: boolean,
-): void {
-	handleTarget('target', element, value, added, handleTargetElement);
 }
 
 export function handleTargetElement(

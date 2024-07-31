@@ -9,9 +9,9 @@ export type ActionParameters = {
 };
 export type AttributeChangeCallback = (element: Element, value: string, added: boolean) => void;
 export type AttributeChangesParameters = {
-    callback: AttributeChangeCallback;
     element: Element;
     from: string;
+    handler: AttributeChangeCallback | undefined;
     name: string;
     to: string;
 };
@@ -25,11 +25,12 @@ export type AttributeHandleCallbackCustomParameters = {
 };
 export type AttributeHandleParameters = {
     added: boolean;
-    callback: AttributeChangeCallback;
     element: Element;
+    handler: AttributeChangeCallback | undefined;
     name: string;
     value: string;
 };
+export type AttributeType = 'action' | 'input' | 'output' | 'target';
 export type ControllerConstructor = new (context: Context) => Controller;
 export type DataType = 'boolean' | 'parseable' | 'string';
 export type EventParameters = {

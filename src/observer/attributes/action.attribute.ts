@@ -1,11 +1,10 @@
 import type {PlainObject} from '@oscarpalmer/atoms/models';
 import type {Context} from '../../controller/context';
-import {findTarget} from '../../helpers/element';
 import {getEventParameters} from '../../helpers/event';
+import {findTarget} from '../../helpers/index';
 import type {AttributeHandleCallbackCustomParameters} from '../../models';
-import {handleTarget} from './target.attribute';
 
-export function handleAction(
+export function handleActionAttribute(
 	context: Context,
 	element: Element,
 	value: string,
@@ -70,12 +69,4 @@ export function handleAction(
 
 		context.actions.add(value, target);
 	}
-}
-
-export function handleActionAttribute(
-	element: Element,
-	value: string,
-	added: boolean,
-): void {
-	handleTarget('action', element, value, added, handleAction);
 }

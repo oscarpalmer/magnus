@@ -1,19 +1,17 @@
 import {parse} from '@oscarpalmer/atoms/string';
+import {ignoredInputTypes, parseableInputTypes} from '../../constants';
 import type {Context} from '../../controller/context';
 import type {DataType} from '../../models';
-import {handleAction} from './action.attribute';
-import {handleTarget, handleTargetElement} from './target.attribute';
-
-const ignoredTypes = new Set(['button', 'image', 'submit', 'reset']);
-
-const parseableTypes = new Set(['number', 'radio', 'range', 'week']);
+import {handleActionAttribute} from './action.attribute';
+import {handleTargetElement} from './target.attribute';
 
 function getDataType(element: Element): DataType | undefined {
 	switch (true) {
-		case element instanceof HTMLInputElement && !ignoredTypes.has(element.type):
+		case element instanceof HTMLInputElement &&
+			!ignoredInputTypes.has(element.type):
 			return element.type === 'checkbox'
 				? 'boolean'
-				: parseableTypes.has(element.type)
+				: parseableInputTypes.has(element.type)
 					? 'parseable'
 					: 'string';
 
@@ -29,22 +27,6 @@ function getDataType(element: Element): DataType | undefined {
 }
 
 export function handleInputAttribute(
-	element: Element,
-	value: string,
-	added: boolean,
-): void {
-	handleTarget('input', element, value, added, handleInput);
-}
-
-export function handleOutputAttribute(
-	element: Element,
-	value: string,
-	added: boolean,
-): void {
-	handleTarget('output', element, value, added, handleOutput);
-}
-
-function handleInput(
 	context: Context,
 	element: Element,
 	value: string,
@@ -56,7 +38,7 @@ function handleInput(
 		const event = element instanceof HTMLSelectElement ? 'change' : 'input';
 		const name = `input:${value}`;
 
-		handleAction(context, element, name, added, {
+		handleActionAttribute(context, element, name, added, {
 			event,
 			handler: () => {
 				setDataValue(type, context, element as never, value);
@@ -67,7 +49,7 @@ function handleInput(
 	}
 }
 
-function handleOutput(
+export function handleOutputAttribute(
 	context: Context,
 	element: Element,
 	value: string,
