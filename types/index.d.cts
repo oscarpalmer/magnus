@@ -68,8 +68,8 @@ declare class Targets {
 	private readonly store;
 	add(name: string, element: Element): void;
 	clear(): void;
-	get(name: string): Element[];
-	get(name: string, single: true): Element | undefined;
+	get(name: string): Element | undefined;
+	getAll(name: string): Element[];
 	remove(name: string, element: Element): void;
 }
 declare class Context {
@@ -112,7 +112,7 @@ declare class Magnus {
 	 */
 	add(name: string, ctor: ControllerConstructor): void;
 	/**
-	 * Removes a named controller from observation
+	 * Removes a named controller _(and all its instances)_ from observation
 	 */
 	remove(name: string): void;
 	/**

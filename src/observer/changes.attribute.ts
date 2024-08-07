@@ -6,16 +6,8 @@ import type {
 import {handleTargetAttribute} from './attributes/target.attribute';
 
 function getChanges(from: string, to: string): string[][] {
-	const fromValues = from
-		.split(/\s+/)
-		.map(part => part.trim())
-		.filter(part => part.length > 0);
-
-	const toValues = to
-		.split(/\s+/)
-		.map(part => part.trim())
-		.filter(part => part.length > 0);
-
+	const fromValues = getParts(from);
+	const toValues = getParts(to);
 	const attributes: string[][] = [[], []];
 
 	for (let outer = 0; outer < 2; outer += 1) {
@@ -34,6 +26,13 @@ function getChanges(from: string, to: string): string[][] {
 	}
 
 	return attributes;
+}
+
+function getParts(value: string): string[] {
+	return value
+		.split(/\s+/)
+		.map(part => part.trim())
+		.filter(part => part.length > 0);
 }
 
 export function handleAttributeChanges(

@@ -1,7 +1,6 @@
-import {controllers} from './constants';
 import type {ControllerConstructor} from './models';
 import {observerDocument} from './observer/document.observer';
-import {createController, removeController} from './store/controller.store';
+import {controllers} from './store/controller.store';
 
 export class Magnus {
 	/**
@@ -9,17 +8,17 @@ export class Magnus {
 	 */
 	add(name: string, ctor: ControllerConstructor): void {
 		if (!controllers.has(name)) {
-			createController(name, ctor);
+			controllers.create(name, ctor);
 
 			observer.update();
 		}
 	}
 
 	/**
-	 * Removes a named controller from observation
+	 * Removes a named controller _(and all its instances)_ from observation
 	 */
 	remove(name: string): void {
-		removeController(name);
+		controllers.remove(name);
 	}
 
 	/**

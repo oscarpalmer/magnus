@@ -1,5 +1,9 @@
 import {parse} from '@oscarpalmer/atoms/string';
-import {ignoredInputTypes, parseableInputTypes} from '../../constants';
+import {
+	changeEventTypes,
+	ignoredInputTypes,
+	parseableInputTypes,
+} from '../../constants';
 import type {Context} from '../../controller/context';
 import type {DataType} from '../../models';
 import {handleActionAttribute} from './action.attribute';
@@ -26,22 +30,36 @@ function getDataType(element: Element): DataType | undefined {
 	}
 }
 
+function getEventType(
+	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
+): string {
+	if (
+		(element instanceof HTMLInputElement &&
+			changeEventTypes.has(element.type)) ||
+		element instanceof HTMLSelectElement
+	) {
+		return 'change';
+	}
+
+	return 'input';
+}
+
 export function handleInputAttribute(
 	context: Context,
 	element: Element,
 	value: string,
 	added: boolean,
 ): void {
-	const type = getDataType(element);
+	const dataType = getDataType(element);
 
-	if (context != null && type != null) {
-		const event = element instanceof HTMLSelectElement ? 'change' : 'input';
+	if (context != null && dataType != null) {
 		const name = `input:${value}`;
+		const eventType = getEventType(element as never);
 
 		handleActionAttribute(context, element, name, added, {
-			event,
-			handler: () => {
-				setDataValue(type, context, element as never, value);
+			event: eventType,
+			handler: event => {
+				setDataValue(dataType, context, event.target as never, value);
 			},
 		});
 

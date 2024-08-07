@@ -5,7 +5,7 @@ export declare class Magnus {
      */
     add(name: string, ctor: ControllerConstructor): void;
     /**
-     * Removes a named controller from observation
+     * Removes a named controller _(and all its instances)_ from observation
      */
     remove(name: string): void;
     /**

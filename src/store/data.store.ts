@@ -1,7 +1,13 @@
 import {isNullableOrWhitespace} from '@oscarpalmer/atoms/is';
 import type {PlainObject} from '@oscarpalmer/atoms/models';
 import {getString, parse} from '@oscarpalmer/atoms/string';
+import {changeEventTypes} from '../constants';
 import type {Context} from '../controller/context';
+
+type Value = {
+	original: unknown;
+	stringified: string;
+};
 
 export class Data {
 	readonly value: PlainObject;
@@ -17,7 +23,7 @@ export class Data {
 					const previous = Reflect.get(target, property);
 					const nextAsString = getString(next);
 
-					if (Object.is(getString(previous), nextAsString)) {
+					if (getString(previous) === nextAsString) {
 						return true;
 					}
 
@@ -29,13 +35,10 @@ export class Data {
 						cancelAnimationFrame(frames[name]);
 
 						frames[name] = requestAnimationFrame(() => {
-							setValue(
-								context,
-								prefix,
-								name,
-								next,
-								next == null ? '' : nextAsString,
-							);
+							setValue(context, prefix, name, {
+								original: next,
+								stringified: next == null ? '' : nextAsString,
+							});
 						});
 					}
 
@@ -46,24 +49,15 @@ export class Data {
 	}
 }
 
-function setAttribute(
-	element: Element,
-	name: string,
-	original: unknown,
-	stringified: string,
-): void {
-	if (isNullableOrWhitespace(original)) {
+function setAttribute(element: Element, name: string, value: Value): void {
+	if (isNullableOrWhitespace(value.original)) {
 		element.removeAttribute(name);
 	} else {
-		element.setAttribute(name, stringified);
+		element.setAttribute(name, value.stringified);
 	}
 }
 
-function setElementContents(
-	elements: Element[],
-	_: unknown,
-	value: string,
-): void {
+function setElementContents(elements: Element[], value: string): void {
 	const {length} = elements;
 
 	for (let index = 0; index < length; index += 1) {
@@ -71,30 +65,35 @@ function setElementContents(
 	}
 }
 
+function setElementValue(element: Element, value: string): void {
+	switch (true) {
+		case element instanceof HTMLInputElement &&
+			changeEventTypes.has(element.type):
+			element.checked =
+				element.value === value ||
+				(element.type === 'checkbox' && value === 'true');
+			return;
+
+		case (element instanceof HTMLInputElement ||
+			element instanceof HTMLTextAreaElement) &&
+			element.value !== value:
+			element.value = value;
+			return;
+
+		case element instanceof HTMLSelectElement && element.value !== value:
+			element.value =
+				[...element.options].findIndex(option => option.value === value) > -1
+					? value
+					: '';
+			return;
+	}
+}
+
 function setElementValues(elements: Element[], value: string): void {
 	const {length} = elements;
 
 	for (let index = 0; index < length; index += 1) {
-		const element = elements[index];
-
-		if (
-			(element instanceof HTMLInputElement ||
-				element instanceof HTMLTextAreaElement) &&
-			element.value !== value
-		) {
-			element.value = value;
-		} else if (
-			element instanceof HTMLSelectElement &&
-			element.value !== value
-		) {
-			if (
-				Array.from(element.options).findIndex(
-					option => option.value === value,
-				) > -1
-			) {
-				element.value = value;
-			}
-		}
+		setElementValue(elements[index], value);
 	}
 }
 
@@ -102,18 +101,13 @@ function setValue(
 	context: Context,
 	prefix: string,
 	name: string,
-	original: unknown,
-	stringified: string,
+	value: Value,
 ): void {
-	setAttribute(context.element, `${prefix}${name}`, original, stringified);
+	const {element, targets} = context;
 
-	setElementContents(
-		context.targets.get(`output:${name}`),
-		original,
-		stringified,
-	);
-
-	setElementValues(context.targets.get(`input:${name}`), stringified);
+	setAttribute(element, `${prefix}${name}`, value);
+	setElementContents(targets.getAll(`output:${name}`), value.stringified);
+	setElementValues(targets.getAll(`input:${name}`), value.stringified);
 }
 
 export function setValueFromAttribute(
@@ -121,9 +115,7 @@ export function setValueFromAttribute(
 	name: string,
 	value: string,
 ): void {
-	const parsed = value == null ? null : parse(value) ?? value;
-
-	if (!Object.is(getString(context.data.value[name]), value)) {
-		context.data.value[name] = parsed;
+	if (getString(context.data.value[name]) !== value) {
+		context.data.value[name] = value == null ? value : parse(value) ?? value;
 	}
 }

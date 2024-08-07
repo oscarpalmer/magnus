@@ -1,5 +1,5 @@
 import type {Context} from '../controller/context';
-import {findContext} from '../store/controller.store';
+import {controllers} from '../store/controller.store';
 import {setValueFromAttribute} from '../store/data.store';
 import {type Observer, createObserver} from './index';
 
@@ -15,7 +15,7 @@ export function observeController(name: string, element: Element): Observer {
 		},
 		(element, attribute) => {
 			if (attribute.startsWith(prefix)) {
-				context ??= findContext(element, name);
+				context ??= controllers.findContext(element, name);
 
 				if (context != null) {
 					setValueFromAttribute(

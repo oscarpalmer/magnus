@@ -5,7 +5,6 @@ import {
 	handleOutputAttribute,
 } from './observer/attributes/input-output.attribute';
 import {handleTargetElement} from './observer/attributes/target.attribute';
-import type {StoredController} from './store/controller.store';
 
 export const attributeCallbacks: Record<
 	AttributeType,
@@ -27,8 +26,6 @@ export const attributeTypesLength = attributeTypes.length;
 
 export const controllerAttribute = 'data-controller';
 
-export const controllers = new Map<string, StoredController>();
-
 //
 
 // (event->)controller(#id)@method(:options)
@@ -43,6 +40,8 @@ export const extendedActionAttributePattern =
 export const targetAttributePattern = /^(\w+)(?:#(\w+))?\.(\w+)$/i;
 
 //
+
+export const changeEventTypes = new Set(['checkbox', 'radio']);
 
 export const defaultEvents: Record<string, string> = {
 	A: 'click',
@@ -63,6 +62,7 @@ export const ignoredInputTypes = new Set([
 ]);
 
 export const parseableInputTypes = new Set([
+	'hidden',
 	'number',
 	'radio',
 	'range',

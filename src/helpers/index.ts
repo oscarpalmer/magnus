@@ -1,4 +1,4 @@
-import {findContext} from '../store/controller.store';
+import {controllers} from '../store/controller.store';
 
 export function findTarget(
 	origin: Element,
@@ -9,16 +9,16 @@ export function findTarget(
 
 	switch (true) {
 		case noId && /^document$/i.test(name):
-			return document;
+			return origin.ownerDocument ?? document;
 
 		case noId && /^window$/i.test(name):
-			return window;
+			return origin.ownerDocument?.defaultView ?? window;
 
 		default:
 			return (
-				findContext(origin, name, id)?.element ??
+				controllers.findContext(origin, name, id)?.element ??
 				(noId
-					? (origin.ownerDocument.querySelector(`#${id}`) as EventTarget)
+					? (origin.ownerDocument.querySelector(`#${name}`) as EventTarget)
 					: undefined)
 			);
 	}

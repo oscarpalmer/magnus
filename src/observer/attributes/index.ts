@@ -1,6 +1,6 @@
 import {attributeTypes, attributeTypesLength} from '../../constants';
 import type {Context} from '../../controller/context';
-import {addController, removeController} from '../../store/controller.store';
+import {controllers} from '../../store/controller.store';
 import {setValueFromAttribute} from '../../store/data.store';
 import {handleAttributeChanges} from '../changes.attribute';
 
@@ -10,9 +10,9 @@ export function handleControllerAttribute(
 	added: boolean,
 ): void {
 	if (added) {
-		addController(value, element);
+		controllers.add(value, element);
 	} else {
-		removeController(value, element);
+		controllers.remove(value, element);
 	}
 }
 

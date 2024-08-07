@@ -2,7 +2,7 @@ import {attributeCallbacks} from '../../constants';
 import type {Context} from '../../controller/context';
 import {parseAttribute} from '../../helpers/attribute';
 import type {AttributeType} from '../../models';
-import {findContext} from '../../store/controller.store';
+import {controllers} from '../../store/controller.store';
 
 export function handleTargetAttribute(
 	type: AttributeType,
@@ -20,7 +20,7 @@ export function handleTargetAttribute(
 			return;
 		}
 
-		const context = findContext(element, parsed.name, parsed.id);
+		const context = controllers.findContext(element, parsed.name, parsed.id);
 
 		if (context == null) {
 			count += 1;

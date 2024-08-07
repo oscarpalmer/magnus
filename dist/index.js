@@ -55,7 +55,7 @@ function getType(element) {
   return element instanceof HTMLInputElement ? element.type === "submit" ? "submit" : "input" : defaultEvents[element.tagName];
 }
 
-// node_modules/@oscarpalmer/atoms/dist/js/element/closest.mjs
+// node_modules/@oscarpalmer/toretto/dist/find.mjs
 function calculateDistance(origin, target) {
   if (origin === target || origin.parentElement === target) {
     return 0;
@@ -73,7 +73,7 @@ function calculateDistance(origin, target) {
       return -1;
   }
 }
-function closest(origin, selector, context) {
+function findRelatives(origin, selector, context) {
   if (origin.matches(selector)) {
     return [origin];
   }
@@ -148,42 +148,49 @@ function parse(value2, reviver) {
 function isNullableOrWhitespace(value2) {
   return value2 == null || /^\s*$/.test(getString(value2));
 }
+
 // src/store/data.store.ts
-function setAttribute(element, name, original, stringified) {
-  if (isNullableOrWhitespace(original)) {
+function setAttribute(element, name, value2) {
+  if (isNullableOrWhitespace(value2.original)) {
     element.removeAttribute(name);
   } else {
-    element.setAttribute(name, stringified);
+    element.setAttribute(name, value2.stringified);
   }
 }
-function setElementContents(elements, _, value2) {
+function setElementContents(elements, value2) {
   const { length } = elements;
   for (let index = 0;index < length; index += 1) {
     elements[index].textContent = value2;
   }
 }
-function setElementValues2(elements, value2) {
-  const { length } = elements;
-  for (let index = 0;index < length; index += 1) {
-    const element = elements[index];
-    if ((element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) && element.value !== value2) {
+function setElementValue(element, value2) {
+  switch (true) {
+    case (element instanceof HTMLInputElement && changeEventTypes.has(element.type)):
+      element.checked = element.value === value2 || element.type === "checkbox" && value2 === "true";
+      return;
+    case ((element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) && element.value !== value2):
       element.value = value2;
-    } else if (element instanceof HTMLSelectElement && element.value !== value2) {
-      if (Array.from(element.options).findIndex((option) => option.value === value2) > -1) {
-        element.value = value2;
-      }
-    }
+      return;
+    case (element instanceof HTMLSelectElement && element.value !== value2):
+      element.value = [...element.options].findIndex((option) => option.value === value2) > -1 ? value2 : "";
+      return;
   }
 }
-function setValue2(context, prefix, name, original, stringified) {
-  setAttribute(context.element, `${prefix}${name}`, original, stringified);
-  setElementContents(context.targets.get(`output:${name}`), original, stringified);
-  setElementValues2(context.targets.get(`input:${name}`), stringified);
+function setElementValues(elements, value2) {
+  const { length } = elements;
+  for (let index = 0;index < length; index += 1) {
+    setElementValue(elements[index], value2);
+  }
+}
+function setValue2(context, prefix, name, value2) {
+  const { element, targets } = context;
+  setAttribute(element, `${prefix}${name}`, value2);
+  setElementContents(targets.getAll(`output:${name}`), value2.stringified);
+  setElementValues(targets.getAll(`input:${name}`), value2.stringified);
 }
 function setValueFromAttribute(context, name, value2) {
-  const parsed = value2 == null ? null : parse(value2) ?? value2;
-  if (!Object.is(getString(context.data.value[name]), value2)) {
-    context.data.value[name] = parsed;
+  if (getString(context.data.value[name]) !== value2) {
+    context.data.value[name] = value2 == null ? value2 : parse(value2) ?? value2;
   }
 }
 
@@ -196,7 +203,7 @@ class Data {
       set(target, property, next) {
         const previous = Reflect.get(target, property);
         const nextAsString = getString(next);
-        if (Object.is(getString(previous), nextAsString)) {
+        if (getString(previous) === nextAsString) {
           return true;
         }
         const result = Reflect.set(target, property, next);
@@ -204,7 +211,10 @@ class Data {
           const name = String(property);
           cancelAnimationFrame(frames[name]);
           frames[name] = requestAnimationFrame(() => {
-            setValue2(context, prefix, name, next, next == null ? "" : nextAsString);
+            setValue2(context, prefix, name, {
+              original: next,
+              stringified: next == null ? "" : nextAsString
+            });
           });
         }
         return result;
@@ -249,7 +259,7 @@ function handleTargetAttribute(type, element, value2, added) {
     if (parsed == null || count2 >= 10) {
       return;
     }
-    const context = findContext(element, parsed.name, parsed.id);
+    const context = controllers.findContext(element, parsed.name, parsed.id);
     if (context == null) {
       count2 += 1;
       requestAnimationFrame(step);
@@ -269,8 +279,8 @@ function handleTargetElement(context, element, value2, added) {
 
 // src/observer/changes.attribute.ts
 function getChanges(from, to) {
-  const fromValues = from.split(/\s+/).map((part) => part.trim()).filter((part) => part.length > 0);
-  const toValues = to.split(/\s+/).map((part) => part.trim()).filter((part) => part.length > 0);
+  const fromValues = getParts(from);
+  const toValues = getParts(to);
   const attributes = [[], []];
   for (let outer = 0;outer < 2; outer += 1) {
     const values = outer === 0 ? fromValues : toValues;
@@ -284,6 +294,9 @@ function getChanges(from, to) {
     }
   }
   return attributes;
+}
+function getParts(value2) {
+  return value2.split(/\s+/).map((part) => part.trim()).filter((part) => part.length > 0);
 }
 function handleAttributeChanges(type, parameters, initial) {
   let from = initial ? "" : parameters.value;
@@ -322,9 +335,9 @@ function handleChanges(type, parameters) {
 // src/observer/attributes/index.ts
 function handleControllerAttribute(element, value2, added) {
   if (added) {
-    addController(value2, element);
+    controllers.add(value2, element);
   } else {
-    removeController(value2, element);
+    controllers.remove(value2, element);
   }
 }
 function handleAttributes(context) {
@@ -445,7 +458,7 @@ function observeController(name, element) {
     attributes: true
   }, (element2, attribute2) => {
     if (attribute2.startsWith(prefix)) {
-      context ??= findContext(element2, name);
+      context ??= controllers.findContext(element2, name);
       if (context != null) {
         setValueFromAttribute(context, attribute2.slice(prefix.length), element2.getAttribute(attribute2) ?? "");
       }
@@ -528,9 +541,11 @@ class Targets {
     }
     this.store.clear();
   }
-  get(name, single) {
-    const targets = [...this.store.get(name) ?? []];
-    return single === true ? targets[0] : targets;
+  get(name) {
+    return this.getAll(name)[0];
+  }
+  getAll(name) {
+    return [...this.store.get(name) ?? []];
   }
   remove(name, element) {
     this.store.get(name)?.delete(element);
@@ -560,48 +575,56 @@ class Context {
 }
 
 // src/store/controller.store.ts
-function addController(name, element2) {
-  const controller5 = controllers.get(name);
-  if (controller5 != null && !controller5.instances.has(element2)) {
-    controller5.instances.set(element2, new Context(name, element2, controller5.ctor));
-  }
-}
-function createController(name, ctor) {
-  if (!controllers.has(name)) {
-    controllers.set(name, new StoredController(ctor));
-  }
-}
-function findContext(origin, name, id) {
-  let found;
-  if (id == null) {
-    found = closest(origin, `[data-controller*="${name}"]`)[0];
-  } else {
-    found = document.querySelector(`#${id}`);
-  }
-  return found == null ? undefined : controllers.get(name)?.instances.get(found);
-}
-function removeController(name, element2) {
-  const stored = controllers.get(name);
-  if (stored == null) {
-    return;
-  }
-  if (element2 == null) {
-    const instances = [...stored.instances.values()];
-    const { length } = instances;
-    for (let index = 0;index < length; index += 1) {
-      removeInstance(stored, instances[index]);
+class Controllers {
+  stored = new Map;
+  add(name, element) {
+    const controller5 = this.stored.get(name);
+    if (controller5 != null && !controller5.instances.has(element)) {
+      controller5.instances.set(element, new Context(name, element, controller5.ctor));
     }
-  } else {
-    removeInstance(stored, stored.instances.get(element2));
   }
-}
-function removeInstance(controller5, context2) {
-  if (context2 != null) {
-    context2.observer.stop();
-    context2.actions.clear();
-    context2.targets.clear();
-    context2.controller.disconnected?.();
-    controller5?.instances.delete(context2.element);
+  create(name, ctor) {
+    if (!this.stored.has(name)) {
+      this.stored.set(name, new StoredController(ctor));
+    }
+  }
+  findContext(origin, name, id) {
+    let found;
+    if (id == null) {
+      found = findRelatives(origin, `[data-controller~="${name}"]`)[0];
+    } else {
+      found = document.querySelector(`#${id}`);
+    }
+    return found == null ? undefined : this.stored.get(name)?.instances.get(found);
+  }
+  has(name) {
+    return this.stored.has(name);
+  }
+  remove(name, element) {
+    const stored = this.stored.get(name);
+    if (stored == null) {
+      return;
+    }
+    if (element == null) {
+      const instances = [...stored.instances.values()];
+      const { length } = instances;
+      for (let index = 0;index < length; index += 1) {
+        this.removeInstance(stored, instances[index]);
+      }
+      stored.instances.clear();
+      this.stored.delete(name);
+    } else {
+      this.removeInstance(stored, stored.instances.get(element));
+    }
+  }
+  removeInstance(controller5, context2) {
+    if (context2 != null) {
+      context2.observer.stop();
+      context2.actions.clear();
+      context2.targets.clear();
+      context2.controller.disconnected?.();
+      controller5?.instances.delete(context2.element);
+    }
   }
 }
 
@@ -612,35 +635,36 @@ class StoredController {
     this.ctor = ctor;
   }
 }
+var controllers = new Controllers;
 
 // src/helpers/index.ts
 function findTarget(origin, name, id) {
   const noId = id == null;
   switch (true) {
     case (noId && /^document$/i.test(name)):
-      return document;
+      return origin.ownerDocument ?? document;
     case (noId && /^window$/i.test(name)):
-      return window;
+      return origin.ownerDocument?.defaultView ?? window;
     default:
-      return findContext(origin, name, id)?.element ?? (noId ? origin.ownerDocument.querySelector(`#${id}`) : undefined);
+      return controllers.findContext(origin, name, id)?.element ?? (noId ? origin.ownerDocument.querySelector(`#${name}`) : undefined);
   }
 }
 
 // src/observer/attributes/action.attribute.ts
-function handleActionAttribute(context2, element2, value2, added, custom) {
+function handleActionAttribute(context2, element, value2, added, custom) {
   const action2 = custom?.event ?? value2;
   if (context2.actions.has(value2)) {
     if (added) {
-      context2.actions.add(value2, element2);
+      context2.actions.add(value2, element);
     } else {
-      context2.actions.remove(value2, element2);
+      context2.actions.remove(value2, element);
     }
     return;
   }
   if (!added) {
     return;
   }
-  const parameters = custom?.handler == null ? getEventParameters(element2, value2, context2.element === element2) : {
+  const parameters = custom?.handler == null ? getEventParameters(element, value2, context2.element === element) : {
     callback: "",
     options: {
       capture: false,
@@ -656,7 +680,7 @@ function handleActionAttribute(context2, element2, value2, added, custom) {
   if (typeof callback !== "function") {
     return;
   }
-  const target3 = parameters.external == null ? element2 : findTarget(element2, parameters.external.name, parameters.external.id);
+  const target3 = parameters.external == null ? element : findTarget(element, parameters.external.name, parameters.external.id);
   if (target3 != null) {
     context2.actions.create({
       callback: callback.bind(context2.controller),
@@ -669,37 +693,43 @@ function handleActionAttribute(context2, element2, value2, added, custom) {
 }
 
 // src/observer/attributes/input-output.attribute.ts
-function getDataType(element2) {
+function getDataType(element) {
   switch (true) {
-    case (element2 instanceof HTMLInputElement && !ignoredInputTypes.has(element2.type)):
-      return element2.type === "checkbox" ? "boolean" : parseableInputTypes.has(element2.type) ? "parseable" : "string";
-    case element2 instanceof HTMLSelectElement:
+    case (element instanceof HTMLInputElement && !ignoredInputTypes.has(element.type)):
+      return element.type === "checkbox" ? "boolean" : parseableInputTypes.has(element.type) ? "parseable" : "string";
+    case element instanceof HTMLSelectElement:
       return "parseable";
-    case element2 instanceof HTMLTextAreaElement:
+    case element instanceof HTMLTextAreaElement:
       return "string";
     default:
       return;
   }
 }
-function handleInputAttribute(context2, element2, value2, added) {
-  const type = getDataType(element2);
-  if (context2 != null && type != null) {
-    const event2 = element2 instanceof HTMLSelectElement ? "change" : "input";
+function getEventType(element) {
+  if (element instanceof HTMLInputElement && changeEventTypes.has(element.type) || element instanceof HTMLSelectElement) {
+    return "change";
+  }
+  return "input";
+}
+function handleInputAttribute(context2, element, value2, added) {
+  const dataType = getDataType(element);
+  if (context2 != null && dataType != null) {
     const name = `input:${value2}`;
-    handleActionAttribute(context2, element2, name, added, {
-      event: event2,
-      handler: () => {
-        setDataValue(type, context2, element2, value2);
+    const eventType = getEventType(element);
+    handleActionAttribute(context2, element, name, added, {
+      event: eventType,
+      handler: (event2) => {
+        setDataValue(dataType, context2, event2.target, value2);
       }
     });
-    handleTargetElement(context2, element2, name, added);
+    handleTargetElement(context2, element, name, added);
   }
 }
-function handleOutputAttribute(context2, element2, value2, added) {
-  handleTargetElement(context2, element2, `output:${value2}`, added);
+function handleOutputAttribute(context2, element, value2, added) {
+  handleTargetElement(context2, element, `output:${value2}`, added);
 }
-function setDataValue(type, context2, element2, name) {
-  context2.data.value[name] = type === "boolean" ? element2.checked : type === "parseable" ? parse(element2.value) ?? element2.value : element2.value;
+function setDataValue(type, context2, element, name) {
+  context2.data.value[name] = type === "boolean" ? element.checked : type === "parseable" ? parse(element.value) ?? element.value : element.value;
 }
 
 // src/constants.ts
@@ -712,10 +742,10 @@ var attributeCallbacks = {
 var attributeTypes = Object.keys(attributeCallbacks);
 var attributeTypesLength = attributeTypes.length;
 var controllerAttribute = "data-controller";
-var controllers = new Map;
 var actionAttributePattern = /^(?:(\w+)->)?(\w+)(?:#(\w+))?@(\w+)(?::([a-z:]+))?/i;
 var extendedActionAttributePattern = /^(?:(?:(?:(\w+)(?:#(\w+))?)?@)?(\w+)->)?(\w+)(?:#(\w+))?@(\w+)(?::([a-z:]+))?/i;
 var targetAttributePattern = /^(\w+)(?:#(\w+))?\.(\w+)$/i;
+var changeEventTypes = new Set(["checkbox", "radio"]);
 var defaultEvents = {
   A: "click",
   BUTTON: "click",
@@ -731,6 +761,7 @@ var ignoredInputTypes = new Set([
   "reset"
 ]);
 var parseableInputTypes = new Set([
+  "hidden",
   "number",
   "radio",
   "range",
@@ -748,11 +779,11 @@ function observerDocument() {
     attributes: true,
     childList: true,
     subtree: true
-  }, (element2, name, value2, added) => {
+  }, (element, name, value2, added) => {
     if (attributes3.includes(name)) {
       handleAttributeChanges(name.slice(5), {
         added,
-        element: element2,
+        element,
         name,
         value: value2,
         handler: name === controllerAttribute ? handleControllerAttribute : undefined
@@ -765,12 +796,12 @@ function observerDocument() {
 class Magnus {
   add(name, ctor) {
     if (!controllers.has(name)) {
-      createController(name, ctor);
+      controllers.create(name, ctor);
       observer.update();
     }
   }
   remove(name) {
-    removeController(name);
+    controllers.remove(name);
   }
   start() {
     observer.start();
