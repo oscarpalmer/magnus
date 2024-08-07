@@ -16,7 +16,7 @@ export function findTarget(
 
 		default:
 			return (
-				controllers.findContext(origin, name, id)?.element ??
+				controllers.find(origin, name, id)?.element ??
 				(noId
 					? (origin.ownerDocument.querySelector(`#${name}`) as EventTarget)
 					: undefined)

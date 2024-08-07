@@ -50,6 +50,24 @@ export type EventMatches = {
     name?: string;
     options?: string;
 };
+export type GetTargets = {
+    /**
+     * Find elements within the controller's element
+     */
+    find<Found extends Element = Element>(selector: string): Found[];
+    /**
+     * Get the first element with the given target name
+     */
+    get<Target extends Element = Element>(name: string): Target | undefined;
+    /**
+     * Get all elements with the given target name
+     */
+    getAll<Target extends Element = Element>(name: string): Target[];
+    /**
+     * Does the controller have any elements with the given target name?
+     */
+    has(name: string): boolean;
+};
 export type ObserverCallback = (element: Element, name: string, value: string, added: boolean) => void;
 export type ParsedAttribute = {
     id?: string;

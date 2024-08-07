@@ -32,14 +32,6 @@ isObject('hello');
 */
 export type UnknownRecord = Record<PropertyKey, unknown>;
 export type PlainObject = UnknownRecord;
-export type ActionParameters = {
-	callback: (event: Event) => void;
-	name: string;
-	options: AddEventListenerOptions;
-	type: string;
-};
-export type ControllerConstructor = new (context: Context) => Controller;
-export type ObserverCallback = (element: Element, name: string, value: string, added: boolean) => void;
 declare class Observer {
 	private readonly element;
 	private readonly options;
@@ -65,11 +57,15 @@ declare class Data {
 	constructor(context: Context);
 }
 declare class Targets {
+	private readonly callbacks;
 	private readonly store;
+	get getters(): GetTargets;
+	constructor(element: Element);
 	add(name: string, element: Element): void;
 	clear(): void;
-	get(name: string): Element | undefined;
-	getAll(name: string): Element[];
+	get<Target extends Element = Element>(name: string): Target | undefined;
+	getAll<Target extends Element = Element>(name: string): Target[];
+	has(name: string): boolean;
 	remove(name: string, element: Element): void;
 }
 declare class Context {
@@ -82,6 +78,32 @@ declare class Context {
 	readonly targets: Targets;
 	constructor(name: string, element: Element, ctor: ControllerConstructor);
 }
+export type ActionParameters = {
+	callback: (event: Event) => void;
+	name: string;
+	options: AddEventListenerOptions;
+	type: string;
+};
+export type ControllerConstructor = new (context: Context) => Controller;
+export type GetTargets = {
+	/**
+	 * Find elements within the controller's element
+	 */
+	find<Found extends Element = Element>(selector: string): Found[];
+	/**
+	 * Get the first element with the given target name
+	 */
+	get<Target extends Element = Element>(name: string): Target | undefined;
+	/**
+	 * Get all elements with the given target name
+	 */
+	getAll<Target extends Element = Element>(name: string): Target[];
+	/**
+	 * Does the controller have any elements with the given target name?
+	 */
+	has(name: string): boolean;
+};
+export type ObserverCallback = (element: Element, name: string, value: string, added: boolean) => void;
 export declare abstract class Controller<Data extends PlainObject = PlainObject> {
 	protected readonly context: Context;
 	/**
@@ -96,15 +118,19 @@ export declare abstract class Controller<Data extends PlainObject = PlainObject>
 	 * Controller name
 	 */
 	get name(): string;
+	/**
+	 * The controller's targets
+	 */
+	get targets(): GetTargets;
 	constructor(context: Context);
 	/**
 	 * Called when the controller is connected
 	 */
-	abstract connected(): void;
+	abstract connect(): void;
 	/**
 	 * Called when the controller is disconnected
 	 */
-	abstract disconnected(): void;
+	abstract disconnect(): void;
 }
 declare class Magnus {
 	/**

@@ -22,7 +22,7 @@ class Controllers {
 		}
 	}
 
-	findContext(origin: Element, name: string, id?: string): Context | undefined {
+	find(origin: Element, name: string, id?: string): Context | undefined {
 		let found: Element | null;
 
 		if (id == null) {
@@ -72,7 +72,7 @@ class Controllers {
 			context.actions.clear();
 			context.targets.clear();
 
-			context.controller.disconnected?.();
+			context.controller.disconnect?.();
 
 			controller?.instances.delete(context.element);
 		}

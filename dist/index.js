@@ -10,6 +10,9 @@ class Controller {
   get name() {
     return this.context.name;
   }
+  get targets() {
+    return this.context.targets.getters;
+  }
   constructor(context) {
     this.context = context;
   }
@@ -144,6 +147,29 @@ function parse(value2, reviver) {
   } catch {
   }
 }
+function words(value2) {
+  return value2.match(/[^\x00-\x2f\x3a-\x40\x5b-\x60\x7b-\x7f]+/g) ?? [];
+}
+
+// node_modules/@oscarpalmer/atoms/dist/js/string/case.mjs
+function camelCase(value) {
+  return toCase(value, "", true, false);
+}
+function capitalise(value) {
+  if (value.length === 0) {
+    return value;
+  }
+  return value.length === 1 ? value.toLocaleUpperCase() : `${value.charAt(0).toLocaleUpperCase()}${value.slice(1).toLocaleLowerCase()}`;
+}
+function kebabCase(value) {
+  return toCase(value, "-", false, false);
+}
+function toCase(value, delimiter, capitaliseAny, capitaliseFirst) {
+  return words(value).map((word, index) => {
+    const parts = word.replace(/(\p{Lu}*)(\p{Lu})(\p{Ll}+)/gu, (full, one, two, three) => three === "s" ? full : `${one}-${two}${three}`).replace(/(\p{Ll})(\p{Lu})/gu, "$1-$2").split("-");
+    return parts.filter((part) => part.length > 0).map((part, partIndex) => !capitaliseAny || partIndex === 0 && index === 0 && !capitaliseFirst ? part.toLocaleLowerCase() : capitalise(part)).join(delimiter);
+  }).join(delimiter);
+}
 // node_modules/@oscarpalmer/atoms/dist/js/is.mjs
 function isNullableOrWhitespace(value2) {
   return value2 == null || /^\s*$/.test(getString(value2));
@@ -183,34 +209,43 @@ function setElementValues(elements, value2) {
   }
 }
 function setValue2(context, prefix, name, value2) {
-  const { element, targets } = context;
-  setAttribute(element, `${prefix}${name}`, value2);
-  setElementContents(targets.getAll(`output:${name}`), value2.stringified);
-  setElementValues(targets.getAll(`input:${name}`), value2.stringified);
+  cancelAnimationFrame(frames.get(context));
+  setAttribute(context.element, `${prefix}${kebabCase(name)}`, value2);
+  setElementValues(context.targets.getAll(`input:${name}`), value2.stringified);
+  setElementContents(context.targets.getAll(`output:${name}`), value2.stringified);
+  setElementContents(context.targets.getAll(`output:${name}:json`), JSON.stringify(value2.original, null, +(getComputedStyle(context.element)?.tabSize ?? "4")));
+  frames.set(context, requestAnimationFrame(() => {
+    const all = JSON.stringify(context.data.value, null, 2);
+    setElementContents(context.targets.getAll("output:$:json"), all);
+  }));
 }
 function setValueFromAttribute(context, name, value2) {
   if (getString(context.data.value[name]) !== value2) {
     context.data.value[name] = value2 == null ? value2 : parse(value2) ?? value2;
   }
 }
+var frames = new WeakMap;
 
 class Data {
   value;
   constructor(context) {
-    const frames = {};
+    const frames2 = {};
     const prefix = `data-${context.name}-`;
     this.value = new Proxy({}, {
+      get(target, property) {
+        return Reflect.get(target, camelCase(String(property)));
+      },
       set(target, property, next) {
-        const previous = Reflect.get(target, property);
+        const name = camelCase(String(property));
+        const previous = Reflect.get(target, name);
         const nextAsString = getString(next);
         if (getString(previous) === nextAsString) {
           return true;
         }
-        const result = Reflect.set(target, property, next);
+        const result = Reflect.set(target, name, next);
         if (result) {
-          const name = String(property);
-          cancelAnimationFrame(frames[name]);
-          frames[name] = requestAnimationFrame(() => {
+          cancelAnimationFrame(frames2[name]);
+          frames2[name] = requestAnimationFrame(() => {
             setValue2(context, prefix, name, {
               original: next,
               stringified: next == null ? "" : nextAsString
@@ -236,7 +271,28 @@ function parseActionAttribute(attribute) {
   }
 }
 function parseAttribute(type, value2) {
-  return type === "action" ? parseActionAttribute(value2) : parseTargetAttribute(value2);
+  switch (type) {
+    case "action":
+      return parseActionAttribute(value2);
+    case "output":
+      return parseOutputAttribute(value2);
+    default:
+      return parseTargetAttribute(value2);
+  }
+}
+function parseOutputAttribute(attribute) {
+  const matches = outputAttributePattern.exec(attribute);
+  if (matches != null) {
+    const [, name, id, value2, json] = matches;
+    if (value2 == null && json == null) {
+      return;
+    }
+    return {
+      id,
+      name,
+      value: `${value2 ?? "$"}${json ?? ""}`
+    };
+  }
 }
 function parseTargetAttribute(attribute) {
   const matches = targetAttributePattern.exec(attribute);
@@ -259,7 +315,7 @@ function handleTargetAttribute(type, element, value2, added) {
     if (parsed == null || count2 >= 10) {
       return;
     }
-    const context = controllers.findContext(element, parsed.name, parsed.id);
+    const context = controllers.find(element, parsed.name, parsed.id);
     if (context == null) {
       count2 += 1;
       requestAnimationFrame(step);
@@ -458,7 +514,7 @@ function observeController(name, element) {
     attributes: true
   }, (element2, attribute2) => {
     if (attribute2.startsWith(prefix)) {
-      context ??= controllers.findContext(element2, name);
+      context ??= controllers.find(element2, name);
       if (context != null) {
         setValueFromAttribute(context, attribute2.slice(prefix.length), element2.getAttribute(attribute2) ?? "");
       }
@@ -524,7 +580,19 @@ class Actions {
 
 // src/store/target.store.ts
 class Targets {
+  callbacks;
   store = new Map;
+  get getters() {
+    return { ...this.callbacks };
+  }
+  constructor(element) {
+    this.callbacks = {
+      find: (selector) => [...element.querySelectorAll(selector)],
+      get: this.get.bind(this),
+      getAll: this.getAll.bind(this),
+      has: this.has.bind(this)
+    };
+  }
   add(name, element) {
     let targets = this.store.get(name);
     if (targets == null) {
@@ -547,6 +615,9 @@ class Targets {
   getAll(name) {
     return [...this.store.get(name) ?? []];
   }
+  has(name) {
+    return (this.store.get(name)?.size ?? 0) > 0;
+  }
   remove(name, element) {
     this.store.get(name)?.delete(element);
   }
@@ -567,10 +638,10 @@ class Context {
     this.actions = new Actions;
     this.data = new Data(this);
     this.observer = observeController(name, element);
-    this.targets = new Targets;
+    this.targets = new Targets(element);
     this.controller = new ctor(this);
     handleAttributes(this);
-    this.controller.connected?.();
+    this.controller.connect?.();
   }
 }
 
@@ -588,7 +659,7 @@ class Controllers {
       this.stored.set(name, new StoredController(ctor));
     }
   }
-  findContext(origin, name, id) {
+  find(origin, name, id) {
     let found;
     if (id == null) {
       found = findRelatives(origin, `[data-controller~="${name}"]`)[0];
@@ -622,7 +693,7 @@ class Controllers {
       context2.observer.stop();
       context2.actions.clear();
       context2.targets.clear();
-      context2.controller.disconnected?.();
+      context2.controller.disconnect?.();
       controller5?.instances.delete(context2.element);
     }
   }
@@ -646,7 +717,7 @@ function findTarget(origin, name, id) {
     case (noId && /^window$/i.test(name)):
       return origin.ownerDocument?.defaultView ?? window;
     default:
-      return controllers.findContext(origin, name, id)?.element ?? (noId ? origin.ownerDocument.querySelector(`#${name}`) : undefined);
+      return controllers.find(origin, name, id)?.element ?? (noId ? origin.ownerDocument.querySelector(`#${name}`) : undefined);
   }
 }
 
@@ -744,7 +815,8 @@ var attributeTypesLength = attributeTypes.length;
 var controllerAttribute = "data-controller";
 var actionAttributePattern = /^(?:(\w+)->)?(\w+)(?:#(\w+))?@(\w+)(?::([a-z:]+))?/i;
 var extendedActionAttributePattern = /^(?:(?:(?:(\w+)(?:#(\w+))?)?@)?(\w+)->)?(\w+)(?:#(\w+))?@(\w+)(?::([a-z:]+))?/i;
-var targetAttributePattern = /^(\w+)(?:#(\w+))?\.(\w+)$/i;
+var outputAttributePattern = /^(\w+)(?:#(\w+))?(?:\.(\w+))?(:json)?$/i;
+var targetAttributePattern = /^(\w+)(?:#(\w+))?\.(\w+)$/;
 var changeEventTypes = new Set(["checkbox", "radio"]);
 var defaultEvents = {
   A: "click",

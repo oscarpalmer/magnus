@@ -15,7 +15,7 @@ export function observeController(name: string, element: Element): Observer {
 		},
 		(element, attribute) => {
 			if (attribute.startsWith(prefix)) {
-				context ??= controllers.findContext(element, name);
+				context ??= controllers.find(element, name);
 
 				if (context != null) {
 					setValueFromAttribute(

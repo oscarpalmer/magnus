@@ -21,12 +21,12 @@ export class Context {
 		this.actions = new Actions();
 		this.data = new Data(this);
 		this.observer = observeController(name, element);
-		this.targets = new Targets();
+		this.targets = new Targets(element);
 
 		this.controller = new ctor(this);
 
 		handleAttributes(this);
 
-		this.controller.connected?.();
+		this.controller.connect?.();
 	}
 }

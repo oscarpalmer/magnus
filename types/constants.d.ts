@@ -5,6 +5,7 @@ export declare const attributeTypesLength: number;
 export declare const controllerAttribute = "data-controller";
 export declare const actionAttributePattern: RegExp;
 export declare const extendedActionAttributePattern: RegExp;
+export declare const outputAttributePattern: RegExp;
 export declare const targetAttributePattern: RegExp;
 export declare const changeEventTypes: Set<string>;
 export declare const defaultEvents: Record<string, string>;

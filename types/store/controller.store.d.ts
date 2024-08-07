@@ -4,7 +4,7 @@ declare class Controllers {
     private readonly stored;
     add(name: string, element: Element): void;
     create(name: string, ctor: ControllerConstructor): void;
-    findContext(origin: Element, name: string, id?: string): Context | undefined;
+    find(origin: Element, name: string, id?: string): Context | undefined;
     has(name: string): boolean;
     remove(name: string, element?: Element): void;
     private removeInstance;

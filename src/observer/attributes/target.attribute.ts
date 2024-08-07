@@ -20,7 +20,7 @@ export function handleTargetAttribute(
 			return;
 		}
 
-		const context = controllers.findContext(element, parsed.name, parsed.id);
+		const context = controllers.find(element, parsed.name, parsed.id);
 
 		if (context == null) {
 			count += 1;

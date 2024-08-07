@@ -12,11 +12,11 @@ To quickly get started, Magnus needs some nice HTML:
 
 ```html
 <div data-controller="talin">
-  <input data-talin-target="input" type="text" />
+  <input data-target="talin.input" type="text" />
 
-  <button data-talin-action="click@greet">Greet</button>
+  <button data-action="click->talin@greet">Greet</button>
 
-  <pre data-talin-target="output"></pre>
+  <pre data-target="talin.output"></pre>
 </div>
 ```
 
@@ -27,18 +27,18 @@ import {Controller} from 'magnus';
 
 export class Talin extends Controller {
   greet(): void {
-    this.targets.get('output')[0].innerHTML = this.targets.get('input')[0].value;
+    this.targets.get('output').textContent = this.targets.get('input').value;
   }
 }
 ```
 
-… and that's it. Entering any value in the input and then clicking the button should display the same value below the button. Awesome!
+… and that's it. Entering any value in the input field and then clicking the button will display the same value below the button. Awesome!
 
 _(Thanks to [Stimulus](https://github.com/hotwired/stimulus) for the example, which looks mostly the same for Magnus!)_
 
 ## Installation
 
-Magnus is available on NPM as `magnus` and works well with JavaScript-bundlers, like [Rollup](https://github.com/rollup/rollup) and [Webpack](https://github.com/webpack/webpack), as well as completely standalone using one of the files in the `dist`-folder.
+Magnus is available on NPM as `magnus` and works well with JavaScript-bundlers, or you may use it completely standalone using the file in the `dist`-folder.
 
 ## How Magnus works
 
@@ -50,9 +50,10 @@ Magnus is built on top of mutation observers, which are objects that watch for c
 
 These event handlers are then able to:
 
-- create (and remove) controller instances that can react to interactivity in the DOM
-- create (and remove) targets – element groups – from controllers
-- create (and remove) actions – controller-specific event handlers – that handle interactivity for the controller
+- create _(and remove)_ controller instances that can react to interactivity in the DOM
+- create _(and remove)_ targets _(element groups)_ from controllers
+- create _(and remove)_ actions _(controller-specific event handlers)_ that handle interactivity for the controller
+- create _(and remove)_ input- and output-target, which are built-in targets _(with actions)_ for handling reactivity for the controller
 
 #### Controller lifecycle events
 
@@ -60,19 +61,16 @@ As controllers can be created and destroyed, they may also need to react to such
 
 ### Application
 
-To get things going with Magnus, we first need do create and start its application, like below:
+To get things going with Magnus, all we need to do is import the application, like below:
 
 ```typescript
-import {Application} from 'magnus';
-
-// Creates a Magnus application
-const application = new Application();
-
-// Begins to observe the document element
-application.start();
+import {magnus} from '@oscarpalmer/magnus'; // And it will automatically start and observe the document
 
 // Stops observing the document element
 application.stop();
+
+// Begins to observe the document element again
+application.start();
 ```
 
 ### Controllers
@@ -80,40 +78,41 @@ application.stop();
 Magnus controllers should be regular JavaScript classes, while also extending the base controller class available in Magnus.
 
 ```typescript
-import {Controller} from 'magnus';
+import {Controller} from '@oscarpalmer/magnus';
 
-export class Talin extends Controller {
-  greet(): void {
-    this.targets.get('output')[0].innerHTML = this.targets.get('name')[0].value;
-  }
-}
+export class Talin extends Controller {}
 ```
 
-To allow Magnus to create instances for a controller, it must also be added to the application with a name.
+To allow Magnus to create instances for a controller, it must also be added to Magnus with a name.
 
 ```typescript
+import {magnus} from '@oscarpalmer/magnus';
 import {Talin} from 'talin';
 
-// Add controller to application with a name to watch for in observer
-application.add('talin', Talin);
+// Add controller to Magnus with a name to watch for in observer
+magnus.add('talin', Talin);
 ```
 
-When a controller has been instantiated, it will also create a mutation observer for itself and begin to observe actions and targets within the controller instance's element, as well as call its `connect`-method.
+When a controller has been instantiated, it will call its `connect`-method.
 
-When a controller is removed, either by having its element removed from the DOM or by modifying the element's `data-controller`-attribute, it will stop observing the element, as well as remove all actions and targets from itself and finally call the `disconnect`-method.
+When a controller is removed, either by having its element removed from the DOM or by modifying the element's `data-controller`-attribute, it will stop observing the element, as well as remove all actions and targets from itself, and finally call the `disconnect`-method.
 
 ### Targets
 
-Targets are elements in your controller that are useful to have quick and easy access to. Targers are defined by the attribute `data-talin-target`, where `talin` is the name of your controller.
+Targets are elements in your controller that are useful to have quick and easy access to. Targets are defined by the attribute `data-target`.
 
-The value for the attribute should be a string of space-separated names, allowing for an element to be part of multiple target groups.
+The value for the attribute should be a string of space-separated names, allowing for an element to be part of multiple target groups _(and multiple controllers!)_
+
+To map the target to your controller, you may use `talin.output`, where `talin` is the name of your controller and `output` is the name of the target group, and Magnus will attempt to find controller closest to your element.
+
+If you wish to map the target to a specific controller, you may use `talin#id.output`, where `talin` and `output` remain the same as above, but `id` points to an element with the same ID.
 
 #### Target example
 
 Define your targets in HTML:
 
 ```html
-<span data-talin-target="output"></span>
+<span data-target="talin.output"></span>
 ```
 
 And access them in JavaScript:
@@ -124,11 +123,14 @@ import {Controller} from 'magnus';
 export class Talin extends Controller {
   // Custom method for showcasing built-in target-methods
   getTargets(): void {
-    // Returns an array of targets, i.e. elements connected to the controller
+    // Returns the first target
     const targets = this.targets.get('output')
 
-    // Returns true if target(s) exists
-    const exists = this.targets.exists('output')
+    // Returns an array of targets
+    const targets = this.targets.getAll('output')
+
+    // Returns true if at least one target exists
+    const has = this.targets.has('output')
 
     // Finds and returns elements within the controller (not just targets),
     // and accepts whatever 'querySelectorAll' will take
@@ -137,45 +139,47 @@ export class Talin extends Controller {
 }
 ```
 
-Two of the methods above — `get` and `find` — also accepts an optional type for easier control of whatever is found and returned, e.g. `this.targets.find<HTMLButtonElement>('button')`, for retrieving a list of properly typed button-elements.
-
-#### Target changes
-
-It's also possible to listen for target changes which are emitted using a parameters object containg the target name, together with the target element and a value to tell if the target was added or removed. To listen for emitted changes, a callback needs to be attached to `events.target` on your controller using its `listen`-method, as seen below.
-
-##### Target change example
-
-```typescript
-import {DataChange, Magnus} from 'magnus';
-
-class Talin extends Controller {
-  connect(): void {
-    this.events.target.listen(this.targetChanged);
-  }
-
-  targetChanged(change: DataChange): void {
-    // Called when any target has changed, where 'change' is a simple object of:
-    // - change.name: its previously defined target name
-    // - change.element: the HTML element
-    // - change.added: true if added, false if removed
-  }
-}
-```
+The methods above _(except `has`)_ also accepts an optional type for easier management of whatever is found and returned, e.g., `this.targets.find<HTMLButtonElement>('button')` for retrieving a list of properly typed button-elements.
 
 ### Actions
 
-Actions are events for elements within a controller and are defined by the attribute `data-talin-action`, where `talin` is the name of your controller.
+Actions are events for elements within a controller and are defined by the attribute `data-action`.
 
-The value for the attribute should be a space-separated string of actions, where each action should resembles `type@callback` or `callback`, where `type` is an optional value matching an event type, and `callback` should match a method in your controller. Omitting the type tells Magnus to find an appropriate one based on the element's tag, if possible.
+The value for the attribute should be a space-separated string of actions, where each action should match any of the following:
 
-Event options can also be set for an action, which are suffixed to the previous attribute value with a colon, e.g. `type@callback:option-1:option-2`, where `option-1` and `option-2` are the two options. [Valid event options](https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener#parameters) for an action are `capture`, `once`, and `passive`, and when included, will be set to true. All options are by default set to `false`.
+- `controller@method`
+- `controller@method:options`
+- `controller#id@method`
+- `controller#id@method:options`
+- `event->controller@method`
+- `event->controller@method:options`
+- `event->controller#id@method`
+- `event->controller#id@method:options`
+- `external@event->controller@method`
+- `external@event->controller@method:options`
+- `external@event->controller#id@method`
+- `external@event->controller#id@method:options`
+- `external#identifier@event->controller@method`
+- `external#identifier@event->controller@method:options`
+- `external#identifier@event->controller#id@method`
+- `external#identifier@event->controller#id@method:options`
+
+|         Part | Description                                                                                                                                                                                                                      |
+| -----------: | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `controller` | Name of controller                                                                                                                                                                                                               |
+|     `method` | Name of controller method                                                                                                                                                                                                        |
+|    `options` | Event options; a colon-separated string that may contain:<br>&bull;&nbsp;`a` or `active` for allowing `preventDefault`<br>&bull;&nbsp;`c` or `capture` for capturing events<br>&bull;&nbsp;`o` or `once` for handling event once |
+|         `id` | ID for element that has the controller                                                                                                                                                                                           |
+|      `event` | Event name<br>_(Whenever event is omitted, Magnus will try to interpret a default event type based on the element)_                                                                                                              |
+|   `external` | External target, either `window`, `document`, a controller, or an element ID                                                                                                                                                     |
+| `identifier` | If external is a controller, `identifier` is used to identify a specific controller                                                                                                                                              |
 
 #### Action example
 
 Define your actions in HTML:
 
 ```html
-<button data-talin-action="click@greet:once">Greet</button>
+<button data-action="click@greet:once">Greet</button>
 ```
 
 And define their methods in JavaScript:
@@ -190,38 +194,37 @@ export class Talin extends Controller {
 }
 ```
 
-#### Global actions
+### Input & output
 
-Actions can also be created for two global targets — `document` and `window` — on your controller's targets, which can be useful to listen for events like `popstate` or even connecting controllers with each other. The syntax is similar to regular actions, but must be prefixed with either `document->` or `window->`, while also specifying a event name, e.g. `window->type@callback`.
+Inputs and outputs are built-in targets that allow for reactivity in a controller, by listening to change events on input-targets - using the attribute `data-input` - and outputting values into output-targets - using the attribute `data-output`.
 
-#### Triggering actions
+To map such a target to your controller, you may use `talin.message`, where `talin` is the name of your controller and `message` is the key in the controller's data, and Magnus will attempt to find controller closest to your element.
 
-To trigger an action, either for a global target – `document` or `window` – or an element, the `xxx.events.dispath`-method can be called with two parameters: the name of the action (event) to be triggered, and an optional object containing information regarding the event. For more details on this object, please see the snippet below:
+If you wish to map the target to a specific controller, you may use `talin#id.message`, where `talin` and `message` remain the same as above, but `id` points to an element with the same ID.
 
-```typescript
-const information = {
-  // Any kind of data, to be accessed using the 'details'-property
-  // on the event object in the listener method
-  data: null,
-  options: {
-    // Should the event bubble? Defaults to false
-    bubbles: false,
-    // Is the event cancelable? Defaults to false
-    cancelable: false,
-    // Is the event composed and will travel across DOMs? Defaults to false
-    composed: false,
-  },
-  // Can be 'document', 'window', or an element;
-  // defaults to the controller's element
-  target: null,
-};
+Whenever the value for an input-target changes, the new value will be stored in the controller's data, update the contents of output-targets _(using the same key)_, as well as update the values of input-targets _(using the same key)_.
+
+#### Outputting JSON
+
+If you have any kind of object you wish to display, either the complete data for a controller or a key-based value in the controller's data, you may do so with the `:json`-suffix in the attribute value, e.g., `talin.object:json`.
+
+#### Input & output example
+
+```html
+<div>
+  <label for="message">Message</label>
+  <textarea id="message" data-input="talin.message"></textarea>
+  <!-- Our textarea now automatically responds to input events... -->
+</div>
+<pre data-output="talin.message"></pre>
+<!-- ... and updates the formatted block! -->
 ```
 
 ### Data
 
 Magnus is also able to handle simple, mostly-flat data structures, as well as respond to changes when needed.
 
-Data can be initialized for a controller using attributes on your controller element, e.g. `data-talin-data-name`, where `name` is the name for the value to store, and its value is the actual data value (of any type!). If the name contains dashes or underscores, it will be converted to its camel-cased variant in the controller, i.e. `data-talin-data-my-property` &rarr; `myProperty`.
+Data can be initialized for a controller using attributes on your controller element, e.g. `data-talin-name`, where `name` is the key for the value to store, and its value is the actual data value _(of any type!)_. If the name contains dashes or underscores, it will be converted to its camel-cased variant in the controller, i.e., `data-talin-my-property` &rarr; `myProperty`.
 
 To access the data structure for retrieving and storing information, the controller has the property `data` which returns [a Proxy-object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy), so be mindful of how you retrieve and store nested objects.
 

@@ -1,6 +1,11 @@
 import {isNullableOrWhitespace} from '@oscarpalmer/atoms/is';
 import type {PlainObject} from '@oscarpalmer/atoms/models';
-import {getString, parse} from '@oscarpalmer/atoms/string';
+import {
+	camelCase,
+	getString,
+	kebabCase,
+	parse,
+} from '@oscarpalmer/atoms/string';
 import {changeEventTypes} from '../constants';
 import type {Context} from '../controller/context';
 
@@ -8,6 +13,8 @@ type Value = {
 	original: unknown;
 	stringified: string;
 };
+
+const frames: WeakMap<Context, number> = new WeakMap();
 
 export class Data {
 	readonly value: PlainObject;
@@ -19,19 +26,21 @@ export class Data {
 		this.value = new Proxy(
 			{},
 			{
+				get(target, property) {
+					return Reflect.get(target, camelCase(String(property)));
+				},
 				set(target, property, next) {
-					const previous = Reflect.get(target, property);
+					const name = camelCase(String(property));
+					const previous = Reflect.get(target, name);
 					const nextAsString = getString(next);
 
 					if (getString(previous) === nextAsString) {
 						return true;
 					}
 
-					const result = Reflect.set(target, property, next);
+					const result = Reflect.set(target, name, next);
 
 					if (result) {
-						const name = String(property);
-
 						cancelAnimationFrame(frames[name]);
 
 						frames[name] = requestAnimationFrame(() => {
@@ -103,11 +112,33 @@ function setValue(
 	name: string,
 	value: Value,
 ): void {
-	const {element, targets} = context;
+	cancelAnimationFrame(frames.get(context) as never);
 
-	setAttribute(element, `${prefix}${name}`, value);
-	setElementContents(targets.getAll(`output:${name}`), value.stringified);
-	setElementValues(targets.getAll(`input:${name}`), value.stringified);
+	setAttribute(context.element, `${prefix}${kebabCase(name)}`, value);
+	setElementValues(context.targets.getAll(`input:${name}`), value.stringified);
+
+	setElementContents(
+		context.targets.getAll(`output:${name}`),
+		value.stringified,
+	);
+
+	setElementContents(
+		context.targets.getAll(`output:${name}:json`),
+		JSON.stringify(
+			value.original,
+			null,
+			+(getComputedStyle(context.element)?.tabSize ?? '4'),
+		),
+	);
+
+	frames.set(
+		context,
+		requestAnimationFrame(() => {
+			const all = JSON.stringify(context.data.value, null, 2);
+
+			setElementContents(context.targets.getAll('output:$:json'), all);
+		}),
+	);
 }
 
 export function setValueFromAttribute(
