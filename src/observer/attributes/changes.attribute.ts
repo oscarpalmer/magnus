@@ -1,9 +1,23 @@
+import {inputAndOutputAttributePattern, strictTypes} from '../../constants';
 import type {
 	AttributeChangesParameters,
 	AttributeHandleParameters,
 	AttributeType,
-} from '../models';
-import {handleTargetAttribute} from './attributes/target.attribute';
+} from '../../models';
+import {handleTargetAttribute} from './target.attribute';
+
+function getAttribute(
+	type: AttributeType,
+	element: Element,
+): string | undefined {
+	const attribute = element.getAttribute(`data-${type}`) ?? '';
+
+	return strictTypes.has(type)
+		? attribute
+				.split(/\s+/g)
+				.find(part => inputAndOutputAttributePattern.test(part))
+		: attribute;
+}
 
 function getChanges(from: string, to: string): string[][] {
 	const fromValues = getParts(from);
@@ -42,11 +56,9 @@ export function handleAttributeChanges(
 ): void {
 	let from = initial ? '' : parameters.value;
 
-	let to = initial
-		? parameters.value
-		: parameters.element.getAttribute(parameters.name) ?? '';
+	let to = initial ? parameters.value : getAttribute(type, parameters.element);
 
-	if (from === to) {
+	if (to == null || from === to) {
 		return;
 	}
 
@@ -59,7 +71,7 @@ export function handleAttributeChanges(
 		to,
 		element: parameters.element,
 		handler: parameters.handler,
-		name: parameters.name,
+		name: `data-${type}`,
 	});
 }
 

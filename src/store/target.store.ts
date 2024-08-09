@@ -1,19 +1,19 @@
-import type {GetTargets} from '../models';
+import type {Context} from '../controller/context';
+import type {ReadonlyTargets} from '../models';
 
 export class Targets {
-	private readonly callbacks: GetTargets;
+	private readonly callbacks: ReadonlyTargets;
 	private readonly store = new Map<string, Set<Element>>();
 
-	get getters(): GetTargets {
+	get readonly(): ReadonlyTargets {
 		return {...this.callbacks};
 	}
 
-	constructor(element: Element) {
+	constructor(private readonly context: Context) {
 		this.callbacks = {
-			find: (selector: string) =>
-				[...element.querySelectorAll(selector)] as never,
-			get: this.get.bind(this),
-			getAll: this.getAll.bind(this),
+			find: this.find.bind(this) as never,
+			get: this.get.bind(this) as never,
+			getAll: this.getAll.bind(this) as never,
 			has: this.has.bind(this),
 		};
 	}
@@ -41,12 +41,16 @@ export class Targets {
 		this.store.clear();
 	}
 
-	get<Target extends Element = Element>(name: string): Target | undefined {
-		return this.getAll(name)[0] as Target | undefined;
+	find(selector: string): Element[] {
+		return [...this.context.element.querySelectorAll(selector)] as Element[];
 	}
 
-	getAll<Target extends Element = Element>(name: string): Target[] {
-		return [...(this.store.get(name) ?? [])] as Target[];
+	get(name: string): Element | undefined {
+		return this.getAll(name)[0];
+	}
+
+	getAll(name: string): Element[] {
+		return [...(this.store.get(name) ?? [])];
 	}
 
 	has(name: string): boolean {

@@ -1,4 +1,7 @@
-import {isNullableOrWhitespace} from '@oscarpalmer/atoms/is';
+import {
+	isArrayOrPlainObject,
+	isNullableOrWhitespace,
+} from '@oscarpalmer/atoms/is';
 import type {PlainObject} from '@oscarpalmer/atoms/models';
 import {
 	camelCase,
@@ -26,6 +29,17 @@ export class Data {
 		this.value = new Proxy(
 			{},
 			{
+				deleteProperty(target, property) {
+					return updateProperty(
+						context,
+						prefix,
+						target,
+						property,
+						undefined,
+						'',
+						frames,
+					);
+				},
 				get(target, property) {
 					return Reflect.get(target, camelCase(String(property)));
 				},
@@ -38,23 +52,46 @@ export class Data {
 						return true;
 					}
 
-					const result = Reflect.set(target, name, next);
-
-					if (result) {
-						cancelAnimationFrame(frames[name]);
-
-						frames[name] = requestAnimationFrame(() => {
-							setValue(context, prefix, name, {
-								original: next,
-								stringified: next == null ? '' : nextAsString,
-							});
-						});
-					}
-
-					return result;
+					return updateProperty(
+						context,
+						prefix,
+						target,
+						name,
+						next,
+						nextAsString,
+						frames,
+					);
 				},
 			},
 		);
+	}
+}
+
+export function replaceData(context: Context, value: unknown): void {
+	const previous = Object.keys(context.data.value).filter(
+		key => key.length > 0,
+	);
+
+	const next = isArrayOrPlainObject(value)
+		? Object.keys(value).filter(key => key.length > 0)
+		: [];
+
+	for (const key of previous) {
+		if (value == null || !next.includes(key)) {
+			delete context.data.value[key];
+		} else {
+			context.data.value[key] = next.includes(key)
+				? (value as PlainObject)[key]
+				: undefined;
+		}
+	}
+
+	for (const key of next) {
+		const val = (value as PlainObject)[key];
+
+		if (!previous.includes(key) && val != null) {
+			context.data.value[key] = (value as PlainObject)[key];
+		}
 	}
 }
 
@@ -75,6 +112,10 @@ function setElementContents(elements: Element[], value: string): void {
 }
 
 function setElementValue(element: Element, value: string): void {
+	if (element === document.activeElement) {
+		return;
+	}
+
 	switch (true) {
 		case element instanceof HTMLInputElement &&
 			changeEventTypes.has(element.type):
@@ -117,26 +158,31 @@ function setValue(
 	setAttribute(context.element, `${prefix}${kebabCase(name)}`, value);
 	setElementValues(context.targets.getAll(`input:${name}`), value.stringified);
 
+	const json = JSON.stringify(
+		value.original,
+		null,
+		+(getComputedStyle(context.element)?.tabSize ?? '4'),
+	);
+
 	setElementContents(
 		context.targets.getAll(`output:${name}`),
 		value.stringified,
 	);
 
-	setElementContents(
-		context.targets.getAll(`output:${name}:json`),
-		JSON.stringify(
-			value.original,
-			null,
-			+(getComputedStyle(context.element)?.tabSize ?? '4'),
-		),
-	);
+	setElementContents(context.targets.getAll(`output:${name}:json`), json);
+	setElementValues(context.targets.getAll(`input:${name}:json`), json);
 
 	frames.set(
 		context,
 		requestAnimationFrame(() => {
-			const all = JSON.stringify(context.data.value, null, 2);
+			const json = JSON.stringify(
+				context.data.value,
+				null,
+				+(getComputedStyle(context.element)?.tabSize ?? '4'),
+			);
 
-			setElementContents(context.targets.getAll('output:$:json'), all);
+			setElementContents(context.targets.getAll('output:$:json'), json);
+			setElementValues(context.targets.getAll('input:$:json'), json);
 		}),
 	);
 }
@@ -149,4 +195,38 @@ export function setValueFromAttribute(
 	if (getString(context.data.value[name]) !== value) {
 		context.data.value[name] = value == null ? value : parse(value) ?? value;
 	}
+}
+
+function updateProperty(
+	context: Context,
+	prefix: string,
+	target: PlainObject,
+	property: PropertyKey,
+	original: unknown,
+	stringified: string,
+	frames: Record<string, number>,
+): boolean {
+	const name = camelCase(String(property));
+
+	if (name.trim().length === 0) {
+		return true;
+	}
+
+	const result =
+		original == null
+			? Reflect.deleteProperty(target, name)
+			: Reflect.set(target, name, original);
+
+	if (result) {
+		cancelAnimationFrame(frames[name]);
+
+		frames[name] = requestAnimationFrame(() => {
+			setValue(context, prefix, name, {
+				original,
+				stringified,
+			});
+		});
+	}
+
+	return result;
 }

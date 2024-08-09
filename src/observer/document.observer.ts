@@ -1,7 +1,7 @@
 import {attributeTypes, controllerAttribute} from '../constants';
 import type {AttributeType} from '../models';
 import {handleControllerAttribute} from './attributes';
-import {handleAttributeChanges} from './changes.attribute';
+import {handleAttributeChanges} from './attributes/changes.attribute';
 import {type Observer, createObserver} from './index';
 
 export function observerDocument(): Observer {
@@ -25,7 +25,6 @@ export function observerDocument(): Observer {
 					{
 						added,
 						element,
-						name,
 						value,
 						handler:
 							name === controllerAttribute

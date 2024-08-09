@@ -18,10 +18,10 @@ export class Context {
 		readonly element: Element,
 		ctor: ControllerConstructor,
 	) {
-		this.actions = new Actions();
+		this.actions = new Actions(this);
 		this.data = new Data(this);
 		this.observer = observeController(name, element);
-		this.targets = new Targets(element);
+		this.targets = new Targets(this);
 
 		this.controller = new ctor(this);
 

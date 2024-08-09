@@ -2,7 +2,7 @@ import {attributeTypes, attributeTypesLength} from '../../constants';
 import type {Context} from '../../controller/context';
 import {controllers} from '../../store/controller.store';
 import {setValueFromAttribute} from '../../store/data.store';
-import {handleAttributeChanges} from '../changes.attribute';
+import {handleAttributeChanges} from './changes.attribute';
 
 export function handleControllerAttribute(
 	element: Element,
@@ -53,7 +53,6 @@ export function handleAttributes(context: Context): void {
 						value,
 						added: true,
 						handler: undefined,
-						name: '',
 					},
 					true,
 				);

@@ -1,6 +1,6 @@
 # Magnus
 
-[![npm version](https://badge.fury.io/js/magnus.svg)](https://badge.fury.io/js/magnus)
+[![npm](https://badge.fury.io/js/@oscarpalmer%2Fmagnus.svg)](https://www.npmjs.com/package/@oscarpalmer/magnus)
 
 A JavaScript framework for developers who like HTML.
 
@@ -38,7 +38,7 @@ _(Thanks to [Stimulus](https://github.com/hotwired/stimulus) for the example, wh
 
 ## Installation
 
-Magnus is available on NPM as `magnus` and works well with JavaScript-bundlers, or you may use it completely standalone using the file in the `dist`-folder.
+Magnus is available on NPM as `@oscarpalmer/magnus` and works well with JavaScript-bundlers, or you may use it completely standalone using the file in the `dist`-folder.
 
 ## How Magnus works
 
@@ -53,13 +53,13 @@ These event handlers are then able to:
 - create _(and remove)_ controller instances that can react to interactivity in the DOM
 - create _(and remove)_ targets _(element groups)_ from controllers
 - create _(and remove)_ actions _(controller-specific event handlers)_ that handle interactivity for the controller
-- create _(and remove)_ input- and output-target, which are built-in targets _(with actions)_ for handling reactivity for the controller
+- create _(and remove)_ input- and output-targets, which are built-in targets _(with actions)_ for handling reactivity for the controller
 
 #### Controller lifecycle events
 
 As controllers can be created and destroyed, they may also need to react to such events. When a controller is created, it will call the `connect`-method; when it's destroyed, it will call the `disconnect`-method.
 
-### Application
+### Startup
 
 To get things going with Magnus, all we need to do is import the application, like below:
 
@@ -75,7 +75,7 @@ application.start();
 
 ### Controllers
 
-Magnus controllers should be regular JavaScript classes, while also extending the base controller class available in Magnus.
+Magnus controllers should be regular JavaScript classes, while also extending the base class available in Magnus.
 
 ```typescript
 import {Controller} from '@oscarpalmer/magnus';
@@ -83,7 +83,7 @@ import {Controller} from '@oscarpalmer/magnus';
 export class Talin extends Controller {}
 ```
 
-To allow Magnus to create instances for a controller, it must also be added to Magnus with a name.
+To allow Magnus to create instances of a controller, it must also be added to Magnus with a name, which is used when evaluating the `data-controller`-attribute for elements.
 
 ```typescript
 import {magnus} from '@oscarpalmer/magnus';
@@ -96,6 +96,8 @@ magnus.add('talin', Talin);
 When a controller has been instantiated, it will call its `connect`-method.
 
 When a controller is removed, either by having its element removed from the DOM or by modifying the element's `data-controller`-attribute, it will stop observing the element, as well as remove all actions and targets from itself, and finally call the `disconnect`-method.
+
+The same goes for other attributed elements, as well: e.g., modifying an element's `data-action`-attribute _(or removing the element completely)_ will then remove the element and its relevant information from the controllers it has been connected to.
 
 ### Targets
 
@@ -123,7 +125,7 @@ import {Controller} from 'magnus';
 export class Talin extends Controller {
   // Custom method for showcasing built-in target-methods
   getTargets(): void {
-    // Returns the first target
+    // Returns the first target (or undefined, if none exists)
     const targets = this.targets.get('output')
 
     // Returns an array of targets
@@ -132,7 +134,7 @@ export class Talin extends Controller {
     // Returns true if at least one target exists
     const has = this.targets.has('output')
 
-    // Finds and returns elements within the controller (not just targets),
+    // Finds and returns an array of elements within the controller (not just targets!),
     // and accepts whatever 'querySelectorAll' will take
     const found = this.targets.find('pre');
   }
@@ -164,15 +166,19 @@ The value for the attribute should be a space-separated string of actions, where
 - `external#identifier@event->controller#id@method`
 - `external#identifier@event->controller#id@method:options`
 
-|         Part | Description                                                                                                                                                                                                                      |
-| -----------: | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `controller` | Name of controller                                                                                                                                                                                                               |
-|     `method` | Name of controller method                                                                                                                                                                                                        |
-|    `options` | Event options; a colon-separated string that may contain:<br>&bull;&nbsp;`a` or `active` for allowing `preventDefault`<br>&bull;&nbsp;`c` or `capture` for capturing events<br>&bull;&nbsp;`o` or `once` for handling event once |
-|         `id` | ID for element that has the controller                                                                                                                                                                                           |
-|      `event` | Event name<br>_(Whenever event is omitted, Magnus will try to interpret a default event type based on the element)_                                                                                                              |
-|   `external` | External target, either `window`, `document`, a controller, or an element ID                                                                                                                                                     |
-| `identifier` | If external is a controller, `identifier` is used to identify a specific controller                                                                                                                                              |
+Phew, that's a lot, but it helps Magnus do a lot of cool stuff automagically with your events.
+
+#### Action parameters
+
+|         Part | Required | Description                                                                                                                                                                                                                      |
+|-------------:|:--------:|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `controller` | &check;  | Name of controller                                                                                                                                                                                                               |
+|     `method` | &check;  | Name of controller method                                                                                                                                                                                                        |
+|    `options` | &ndash;  | Event options; a colon-separated string that may contain:<br>&bull;&nbsp;`a` or `active` for allowing `preventDefault`<br>&bull;&nbsp;`c` or `capture` for capturing events<br>&bull;&nbsp;`o` or `once` for handling event once |
+|         `id` | &ndash;  | ID for element that has the controller                                                                                                                                                                                           |
+|      `event` | &ndash;  | Event name<br>_(Whenever event is omitted, Magnus will try to interpret a default event type based on the element)_                                                                                                              |
+|   `external` | &ndash;  | External target, either `window`, `document`, a controller, or an element ID                                                                                                                                                     |
+| `identifier` | &ndash;  | When included, `identifier` implies that `external` should be a controller and is used to identify a unique element using the controller                                                                                         |
 
 #### Action example
 
@@ -182,21 +188,45 @@ Define your actions in HTML:
 <button data-action="click@greet:once">Greet</button>
 ```
 
-And define their methods in JavaScript:
+And their methods in JavaScript:
 
 ```typescript
 import {Controller} from 'magnus';
 
 export class Talin extends Controller {
-  greet(event): void {
+  greet(): void {
     // Called on a click event once
+  }
+}
+```
+
+#### Dispatching actions
+
+##### Dispatching actions example
+
+```typescript
+import {Controller} from 'magnus';
+
+export class Talin extends Controller {
+  trigger(): void {
+    this.actions.dispatch('event'); // Dispatches an event on the controller's element
+
+    this.actions.dispatch('event', target);
+    // Dispatches an event for the `target`:
+    // - a string, to find the first existing target in the controller
+    // - an `EventTarget`, i.e., the document, window, or an element
+
+    this.actions.dispatch('event', options, target?)
+    // Dispatches an event on the controller's element (or target)
+    // `options` allow for bubbling, cancellation, composition,
+    // and may hold details to pass along with the event
   }
 }
 ```
 
 ### Input & output
 
-Inputs and outputs are built-in targets that allow for reactivity in a controller, by listening to change events on input-targets - using the attribute `data-input` - and outputting values into output-targets - using the attribute `data-output`.
+Inputs and outputs are built-in targets that allow for reactivity in a controller, by listening to change events on input-targets - using the attribute `data-input` - and outputting values into output-targets, using the attribute `data-output`.
 
 To map such a target to your controller, you may use `talin.message`, where `talin` is the name of your controller and `message` is the key in the controller's data, and Magnus will attempt to find controller closest to your element.
 
@@ -204,9 +234,12 @@ If you wish to map the target to a specific controller, you may use `talin#id.me
 
 Whenever the value for an input-target changes, the new value will be stored in the controller's data, update the contents of output-targets _(using the same key)_, as well as update the values of input-targets _(using the same key)_.
 
-#### Outputting JSON
+> [!IMPORTANT]
+> _Unlike regular targets, these special ones will only try to map the first proper attribute value, i.e., `talin.first talin.second` will only match `talin.first` to avoid unwanted effects in controller data stores._
 
-If you have any kind of object you wish to display, either the complete data for a controller or a key-based value in the controller's data, you may do so with the `:json`-suffix in the attribute value, e.g., `talin.object:json`.
+#### Inputting & outputting JSON
+
+If you have any kind of object you wish to edit or display, either the complete data for a controller or a key-based value in the controller's data, you may do so with the `:json`-suffix in the attribute value, e.g., `talin.object:json`, and Magnus will do its best to handle whatever JSON-y data you're working with.
 
 #### Input & output example
 
@@ -214,7 +247,7 @@ If you have any kind of object you wish to display, either the complete data for
 <div>
   <label for="message">Message</label>
   <textarea id="message" data-input="talin.message"></textarea>
-  <!-- Our textarea now automatically responds to input events... -->
+  <!-- The textarea now automatically responds to input events... -->
 </div>
 <pre data-output="talin.message"></pre>
 <!-- ... and updates the formatted block! -->
@@ -228,31 +261,18 @@ Data can be initialized for a controller using attributes on your controller ele
 
 To access the data structure for retrieving and storing information, the controller has the property `data` which returns [a Proxy-object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy), so be mindful of how you retrieve and store nested objects.
 
-When storing values, Magnus will first: update the attribute as set in the HTML; and second: emit a parameters object containg the property name, together with its new and previous values. To listen for emitted changes, a callback needs to be attached to `events.data` on your controller using its `listen`-method, as seen below.
+When storing values, Magnus will first: update the attribute as set in the HTML; and second: update input- and output-targets and set their contents and values respectively.
 
 #### Data example
 
 ```html
-<div data-controller="talin" data-talin-data-my-cool-property="and a value"></div>
+<div data-controller="talin" data-talin-my-cool-property="and a value"></div>
 ```
 
 ```typescript
 import {Controller} from 'magnus';
 
 export class Talin extends Controller {
-  connect(): void {
-    // Add a callback to listen for data changes
-    this.events.data.listen(this.dataChanged);
-  }
-
-  dataChanged(change): void {
-    // Called when any property's data has changed, where 'change' is a simple object of:
-    // - change.property
-    // - change.values:
-    //     - change.values.new
-    //     - change.values.old
-  }
-
   // Custom method accessing your custom data property
   onAlert(): void {
     alert(this.data.myCoolProperty);
@@ -272,4 +292,4 @@ Magnus also lets you set a custom type for your data model to allow for nicer ma
 
 ## License
 
-[MIT licensed](LICENSE); you're free to do whatever you'd like with all this.
+[MIT licensed](LICENSE); you're free to do whatever you'd like with whatever this is :wink:

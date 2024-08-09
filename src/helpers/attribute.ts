@@ -1,6 +1,6 @@
 import {
 	extendedActionAttributePattern,
-	outputAttributePattern,
+	inputAndOutputAttributePattern,
 	targetAttributePattern,
 } from '../constants';
 import type {AttributeType, ParsedAttribute} from '../models';
@@ -27,16 +27,19 @@ export function parseAttribute(
 		case 'action':
 			return parseActionAttribute(value);
 
+		case 'input':
 		case 'output':
-			return parseOutputAttribute(value);
+			return parseInputAndOutputAttribute(value);
 
 		default:
 			return parseTargetAttribute(value);
 	}
 }
 
-function parseOutputAttribute(attribute: string): ParsedAttribute | undefined {
-	const matches = outputAttributePattern.exec(attribute);
+function parseInputAndOutputAttribute(
+	attribute: string,
+): ParsedAttribute | undefined {
+	const matches = inputAndOutputAttributePattern.exec(attribute);
 
 	if (matches != null) {
 		const [, name, id, value, json] = matches;

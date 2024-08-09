@@ -1,13 +1,16 @@
-import type { GetTargets } from '../models';
+import type { Context } from '../controller/context';
+import type { ReadonlyTargets } from '../models';
 export declare class Targets {
+    private readonly context;
     private readonly callbacks;
     private readonly store;
-    get getters(): GetTargets;
-    constructor(element: Element);
+    get readonly(): ReadonlyTargets;
+    constructor(context: Context);
     add(name: string, element: Element): void;
     clear(): void;
-    get<Target extends Element = Element>(name: string): Target | undefined;
-    getAll<Target extends Element = Element>(name: string): Target[];
+    find(selector: string): Element[];
+    get(name: string): Element | undefined;
+    getAll(name: string): Element[];
     has(name: string): boolean;
     remove(name: string, element: Element): void;
 }

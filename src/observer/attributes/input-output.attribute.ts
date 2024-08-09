@@ -6,6 +6,7 @@ import {
 } from '../../constants';
 import type {Context} from '../../controller/context';
 import type {DataType} from '../../models';
+import {replaceData} from '../../store/data.store';
 import {handleActionAttribute} from './action.attribute';
 import {handleTargetElement} from './target.attribute';
 
@@ -50,16 +51,17 @@ export function handleInputAttribute(
 	value: string,
 	added: boolean,
 ): void {
-	const dataType = getDataType(element);
+	const [key, json] = value.split(':');
+	const data = getDataType(element);
 
-	if (context != null && dataType != null) {
+	if (context != null && data != null) {
 		const name = `input:${value}`;
-		const eventType = getEventType(element as never);
+		const event = getEventType(element as never);
 
 		handleActionAttribute(context, element, name, added, {
-			event: eventType,
+			event,
 			handler: event => {
-				setDataValue(dataType, context, event.target as never, value);
+				setDataValue(data, context, event.target as never, key, json != null);
 			},
 		});
 
@@ -81,11 +83,27 @@ function setDataValue(
 	context: Context,
 	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
 	name: string,
+	json: boolean,
 ): void {
+	let actual: unknown;
+
+	if (json) {
+		actual = parse(element.value);
+
+		if (name === '$' && element.value.trim().length > 0 && actual != null) {
+			replaceData(context, actual);
+		}
+
+		if (actual == null) {
+			return;
+		}
+	}
+
 	context.data.value[name] =
-		type === 'boolean'
+		actual ??
+		(type === 'boolean'
 			? (element as HTMLInputElement).checked
 			: type === 'parseable'
 				? parse(element.value) ?? element.value
-				: element.value;
+				: element.value);
 }

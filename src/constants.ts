@@ -37,7 +37,8 @@ export const extendedActionAttributePattern =
 	/^(?:(?:(?:(\w+)(?:#(\w+))?)?@)?(\w+)->)?(\w+)(?:#(\w+))?@(\w+)(?::([a-z:]+))?/i;
 
 // controller(#id).data(:json)
-export const outputAttributePattern = /^(\w+)(?:#(\w+))?(?:\.(\w+))?(:json)?$/i;
+export const inputAndOutputAttributePattern =
+	/^(\w+)(?:#(\w+))?(?:\.(\w+))?(:json)?$/i;
 
 // controller(#id).target
 export const targetAttributePattern = /^(\w+)(?:#(\w+))?\.(\w+)$/;
@@ -71,3 +72,7 @@ export const parseableInputTypes = new Set([
 	'range',
 	'week',
 ]);
+
+//
+
+export const strictTypes = new Set(['input', 'output']);
