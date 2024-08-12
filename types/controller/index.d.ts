@@ -1,16 +1,9 @@
 import type { PlainObject } from '@oscarpalmer/atoms/models';
-import type { ReadonlyActions, ReadonlyTargets } from '../models';
+import type { ReadonlyTargets } from '../models';
 import type { Context } from './context';
+import type { Events } from './events';
 export declare abstract class Controller<Data extends PlainObject = PlainObject> {
     protected readonly context: Context;
-    /**
-     * The controller's actions
-     */
-    get actions(): ReadonlyActions;
-    /**
-     * The controller's primary element
-     */
-    get element(): Element;
     /**
      * Get the controller's data
      */
@@ -19,6 +12,14 @@ export declare abstract class Controller<Data extends PlainObject = PlainObject>
      * Set the controller's data
      */
     set data(value: Data | null | undefined);
+    /**
+     * The controller's primary element
+     */
+    get element(): Element;
+    /**
+     * Events helper
+     */
+    get events(): Events;
     /**
      * Controller name
      */

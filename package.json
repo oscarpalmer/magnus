@@ -5,13 +5,14 @@
 	},
 	"dependencies": {
 		"@oscarpalmer/atoms": "^0.71.0",
-		"@oscarpalmer/toretto": "^0.12.0"
+		"@oscarpalmer/toretto": "^0.12.1"
 	},
 	"description": "A JavaScript framework for developers who like HTML.",
 	"devDependencies": {
 		"@biomejs/biome": "^1.8.3",
+		"@happy-dom/global-registrator": "^14.12.3",
 		"@types/bun": "^1.1.6",
-		"bun": "^1.1.21",
+		"bun": "^1.1.22",
 		"dts-bundle-generator": "^9.5.1",
 		"typescript": "^5.5.4"
 	},

@@ -1,12 +1,5 @@
-import {isPlainObject} from '@oscarpalmer/atoms/is';
-import {dispatch} from '@oscarpalmer/toretto/event';
-import type {DispatchOptions} from '@oscarpalmer/toretto/models';
 import type {Context} from '../controller/context';
-import type {
-	ActionParameters,
-	DispatchTarget,
-	ReadonlyActions,
-} from '../models';
+import type {ActionParameters} from '../models';
 
 export class Action {
 	readonly callback: (event: Event) => void;
@@ -23,14 +16,6 @@ export class Action {
 
 export class Actions {
 	private readonly store = new Map<string, Action>();
-
-	get readonly(): ReadonlyActions {
-		return {
-			dispatch: this.dispatch.bind(this),
-		};
-	}
-
-	constructor(private readonly context: Context) {}
 
 	add(name: string, target: EventTarget): void {
 		const action = this.store.get(name);
@@ -71,20 +56,6 @@ export class Actions {
 		}
 	}
 
-	dispatch(
-		type: string,
-		first?: DispatchTarget | DispatchOptions,
-		second?: DispatchTarget,
-	): void {
-		const firstIsOptions = isPlainObject(first);
-		const target = getTarget(this.context, firstIsOptions ? second : first);
-		const options = firstIsOptions ? (first as DispatchOptions) : undefined;
-
-		if (target != null) {
-			dispatch(target, type, options);
-		}
-	}
-
 	has(name: string): boolean {
 		return this.store.has(name);
 	}
@@ -102,15 +73,4 @@ export class Actions {
 			}
 		}
 	}
-}
-
-function getTarget(
-	context: Context,
-	target?: DispatchTarget,
-): EventTarget | undefined {
-	if (typeof target === 'string') {
-		return context.targets.get(target);
-	}
-
-	return target instanceof EventTarget ? target : context.element;
 }

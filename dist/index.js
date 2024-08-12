@@ -433,48 +433,8 @@ function observeController(name, element) {
     }
   });
 }
-// node_modules/@oscarpalmer/toretto/node_modules/@oscarpalmer/atoms/dist/js/is.mjs
-function isPlainObject2(value3) {
-  if (typeof value3 !== "object" || value3 === null) {
-    return false;
-  }
-  const prototype = Object.getPrototypeOf(value3);
-  return (prototype === null || prototype === Object.prototype || Object.getPrototypeOf(prototype) === null) && !(Symbol.toStringTag in value3) && !(Symbol.iterator in value3);
-}
-
-// node_modules/@oscarpalmer/toretto/dist/event.mjs
-function createDispatchOptions(options) {
-  return {
-    bubbles: getBoolean(options?.bubbles),
-    cancelable: getBoolean(options?.cancelable),
-    composed: getBoolean(options?.composed)
-  };
-}
-function createEvent(type, options) {
-  const hasOptions = isPlainObject2(options);
-  if (hasOptions && "detail" in options) {
-    return new CustomEvent(type, {
-      ...createDispatchOptions(options),
-      detail: options?.detail
-    });
-  }
-  return new Event(type, createDispatchOptions(hasOptions ? options : {}));
-}
-function dispatch(target2, type, options) {
-  target2.dispatchEvent(createEvent(type, options));
-}
-function getBoolean(value3, defaultValue) {
-  return typeof value3 === "boolean" ? value3 : defaultValue ?? false;
-}
 
 // src/store/action.store.ts
-function getTarget(context, target2) {
-  if (typeof target2 === "string") {
-    return context.targets.get(target2);
-  }
-  return target2 instanceof EventTarget ? target2 : context.element;
-}
-
 class Action {
   callback;
   options;
@@ -488,16 +448,7 @@ class Action {
 }
 
 class Actions {
-  context;
   store = new Map;
-  get readonly() {
-    return {
-      dispatch: this.dispatch.bind(this)
-    };
-  }
-  constructor(context) {
-    this.context = context;
-  }
   add(name, target2) {
     const action = this.store.get(name);
     if (action != null && !action.targets.has(target2)) {
@@ -524,14 +475,6 @@ class Actions {
       this.store.set(parameters.name, new Action(parameters));
     }
   }
-  dispatch(type, first, second) {
-    const firstIsOptions = isPlainObject(first);
-    const target2 = getTarget(this.context, firstIsOptions ? second : first);
-    const options = firstIsOptions ? first : undefined;
-    if (target2 != null) {
-      dispatch(target2, type, options);
-    }
-  }
   has(name) {
     return this.store.has(name);
   }
@@ -553,16 +496,16 @@ class Targets {
   callbacks;
   store = new Map;
   get readonly() {
-    return { ...this.callbacks };
+    return this.callbacks;
   }
   constructor(context) {
     this.context = context;
-    this.callbacks = {
+    this.callbacks = Object.create({
       find: this.find.bind(this),
       get: this.get.bind(this),
       getAll: this.getAll.bind(this),
       has: this.has.bind(this)
-    };
+    });
   }
   add(name, element) {
     let targets = this.store.get(name);
@@ -597,6 +540,105 @@ class Targets {
   }
 }
 
+// node_modules/@oscarpalmer/atoms/dist/js/function.mjs
+function noop() {
+}
+// node_modules/@oscarpalmer/toretto/node_modules/@oscarpalmer/atoms/dist/js/is.mjs
+function isPlainObject2(value3) {
+  if (typeof value3 !== "object" || value3 === null) {
+    return false;
+  }
+  const prototype = Object.getPrototypeOf(value3);
+  return (prototype === null || prototype === Object.prototype || Object.getPrototypeOf(prototype) === null) && !(Symbol.toStringTag in value3) && !(Symbol.iterator in value3);
+}
+
+// node_modules/@oscarpalmer/toretto/dist/event.mjs
+function createDispatchOptions(options) {
+  return {
+    bubbles: getBoolean(options?.bubbles),
+    cancelable: getBoolean(options?.cancelable),
+    composed: getBoolean(options?.composed)
+  };
+}
+function createEvent(type, options) {
+  const hasOptions = isPlainObject2(options);
+  if (hasOptions && "detail" in options) {
+    return new CustomEvent(type, {
+      ...createDispatchOptions(options),
+      detail: options?.detail
+    });
+  }
+  return new Event(type, createDispatchOptions(hasOptions ? options : {}));
+}
+function createEventOptions(options) {
+  if (isPlainObject2(options)) {
+    return {
+      capture: getBoolean(options.capture),
+      once: getBoolean(options.once),
+      passive: getBoolean(options.passive, true)
+    };
+  }
+  return {
+    capture: getBoolean(options),
+    once: false,
+    passive: true
+  };
+}
+function dispatch(target2, type, options) {
+  target2.dispatchEvent(createEvent(type, options));
+}
+function getBoolean(value3, defaultValue) {
+  return typeof value3 === "boolean" ? value3 : defaultValue ?? false;
+}
+function off(target2, type, listener, options) {
+  target2.removeEventListener(type, listener, createEventOptions(options));
+}
+function on(target2, type, listener, options) {
+  const extended = createEventOptions(options);
+  target2.addEventListener(type, listener, extended);
+  return () => {
+    target2.removeEventListener(type, listener, extended);
+  };
+}
+
+// src/controller/events.ts
+function getTarget(context, target2) {
+  if (typeof target2 === "string") {
+    return context.targets.get(target2);
+  }
+  return target2 instanceof EventTarget ? target2 : context.element;
+}
+function handleEvent(context, parameters, add) {
+  const firstIsOptions = typeof parameters.first === "boolean" || isPlainObject(parameters.first);
+  const target2 = getTarget(context, firstIsOptions ? parameters.second : parameters.first);
+  if (target2 == null) {
+    return noop;
+  }
+  const options = firstIsOptions ? parameters.first : undefined;
+  return (add ? on : off)(target2, parameters.type, parameters.listener, options) ?? noop;
+}
+
+class Events {
+  context;
+  constructor(context) {
+    this.context = context;
+  }
+  dispatch(type, first, second) {
+    const firstIsOptions = isPlainObject(first);
+    const target2 = getTarget(this.context, firstIsOptions ? second : first);
+    const options = firstIsOptions ? first : undefined;
+    if (target2 != null) {
+      dispatch(target2, type, options);
+    }
+  }
+  off(type, listener, first, second) {
+    handleEvent(this.context, { listener, type, first, second }, false);
+  }
+  on(type, listener, first, second) {
+    return handleEvent(this.context, { listener, type, first, second }, true);
+  }
+}
+
 // src/controller/context.ts
 class Context {
   name;
@@ -604,13 +646,15 @@ class Context {
   actions;
   controller;
   data;
+  events;
   observer;
   targets;
   constructor(name, element, ctor) {
     this.name = name;
     this.element = element;
-    this.actions = new Actions(this);
+    this.actions = new Actions;
     this.data = new Data(this);
+    this.events = new Events(this);
     this.observer = observeController(name, element);
     this.targets = new Targets(this);
     this.controller = new ctor(this);
@@ -945,17 +989,17 @@ class Data {
 // src/controller/index.ts
 class Controller {
   context2;
-  get actions() {
-    return this.context.actions.readonly;
-  }
-  get element() {
-    return this.context.element;
-  }
   get data() {
     return this.context.data.value;
   }
   set data(value3) {
     replaceData(this.context, value3);
+  }
+  get element() {
+    return this.context.element;
+  }
+  get events() {
+    return this.context.events;
   }
   get name() {
     return this.context.name;

@@ -1,23 +1,10 @@
 import type {PlainObject} from '@oscarpalmer/atoms/models';
-import type {ReadonlyActions, ReadonlyTargets} from '../models';
+import type {ReadonlyTargets} from '../models';
 import {replaceData} from '../store/data.store';
 import type {Context} from './context';
+import type {Events} from './events';
 
 export abstract class Controller<Data extends PlainObject = PlainObject> {
-	/**
-	 * The controller's actions
-	 */
-	get actions(): ReadonlyActions {
-		return this.context.actions.readonly;
-	}
-
-	/**
-	 * The controller's primary element
-	 */
-	get element(): Element {
-		return this.context.element;
-	}
-
 	/**
 	 * Get the controller's data
 	 */
@@ -30,6 +17,20 @@ export abstract class Controller<Data extends PlainObject = PlainObject> {
 	 */
 	set data(value: Data | null | undefined) {
 		replaceData(this.context, value);
+	}
+
+	/**
+	 * The controller's primary element
+	 */
+	get element(): Element {
+		return this.context.element;
+	}
+
+	/**
+	 * Events helper
+	 */
+	get events(): Events {
+		return this.context.events;
 	}
 
 	/**

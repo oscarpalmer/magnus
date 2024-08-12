@@ -1,5 +1,4 @@
 import type {GenericCallback, PlainObject} from '@oscarpalmer/atoms/models';
-import type {DispatchOptions} from '@oscarpalmer/toretto';
 import type {Controller} from './controller';
 import type {Context} from './controller/context';
 
@@ -61,10 +60,6 @@ export type DataType = 'boolean' | 'parseable' | 'string';
 
 //
 
-export type DispatchTarget = string | EventTarget;
-
-//
-
 export type EventParameters = {
 	callback: string;
 	external?: EventController;
@@ -87,6 +82,10 @@ export type EventMatches = {
 
 //
 
+export type ExtendedEventTarget = string | EventTarget;
+
+//
+
 export type ObserverCallback = (
 	element: Element,
 	name: string,
@@ -103,50 +102,6 @@ export type ParsedAttribute = {
 };
 
 //
-
-export type ReadonlyActions = {
-	/**
-	 * Dispatch an event for the controller
-	 */
-	dispatch<Type extends keyof HTMLElementEventMap>(type: Type): void;
-	/**
-	 * Dispatch an event for the controller
-	 */
-	dispatch(type: string): void;
-	/**
-	 * - Dispatch an event for a target element
-	 * ---
-	 * - If target is a `string`, the controller will use the first matching target element
-	 */
-	dispatch<Type extends keyof HTMLElementEventMap>(
-		type: Type,
-		target: DispatchTarget,
-	): void;
-	/**
-	 * - Dispatch an event for a target element
-	 * ---
-	 * - If target is a `string`, the controller will use the first matching target element
-	 */
-	dispatch(type: string, target: DispatchTarget): void;
-	/**
-	 * - Dispatch an event with specific options
-	 * ---
-	 * - If target is a `string`, the controller will use the first matching target element
-	 * - It target is not provided, the controller's element will be used
-	 */
-	dispatch<Type extends keyof HTMLElementEventMap>(
-		type: Type,
-		options: DispatchOptions,
-		target?: DispatchTarget,
-	): void;
-	/**
-	 * - Dispatch an event with specific options
-	 * ---
-	 * - If target is a `string`, the controller will use the first matching target element
-	 * - It target is not provided, the controller's element will be used
-	 */
-	dispatch(type: string, options?: PlainObject, target?: DispatchTarget): void;
-};
 
 export type ReadonlyTargets = {
 	/**

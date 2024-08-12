@@ -6,16 +6,16 @@ export class Targets {
 	private readonly store = new Map<string, Set<Element>>();
 
 	get readonly(): ReadonlyTargets {
-		return {...this.callbacks};
+		return this.callbacks;
 	}
 
 	constructor(private readonly context: Context) {
-		this.callbacks = {
+		this.callbacks = Object.create({
 			find: this.find.bind(this) as never,
 			get: this.get.bind(this) as never,
 			getAll: this.getAll.bind(this) as never,
 			has: this.has.bind(this),
-		};
+		});
 	}
 
 	add(name: string, element: Element): void {

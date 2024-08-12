@@ -5,11 +5,13 @@ import {observeController} from '../observer/controller.observer';
 import {Actions} from '../store/action.store';
 import {Data} from '../store/data.store';
 import {Targets} from '../store/target.store';
+import {Events} from './events';
 
 export class Context {
 	readonly actions: Actions;
 	readonly controller: InstanceType<ControllerConstructor>;
 	readonly data: Data;
+	readonly events: Events;
 	readonly observer: Observer;
 	readonly targets: Targets;
 
@@ -18,8 +20,9 @@ export class Context {
 		readonly element: Element,
 		ctor: ControllerConstructor,
 	) {
-		this.actions = new Actions(this);
+		this.actions = new Actions();
 		this.data = new Data(this);
+		this.events = new Events(this);
 		this.observer = observeController(name, element);
 		this.targets = new Targets(this);
 
