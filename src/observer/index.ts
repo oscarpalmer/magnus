@@ -17,18 +17,13 @@ export class Observer {
 				const entry = entries[index];
 
 				if (entry.type === 'childList') {
-					handleNodes(entry.addedNodes, true, handler);
-					handleNodes(entry.removedNodes, false, handler);
+					handleNodes(entry.addedNodes, handler);
+					handleNodes(entry.removedNodes, handler);
 				} else if (
 					entry.type === 'attributes' &&
 					entry.target instanceof Element
 				) {
-					handler(
-						entry.target,
-						entry.attributeName ?? '',
-						entry.oldValue ?? '',
-						true,
-					);
+					handler(entry.target, entry.attributeName ?? '', entry.oldValue ?? '');
 				}
 			}
 		});
@@ -66,7 +61,7 @@ export class Observer {
 		cancelAnimationFrame(this.frame);
 
 		this.frame = requestAnimationFrame(() => {
-			handleNodes([this.element], true, this.handler);
+			handleNodes([this.element], this.handler);
 		});
 	}
 }
@@ -89,22 +84,17 @@ export function createObserver(
 	return instance;
 }
 
-function handleElement(
-	element: Element,
-	added: boolean,
-	handler: ObserverCallback,
-): void {
+function handleElement(element: Element, handler: ObserverCallback): void {
 	const attributes = [...element.attributes];
 	const {length} = attributes;
 
 	for (let index = 0; index < length; index += 1) {
-		handler(element, attributes[index].name, '', added);
+		handler(element, attributes[index].name, '');
 	}
 }
 
 function handleNodes(
 	nodes: NodeList | Node[],
-	added: boolean,
 	handler: ObserverCallback,
 ): void {
 	const {length} = nodes;
@@ -113,8 +103,8 @@ function handleNodes(
 		const node = nodes[index];
 
 		if (node instanceof Element) {
-			handleElement(node, added, handler);
-			handleNodes(node.childNodes, added, handler);
+			handleElement(node, handler);
+			handleNodes(node.childNodes, handler);
 		}
 	}
 }

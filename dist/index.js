@@ -174,7 +174,7 @@ function parseActionAttribute(attribute) {
     return {
       id: name == null ? undefined : id,
       name: name == null ? id : name,
-      value: method
+      value: camelCase(method)
     };
   }
 }
@@ -268,13 +268,10 @@ function getParts(value2) {
   return value2.split(/\s+/).map((part) => part.trim()).filter((part) => part.length > 0);
 }
 function handleAttributeChanges(type, parameters, initial) {
-  let from = initial ? "" : parameters.value;
-  let to = initial ? parameters.value : getAttribute(type, parameters.element);
+  const from = initial ? "" : parameters.value;
+  const to = initial ? parameters.value : getAttribute(type, parameters.element);
   if (to == null || from === to) {
     return;
-  }
-  if (!parameters.added) {
-    [from, to] = [to, from];
   }
   handleChanges(type, {
     from,
@@ -329,7 +326,6 @@ function handleAttributes(context) {
         handleAttributeChanges(type, {
           element,
           value: value2,
-          added: true,
           handler: undefined
         }, true);
       }
@@ -349,20 +345,20 @@ function createObserver(element, options, handler) {
   }
   return instance;
 }
-function handleElement(element, added, handler) {
+function handleElement(element, handler) {
   const attributes = [...element.attributes];
   const { length } = attributes;
   for (let index = 0;index < length; index += 1) {
-    handler(element, attributes[index].name, "", added);
+    handler(element, attributes[index].name, "");
   }
 }
-function handleNodes(nodes, added, handler) {
+function handleNodes(nodes, handler) {
   const { length } = nodes;
   for (let index = 0;index < length; index += 1) {
     const node = nodes[index];
     if (node instanceof Element) {
-      handleElement(node, added, handler);
-      handleNodes(node.childNodes, added, handler);
+      handleElement(node, handler);
+      handleNodes(node.childNodes, handler);
     }
   }
 }
@@ -383,10 +379,10 @@ class Observer {
       for (let index = 0;index < length; index += 1) {
         const entry = entries[index];
         if (entry.type === "childList") {
-          handleNodes(entry.addedNodes, true, handler);
-          handleNodes(entry.removedNodes, false, handler);
+          handleNodes(entry.addedNodes, handler);
+          handleNodes(entry.removedNodes, handler);
         } else if (entry.type === "attributes" && entry.target instanceof Element) {
-          handler(entry.target, entry.attributeName ?? "", entry.oldValue ?? "", true);
+          handler(entry.target, entry.attributeName ?? "", entry.oldValue ?? "");
         }
       }
     });
@@ -413,7 +409,7 @@ class Observer {
     }
     cancelAnimationFrame(this.frame);
     this.frame = requestAnimationFrame(() => {
-      handleNodes([this.element], true, this.handler);
+      handleNodes([this.element], this.handler);
     });
   }
 }
@@ -423,6 +419,7 @@ function observeController(name, element) {
   const prefix = `data-${name}-`;
   let context;
   return createObserver(element, {
+    attributeOldValue: true,
     attributes: true
   }, (element2, attribute2) => {
     if (attribute2.startsWith(prefix)) {
@@ -740,19 +737,7 @@ function findTarget(origin, name, id) {
 }
 
 // src/observer/attributes/action.attribute.ts
-function handleActionAttribute(context2, element, value3, added, custom) {
-  const action2 = custom?.event ?? value3;
-  if (context2.actions.has(value3)) {
-    if (added) {
-      context2.actions.add(value3, element);
-    } else {
-      context2.actions.remove(value3, element);
-    }
-    return;
-  }
-  if (!added) {
-    return;
-  }
+function createAction(context2, element, action2, value3, custom) {
   const parameters = custom?.handler == null ? getEventParameters(element, value3, context2.element === element) : {
     callback: "",
     options: {
@@ -778,6 +763,20 @@ function handleActionAttribute(context2, element, value3, added, custom) {
       type: parameters.type
     });
     context2.actions.add(value3, target3);
+  }
+}
+function handleActionAttribute(context2, element, value3, added, custom) {
+  const action2 = custom?.event ?? value3;
+  if (context2.actions.has(value3)) {
+    if (added) {
+      context2.actions.add(value3, element);
+    } else {
+      context2.actions.remove(value3, element);
+    }
+    return;
+  }
+  if (added) {
+    createAction(context2, element, action2, value3, custom);
   }
 }
 
@@ -842,10 +841,10 @@ var attributeCallbacks = {
 var attributeTypes = Object.keys(attributeCallbacks);
 var attributeTypesLength = attributeTypes.length;
 var controllerAttribute = "data-controller";
-var actionAttributePattern = /^(?:(\w+)->)?(\w+)(?:#(\w+))?@(\w+)(?::([a-z:]+))?/i;
-var extendedActionAttributePattern = /^(?:(?:(?:(\w+)(?:#(\w+))?)?@)?(\w+)->)?(\w+)(?:#(\w+))?@(\w+)(?::([a-z:]+))?/i;
-var inputAndOutputAttributePattern = /^(\w+)(?:#(\w+))?(?:\.(\w+))?(:json)?$/i;
-var targetAttributePattern = /^(\w+)(?:#(\w+))?\.(\w+)$/;
+var actionAttributePattern = /^(?:([\w-]+)->)?([\w-]+)(?:#([\w-]+))?@([\w-]+)(?::([a-z:]+))?/i;
+var extendedActionAttributePattern = /^(?:(?:(?:([\w-]+)(?:#([\w-]+))?)?@)?([\w-]+)->)?([\w-]+)(?:#([\w-]+))?@([\w-]+)(?::([a-z:]+))?/i;
+var inputAndOutputAttributePattern = /^([\w-]+)(?:#([\w-]+))?(?:\.([\w-]+))?(:json)?$/i;
+var targetAttributePattern = /^([\w-]+)(?:#([\w-]+))?\.([\w-]+)$/;
 var changeEventTypes = new Set(["checkbox", "radio"]);
 var defaultEvents = {
   A: "click",
@@ -1010,6 +1009,10 @@ class Controller {
   constructor(context2) {
     this.context = context2;
   }
+  connect() {
+  }
+  disconnect() {
+  }
 }
 
 // src/observer/document.observer.ts
@@ -1020,13 +1023,13 @@ function observerDocument() {
   ];
   return createObserver(document.body, {
     attributeFilter: attributes3,
+    attributeOldValue: true,
     attributes: true,
     childList: true,
     subtree: true
-  }, (element, name, value3, added) => {
+  }, (element, name, value3) => {
     if (attributes3.includes(name)) {
       handleAttributeChanges(name.slice(5), {
-        added,
         element,
         value: value3,
         handler: name === controllerAttribute ? handleControllerAttribute : undefined

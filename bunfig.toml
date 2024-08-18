@@ -1,0 +1,3 @@
+[test]
+coverage = true
+preload = './test/_preload.ts'

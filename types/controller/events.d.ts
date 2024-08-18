@@ -1,4 +1,3 @@
-import type { PlainObject } from '@oscarpalmer/atoms/models';
 import type { ExtendedEventTarget } from '../models';
 import type { Context } from './context';
 type RemoveEventListener = () => void;
@@ -38,7 +37,7 @@ export declare class Events {
      * - If target is a `string`, the controller will use the first matching target element
      * - It target is not provided, the controller's element will be used
      */
-    dispatch(type: string, options?: PlainObject, target?: ExtendedEventTarget): void;
+    dispatch(type: string, options?: CustomEventInit, target?: ExtendedEventTarget): void;
     /**
      * Remove an event listener from the controller's element
      */

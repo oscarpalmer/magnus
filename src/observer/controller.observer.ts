@@ -11,6 +11,7 @@ export function observeController(name: string, element: Element): Observer {
 	return createObserver(
 		element,
 		{
+			attributeOldValue: true,
 			attributes: true,
 		},
 		(element, attribute) => {

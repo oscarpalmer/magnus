@@ -30,18 +30,18 @@ export const controllerAttribute = 'data-controller';
 
 // (event->)controller(#id)@method(:options)
 export const actionAttributePattern =
-	/^(?:(\w+)->)?(\w+)(?:#(\w+))?@(\w+)(?::([a-z:]+))?/i;
+	/^(?:([\w-]+)->)?([\w-]+)(?:#([\w-]+))?@([\w-]+)(?::([a-z:]+))?/i;
 
 // ((external(#id)@)event->)controller(#id)@method(:options)
 export const extendedActionAttributePattern =
-	/^(?:(?:(?:(\w+)(?:#(\w+))?)?@)?(\w+)->)?(\w+)(?:#(\w+))?@(\w+)(?::([a-z:]+))?/i;
+	/^(?:(?:(?:([\w-]+)(?:#([\w-]+))?)?@)?([\w-]+)->)?([\w-]+)(?:#([\w-]+))?@([\w-]+)(?::([a-z:]+))?/i;
 
 // controller(#id).data(:json)
 export const inputAndOutputAttributePattern =
-	/^(\w+)(?:#(\w+))?(?:\.(\w+))?(:json)?$/i;
+	/^([\w-]+)(?:#([\w-]+))?(?:\.([\w-]+))?(:json)?$/i;
 
 // controller(#id).target
-export const targetAttributePattern = /^(\w+)(?:#(\w+))?\.(\w+)$/;
+export const targetAttributePattern = /^([\w-]+)(?:#([\w-]+))?\.([\w-]+)$/;
 
 //
 

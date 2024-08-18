@@ -1,4 +1,3 @@
-import type {Context} from '../controller/context';
 import type {ActionParameters} from '../models';
 
 export class Action {

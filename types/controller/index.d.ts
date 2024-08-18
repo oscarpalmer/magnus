@@ -32,9 +32,9 @@ export declare abstract class Controller<Data extends PlainObject = PlainObject>
     /**
      * Called when the controller is connected
      */
-    abstract connect(): void;
+    connect(): void;
     /**
      * Called when the controller is disconnected
      */
-    abstract disconnect(): void;
+    disconnect(): void;
 }

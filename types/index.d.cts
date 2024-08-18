@@ -107,7 +107,7 @@ declare class Events {
 	 * - If target is a `string`, the controller will use the first matching target element
 	 * - It target is not provided, the controller's element will be used
 	 */
-	dispatch(type: string, options?: PlainObject, target?: ExtendedEventTarget): void;
+	dispatch(type: string, options?: CustomEventInit, target?: ExtendedEventTarget): void;
 	/**
 	 * Remove an event listener from the controller's element
 	 */
@@ -200,7 +200,7 @@ export type ActionParameters = {
 };
 export type ControllerConstructor = new (context: Context) => Controller;
 export type ExtendedEventTarget = string | EventTarget;
-export type ObserverCallback = (element: Element, name: string, value: string, added: boolean) => void;
+export type ObserverCallback = (element: Element, name: string, value: string) => void;
 export type ReadonlyTargets = {
 	/**
 	 * Find elements within the controller's element
@@ -249,11 +249,11 @@ export declare abstract class Controller<Data extends PlainObject = PlainObject>
 	/**
 	 * Called when the controller is connected
 	 */
-	abstract connect(): void;
+	connect(): void;
 	/**
 	 * Called when the controller is disconnected
 	 */
-	abstract disconnect(): void;
+	disconnect(): void;
 }
 declare class Magnus {
 	/**

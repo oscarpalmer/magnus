@@ -1,3 +1,4 @@
+import {camelCase} from '@oscarpalmer/atoms/string';
 import {
 	extendedActionAttributePattern,
 	inputAndOutputAttributePattern,
@@ -14,7 +15,7 @@ function parseActionAttribute(attribute: string): ParsedAttribute | undefined {
 		return {
 			id: name == null ? undefined : id,
 			name: name == null ? id : name,
-			value: method,
+			value: camelCase(method),
 		};
 	}
 }

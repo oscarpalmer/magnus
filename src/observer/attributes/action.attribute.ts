@@ -4,29 +4,13 @@ import {getEventParameters} from '../../helpers/event';
 import {findTarget} from '../../helpers/index';
 import type {AttributeHandleCallbackCustomParameters} from '../../models';
 
-export function handleActionAttribute(
+function createAction(
 	context: Context,
 	element: Element,
+	action: string,
 	value: string,
-	added: boolean,
 	custom?: AttributeHandleCallbackCustomParameters,
 ): void {
-	const action = custom?.event ?? value;
-
-	if (context.actions.has(value)) {
-		if (added) {
-			context.actions.add(value, element);
-		} else {
-			context.actions.remove(value, element);
-		}
-
-		return;
-	}
-
-	if (!added) {
-		return;
-	}
-
 	const parameters =
 		custom?.handler == null
 			? getEventParameters(element, value, context.element === element)
@@ -68,5 +52,29 @@ export function handleActionAttribute(
 		});
 
 		context.actions.add(value, target);
+	}
+}
+
+export function handleActionAttribute(
+	context: Context,
+	element: Element,
+	value: string,
+	added: boolean,
+	custom?: AttributeHandleCallbackCustomParameters,
+): void {
+	const action = custom?.event ?? value;
+
+	if (context.actions.has(value)) {
+		if (added) {
+			context.actions.add(value, element);
+		} else {
+			context.actions.remove(value, element);
+		}
+
+		return;
+	}
+
+	if (added) {
+		createAction(context, element, action, value, custom);
 	}
 }

@@ -12,7 +12,7 @@
 		"@biomejs/biome": "^1.8.3",
 		"@happy-dom/global-registrator": "^14.12.3",
 		"@types/bun": "^1.1.6",
-		"bun": "^1.1.22",
+		"bun": "^1.1.24",
 		"dts-bundle-generator": "^9.5.1",
 		"typescript": "^5.5.4"
 	},
@@ -53,6 +53,7 @@
 	"scripts": {
 		"build": "bun run clean && bunx bun ./.bun.ts && bunx bun ./.bun.ts --mjs && bun run types",
 		"clean": "rm -rf ./dist && rm -rf ./types && rm -rf ./tsconfig.tsbuildinfo",
+		"test": "bun test",
 		"types": "bun run types:cjs && bun run types:esm",
 		"types:cjs": "bunx dts-bundle-generator --out-file ./types/index.d.cts --external-inlines '@oscarpalmer/atoms' 'type-fest' --no-check --silent ./src/index.ts",
 		"types:esm": "bunx tsc -p ./tsconfig.json",

@@ -24,7 +24,6 @@ export type AttributeHandleCallbackCustomParameters = {
     handler: GenericCallback;
 };
 export type AttributeHandleParameters = {
-    added: boolean;
     element: Element;
     handler: AttributeChangeCallback | undefined;
     value: string;
@@ -50,7 +49,7 @@ export type EventMatches = {
     options?: string;
 };
 export type ExtendedEventTarget = string | EventTarget;
-export type ObserverCallback = (element: Element, name: string, value: string, added: boolean) => void;
+export type ObserverCallback = (element: Element, name: string, value: string) => void;
 export type ParsedAttribute = {
     id?: string;
     name: string;

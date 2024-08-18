@@ -51,7 +51,6 @@ export function handleAttributes(context: Context): void {
 					{
 						element,
 						value,
-						added: true,
 						handler: undefined,
 					},
 					true,

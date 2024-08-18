@@ -14,16 +14,16 @@ export function observerDocument(): Observer {
 		document.body,
 		{
 			attributeFilter: attributes,
+			attributeOldValue: true,
 			attributes: true,
 			childList: true,
 			subtree: true,
 		},
-		(element, name, value, added) => {
+		(element, name, value) => {
 			if (attributes.includes(name)) {
 				handleAttributeChanges(
 					name.slice(5) as AttributeType,
 					{
-						added,
 						element,
 						value,
 						handler:

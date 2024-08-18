@@ -1,4 +1,4 @@
-import type {GenericCallback, PlainObject} from '@oscarpalmer/atoms/models';
+import type {GenericCallback} from '@oscarpalmer/atoms/models';
 import type {Controller} from './controller';
 import type {Context} from './controller/context';
 
@@ -42,7 +42,6 @@ export type AttributeHandleCallbackCustomParameters = {
 };
 
 export type AttributeHandleParameters = {
-	added: boolean;
 	element: Element;
 	handler: AttributeChangeCallback | undefined;
 	value: string;
@@ -90,7 +89,6 @@ export type ObserverCallback = (
 	element: Element,
 	name: string,
 	value: string,
-	added: boolean,
 ) => void;
 
 //

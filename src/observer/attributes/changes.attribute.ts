@@ -54,16 +54,12 @@ export function handleAttributeChanges(
 	parameters: AttributeHandleParameters,
 	initial: boolean,
 ): void {
-	let from = initial ? '' : parameters.value;
+	const from = initial ? '' : parameters.value;
 
-	let to = initial ? parameters.value : getAttribute(type, parameters.element);
+	const to = initial ? parameters.value : getAttribute(type, parameters.element);
 
 	if (to == null || from === to) {
 		return;
-	}
-
-	if (!parameters.added) {
-		[from, to] = [to, from];
 	}
 
 	handleChanges(type, {
