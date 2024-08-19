@@ -603,7 +603,7 @@ function getTarget(context, target2) {
   if (typeof target2 === "string") {
     return context.targets.get(target2);
   }
-  return target2 instanceof EventTarget ? target2 : context.element;
+  return target2 instanceof EventTarget || target2 != null && target2.window === target2 ? target2 : context.element;
 }
 function handleEvent(context, parameters, add) {
   const firstIsOptions = typeof parameters.first === "boolean" || isPlainObject(parameters.first);

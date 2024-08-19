@@ -2,8 +2,16 @@ import {afterAll, expect, test} from 'bun:test';
 import {magnus, Controller} from '../src';
 
 class ActionOneController extends Controller {
-	onGlobal(event: CustomEventInit) {
-		global = event.detail;
+	fromDocument(event: CustomEventInit) {
+		fromDocument = event.detail;
+	}
+
+	fromElement() {
+		fromElement = 'Hello, world! -- fromElement';
+	}
+
+	fromWindow(event: CustomEventInit) {
+		fromWindow = event.detail;
 	}
 }
 
@@ -13,30 +21,40 @@ class ActionTwoController extends Controller {
 	}
 
 	onOnce() {
-		this.events.dispatch(
-			'global',
-			{
-				detail: 'Hello, world!',
-			},
-			document,
-		);
+		for (const type of ['fromDocument', 'fromWindow']) {
+			this.events.dispatch(
+				type,
+				{
+					detail: `Hello, world! -- ${type}`,
+				},
+				type === 'fromDocument' ? document : window,
+			);
+		}
 
 		once += 1;
 	}
 }
 
-let global: string | undefined;
+let fromDocument: string | undefined;
+let fromElement: string | undefined;
+let fromWindow: string | undefined;
 let multiple = 0;
 let once = 0;
 
 document.body.innerHTML = `<div
 	data-controller="action-one"
-	data-action="document@global->action-one@onGlobal"
+	data-action="
+		btn@click->action-one@fromElement
+		document@fromDocument->action-one@fromDocument
+		window@fromWindow->action-one@fromWindow
+	"
 ></div>
 <div data-controller="action-two">
 	<button
+		id="btn"
 		data-action="action-two@onMultiple action-two@onOnce:once"
 	></button>
+	<input type="submit" data-action="action-two@onSubmit" />
 	<div
 		data-action="this-will@be-ignored action-two@and-so-will-this"
 	></div>
@@ -64,11 +82,36 @@ test('action attribute', done => {
 				button?.click();
 			}
 
-			expect(global).toBe('Hello, world!');
+			expect(fromDocument).toBe('Hello, world! -- fromDocument');
+			expect(fromElement).toBe('Hello, world! -- fromElement');
+			expect(fromWindow).toBe('Hello, world! -- fromWindow');
+
 			expect(multiple).toBe(10);
 			expect(once).toBe(1);
 
-			done();
-		}, 125);
+			button?.setAttribute('data-action', 'action-two@onMultiple');
+
+			setTimeout(() => {
+				for (let index = 0; index < 10; index += 1) {
+					button?.click();
+				}
+
+				expect(multiple).toBe(20);
+				expect(once).toBe(1);
+
+				magnus.remove('action-two');
+
+				setTimeout(() => {
+					for (let index = 0; index < 10; index += 1) {
+						button?.click();
+					}
+
+					expect(multiple).toBe(20);
+					expect(once).toBe(1);
+
+					done();
+				}, 25);
+			}, 25);
+		}, 25);
 	}, 125);
 });

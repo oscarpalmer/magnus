@@ -20,6 +20,7 @@ export class Events {
 	 * Dispatch an event for the controller
 	 */
 	dispatch<Type extends keyof HTMLElementEventMap>(type: Type): void;
+
 	/**
 	 * Dispatch an event for the controller
 	 */
@@ -234,7 +235,10 @@ function getTarget(
 		return context.targets.get(target);
 	}
 
-	return target instanceof EventTarget ? target : context.element;
+	return target instanceof EventTarget ||
+		(target != null && (target as Window).window === (target as Window))
+		? target
+		: context.element;
 }
 
 function handleEvent(

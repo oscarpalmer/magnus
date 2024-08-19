@@ -177,6 +177,7 @@ document.body.innerHTML = `<div
 	</ul>
 
 	<textarea data-input="io-test:json"></textarea>
+	<textarea data-input="io-test"></textarea>
 
 	<pre data-output="io-test:json"></pre>
 </div>`;
@@ -187,7 +188,7 @@ afterAll(() => {
 	document.body.innerHTML = '';
 });
 
-test('input-output attribute', done => {
+test('input/output attribute', done => {
 	setTimeout(() => {
 		expect(input.first).toEqual({
 			boolean: true,
