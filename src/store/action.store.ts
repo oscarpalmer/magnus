@@ -19,39 +19,35 @@ export class Actions {
 	add(name: string, target: EventTarget): void {
 		const action = this.store.get(name);
 
-		if (action != null && !action.targets.has(target)) {
-			action.targets.add(target);
-
-			target.addEventListener(action.type, action.callback, action.options);
+		if (action != null) {
+			addActionTarget(action, target);
 		}
 	}
 
 	clear(): void {
-		const actions = [...this.store.values()];
+		const actions = [...this.store.entries()];
 		const actionsLength = actions.length;
 
 		for (let actionIndex = 0; actionIndex < actionsLength; actionIndex += 1) {
-			const action = actions[actionIndex];
+			const [name, action] = actions[actionIndex];
 			const targets = [...action.targets];
 			const targetsLength = targets.length;
 
 			for (let targetIndex = 0; targetIndex < targetsLength; targetIndex += 1) {
-				targets[targetIndex].removeEventListener(
-					action.type,
-					action.callback,
-					action.options,
-				);
+				removeActionTarget(this.store, name, action, targets[targetIndex]);
 			}
-
-			action.targets.clear();
 		}
 
 		this.store.clear();
 	}
 
-	create(parameters: ActionParameters): void {
+	create(parameters: ActionParameters, target: EventTarget): void {
 		if (!this.store.has(parameters.name)) {
-			this.store.set(parameters.name, new Action(parameters));
+			const action = new Action(parameters);
+
+			addActionTarget(action, target);
+
+			this.store.set(parameters.name, action);
 		}
 	}
 
@@ -63,13 +59,37 @@ export class Actions {
 		const action = this.store.get(name);
 
 		if (action != null) {
-			target.removeEventListener(action.type, action.callback);
-
-			action.targets.delete(target);
-
-			if (action.targets.size === 0) {
-				this.store.delete(name);
-			}
+			removeActionTarget(this.store, name, action, target);
 		}
+	}
+}
+
+function addActionTarget(action: Action, target: EventTarget): void {
+	if (!action.targets.has(target)) {
+		action.targets.add(target);
+
+		target.addEventListener(action.type, action.callback, action.options);
+	}
+}
+
+function removeActionTarget(
+	store: Map<string, Action>,
+	name: string,
+	action: Action,
+	target: EventTarget,
+): void {
+	console.log(
+		name,
+		action.type,
+		action.callback,
+		(target as Element).tagName ?? 'x',
+	);
+
+	target.removeEventListener(action.type, action.callback, action.options);
+
+	action.targets.delete(target);
+
+	if (action.targets.size === 0) {
+		store.delete(name);
 	}
 }

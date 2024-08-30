@@ -56,17 +56,19 @@ export function handleAttributeChanges(
 ): void {
 	const from = initial ? '' : parameters.value;
 
-	const to = initial ? parameters.value : getAttribute(type, parameters.element);
+	const to = initial
+		? parameters.value
+		: getAttribute(type, parameters.element) ?? '';
 
-	if (to == null || from === to) {
+	if (from === to) {
 		return;
 	}
 
 	handleChanges(type, {
 		from,
 		to,
+		callback: parameters.callback,
 		element: parameters.element,
-		handler: parameters.handler,
 		name: `data-${type}`,
 	});
 }
@@ -88,7 +90,7 @@ function handleChanges(
 			changedIndex < changedLength;
 			changedIndex += 1
 		) {
-			if (parameters.handler == null) {
+			if (parameters.callback == null) {
 				handleTargetAttribute(
 					type,
 					parameters.element,
@@ -96,7 +98,7 @@ function handleChanges(
 					added,
 				);
 			} else {
-				parameters.handler(parameters.element, changed[changedIndex], added);
+				parameters.callback(parameters.element, changed[changedIndex], added);
 			}
 		}
 	}

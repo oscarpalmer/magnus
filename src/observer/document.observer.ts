@@ -4,12 +4,12 @@ import {handleControllerAttribute} from './attributes';
 import {handleAttributeChanges} from './attributes/changes.attribute';
 import {type Observer, createObserver} from './index';
 
-export function observerDocument(): Observer {
-	const attributes = [
-		controllerAttribute,
-		...attributeTypes.map(type => `data-${type}`),
-	];
+const attributes = [
+	controllerAttribute,
+	...attributeTypes.map(type => `data-${type}`),
+];
 
+export function observeDocument(): Observer {
 	return createObserver(
 		document.body,
 		{
@@ -26,7 +26,7 @@ export function observerDocument(): Observer {
 					{
 						element,
 						value,
-						handler:
+						callback:
 							name === controllerAttribute
 								? handleControllerAttribute
 								: undefined,

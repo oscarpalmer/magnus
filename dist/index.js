@@ -269,15 +269,15 @@ function getParts(value2) {
 }
 function handleAttributeChanges(type, parameters, initial) {
   const from = initial ? "" : parameters.value;
-  const to = initial ? parameters.value : getAttribute(type, parameters.element);
-  if (to == null || from === to) {
+  const to = initial ? parameters.value : getAttribute(type, parameters.element) ?? "";
+  if (from === to) {
     return;
   }
   handleChanges(type, {
     from,
     to,
+    callback: parameters.callback,
     element: parameters.element,
-    handler: parameters.handler,
     name: `data-${type}`
   });
 }
@@ -289,10 +289,10 @@ function handleChanges(type, parameters) {
     const added = changes.indexOf(changed) === 1;
     const changedLength = changed.length;
     for (let changedIndex = 0;changedIndex < changedLength; changedIndex += 1) {
-      if (parameters.handler == null) {
+      if (parameters.callback == null) {
         handleTargetAttribute(type, parameters.element, changed[changedIndex], added);
       } else {
-        parameters.handler(parameters.element, changed[changedIndex], added);
+        parameters.callback(parameters.element, changed[changedIndex], added);
       }
     }
   }
@@ -325,8 +325,7 @@ function handleAttributes(context) {
       if (value2 != null) {
         handleAttributeChanges(type, {
           element,
-          value: value2,
-          handler: undefined
+          value: value2
         }, true);
       }
     }
@@ -334,8 +333,8 @@ function handleAttributes(context) {
 }
 
 // src/observer/index.ts
-function createObserver(element, options, handler) {
-  const instance = new Observer(element, options, handler);
+function createObserver(element, options, callback) {
+  const instance = new Observer(element, options, callback);
   if (element.ownerDocument.readyState === "complete") {
     instance.start();
   } else {
@@ -345,20 +344,20 @@ function createObserver(element, options, handler) {
   }
   return instance;
 }
-function handleElement(element, handler) {
+function handleElement(element, callback) {
   const attributes = [...element.attributes];
   const { length } = attributes;
   for (let index = 0;index < length; index += 1) {
-    handler(element, attributes[index].name, "");
+    callback(element, attributes[index].name, "");
   }
 }
-function handleNodes(nodes, handler) {
+function handleNodes(nodes, callback) {
   const { length } = nodes;
   for (let index = 0;index < length; index += 1) {
     const node = nodes[index];
     if (node instanceof Element) {
-      handleElement(node, handler);
-      handleNodes(node.childNodes, handler);
+      handleElement(node, callback);
+      handleNodes(node.childNodes, callback);
     }
   }
 }
@@ -366,23 +365,23 @@ function handleNodes(nodes, handler) {
 class Observer {
   element;
   options;
-  handler;
+  callback;
   frame;
   observer;
   running = false;
-  constructor(element, options, handler) {
+  constructor(element, options, callback) {
     this.element = element;
     this.options = options;
-    this.handler = handler;
+    this.callback = callback;
     this.observer = new MutationObserver((entries) => {
       const { length } = entries;
       for (let index = 0;index < length; index += 1) {
         const entry = entries[index];
         if (entry.type === "childList") {
-          handleNodes(entry.addedNodes, handler);
-          handleNodes(entry.removedNodes, handler);
+          handleNodes(entry.addedNodes, callback);
+          handleNodes(entry.removedNodes, callback);
         } else if (entry.type === "attributes" && entry.target instanceof Element) {
-          handler(entry.target, entry.attributeName ?? "", entry.oldValue ?? "");
+          callback(entry.target, entry.attributeName ?? "", entry.oldValue ?? "");
         }
       }
     });
@@ -409,7 +408,7 @@ class Observer {
     }
     cancelAnimationFrame(this.frame);
     this.frame = requestAnimationFrame(() => {
-      handleNodes([this.element], this.handler);
+      handleNodes([this.element], this.callback);
     });
   }
 }
@@ -432,6 +431,20 @@ function observeController(name, element) {
 }
 
 // src/store/action.store.ts
+function addActionTarget(action, target2) {
+  if (!action.targets.has(target2)) {
+    action.targets.add(target2);
+    target2.addEventListener(action.type, action.callback, action.options);
+  }
+}
+function removeActionTarget(store, name, action, target2) {
+  target2.removeEventListener(action.type, action.callback, action.options);
+  action.targets.delete(target2);
+  if (action.targets.size === 0) {
+    store.delete(name);
+  }
+}
+
 class Action {
   callback;
   options;
@@ -448,28 +461,28 @@ class Actions {
   store = new Map;
   add(name, target2) {
     const action = this.store.get(name);
-    if (action != null && !action.targets.has(target2)) {
-      action.targets.add(target2);
-      target2.addEventListener(action.type, action.callback, action.options);
+    if (action != null) {
+      addActionTarget(action, target2);
     }
   }
   clear() {
-    const actions = [...this.store.values()];
+    const actions = [...this.store.entries()];
     const actionsLength = actions.length;
     for (let actionIndex = 0;actionIndex < actionsLength; actionIndex += 1) {
-      const action = actions[actionIndex];
+      const [name, action] = actions[actionIndex];
       const targets = [...action.targets];
       const targetsLength = targets.length;
       for (let targetIndex = 0;targetIndex < targetsLength; targetIndex += 1) {
-        targets[targetIndex].removeEventListener(action.type, action.callback, action.options);
+        removeActionTarget(this.store, name, action, targets[targetIndex]);
       }
-      action.targets.clear();
     }
     this.store.clear();
   }
-  create(parameters) {
+  create(parameters, target2) {
     if (!this.store.has(parameters.name)) {
-      this.store.set(parameters.name, new Action(parameters));
+      const action = new Action(parameters);
+      addActionTarget(action, target2);
+      this.store.set(parameters.name, action);
     }
   }
   has(name) {
@@ -478,11 +491,7 @@ class Actions {
   remove(name, target2) {
     const action = this.store.get(name);
     if (action != null) {
-      target2.removeEventListener(action.type, action.callback);
-      action.targets.delete(target2);
-      if (action.targets.size === 0) {
-        this.store.delete(name);
-      }
+      removeActionTarget(this.store, name, action, target2);
     }
   }
 }
@@ -738,7 +747,7 @@ function findTarget(origin, name, id) {
 
 // src/observer/attributes/action.attribute.ts
 function createAction(context2, element, action2, value3, custom) {
-  const parameters = custom?.handler == null ? getEventParameters(element, value3, context2.element === element) : {
+  const parameters = custom?.callback == null ? getEventParameters(element, value3, context2.element === element) : {
     callback: "",
     options: {
       capture: false,
@@ -750,7 +759,7 @@ function createAction(context2, element, action2, value3, custom) {
   if (parameters == null) {
     return;
   }
-  const callback = custom?.handler ?? context2.controller[parameters.callback];
+  const callback = custom?.callback ?? context2.controller[parameters.callback];
   if (typeof callback !== "function") {
     return;
   }
@@ -761,8 +770,7 @@ function createAction(context2, element, action2, value3, custom) {
       name: value3,
       options: parameters.options,
       type: parameters.type
-    });
-    context2.actions.add(value3, target3);
+    }, target3);
   }
 }
 function handleActionAttribute(context2, element, value3, added, custom) {
@@ -807,7 +815,7 @@ function handleInputAttribute(context2, element, value3, added) {
     const event3 = getEventType(element);
     handleActionAttribute(context2, element, name, added, {
       event: event3,
-      handler: (event4) => {
+      callback: (event4) => {
         setDataValue(data5, context2, event4.target, key, json != null);
       }
     });
@@ -1016,11 +1024,7 @@ class Controller {
 }
 
 // src/observer/document.observer.ts
-function observerDocument() {
-  const attributes3 = [
-    controllerAttribute,
-    ...attributeTypes.map((type) => `data-${type}`)
-  ];
+function observeDocument() {
   return createObserver(document.body, {
     attributeFilter: attributes3,
     attributeOldValue: true,
@@ -1032,11 +1036,15 @@ function observerDocument() {
       handleAttributeChanges(name.slice(5), {
         element,
         value: value3,
-        handler: name === controllerAttribute ? handleControllerAttribute : undefined
+        callback: name === controllerAttribute ? handleControllerAttribute : undefined
       }, false);
     }
   });
 }
+var attributes3 = [
+  controllerAttribute,
+  ...attributeTypes.map((type) => `data-${type}`)
+];
 
 // src/magnus.ts
 class Magnus {
@@ -1057,7 +1065,7 @@ class Magnus {
   }
 }
 var magnus = new Magnus;
-var observer = observerDocument();
+var observer = observeDocument();
 var magnus_default = magnus;
 export {
   magnus_default as magnus,

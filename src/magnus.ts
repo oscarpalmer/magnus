@@ -1,5 +1,5 @@
 import type {ControllerConstructor} from './models';
-import {observerDocument} from './observer/document.observer';
+import {observeDocument} from './observer/document.observer';
 import {controllers} from './store/controller.store';
 
 export class Magnus {
@@ -37,6 +37,6 @@ export class Magnus {
 }
 
 const magnus = new Magnus();
-const observer = observerDocument();
+const observer = observeDocument();
 
 export default magnus;

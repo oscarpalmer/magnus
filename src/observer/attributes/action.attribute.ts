@@ -12,7 +12,7 @@ function createAction(
 	custom?: AttributeHandleCallbackCustomParameters,
 ): void {
 	const parameters =
-		custom?.handler == null
+		custom?.callback == null
 			? getEventParameters(element, value, context.element === element)
 			: {
 					callback: '',
@@ -29,7 +29,7 @@ function createAction(
 	}
 
 	const callback =
-		custom?.handler ??
+		custom?.callback ??
 		((context.controller as unknown as PlainObject)[parameters.callback] as (
 			event: Event,
 		) => void);
@@ -44,14 +44,15 @@ function createAction(
 			: findTarget(element, parameters.external.name, parameters.external.id);
 
 	if (target != null) {
-		context.actions.create({
-			callback: callback.bind(context.controller),
-			name: value,
-			options: parameters.options,
-			type: parameters.type,
-		});
-
-		context.actions.add(value, target);
+		context.actions.create(
+			{
+				callback: callback.bind(context.controller),
+				name: value,
+				options: parameters.options,
+				type: parameters.type,
+			},
+			target,
+		);
 	}
 }
 

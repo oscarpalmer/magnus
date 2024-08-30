@@ -18,34 +18,34 @@ export type AttributeChangeCallback = (
 ) => void;
 
 export type AttributeChangesParameters = {
-	element: Element;
-	from: string;
-	handler: AttributeChangeCallback | undefined;
-	name: string;
-	to: string;
-};
+		callback?: AttributeChangeCallback;
+		element: Element;
+		from: string;
+		name: string;
+		to: string;
+	};
 
 export type AttributeHandleCallback = (
-	context: Context,
-	element: Element,
-	value: string,
-	added: boolean,
-	custom?: {
-		event: string;
-		handler: GenericCallback;
-	},
-) => void;
+		context: Context,
+		element: Element,
+		value: string,
+		added: boolean,
+		custom?: {
+			event: string;
+			callback: GenericCallback;
+		},
+	) => void;
 
 export type AttributeHandleCallbackCustomParameters = {
-	event: string;
-	handler: GenericCallback;
-};
+		callback: GenericCallback;
+		event: string;
+	};
 
 export type AttributeHandleParameters = {
-	element: Element;
-	handler: AttributeChangeCallback | undefined;
-	value: string;
-};
+		callback?: AttributeChangeCallback;
+		element: Element;
+		value: string;
+	};
 
 export type AttributeType = 'action' | 'input' | 'output' | 'target';
 

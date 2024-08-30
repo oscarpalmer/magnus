@@ -56,6 +56,7 @@ class Controllers {
 			}
 
 			stored.instances.clear();
+
 			this.stored.delete(name);
 		} else {
 			this.removeInstance(stored, stored.instances.get(element));

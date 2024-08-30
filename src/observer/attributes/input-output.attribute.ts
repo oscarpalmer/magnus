@@ -60,7 +60,7 @@ export function handleInputAttribute(
 
 		handleActionAttribute(context, element, name, added, {
 			event,
-			handler: event => {
+			callback: event => {
 				setDataValue(data, context, event.target as never, key, json != null);
 			},
 		});
