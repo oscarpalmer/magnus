@@ -1,80 +1,88 @@
-import {Action, ActionParameters} from '../models';
-import {getActionOptions} from '../helpers';
+import type {ActionParameters} from '../models';
 
-export class ActionStore {
-  private readonly actions: Map<string, Action>;
+export class Action {
+	readonly callback: (event: Event) => void;
+	readonly options: AddEventListenerOptions;
+	readonly targets = new Set<EventTarget>();
+	readonly type: string;
 
-  constructor() {
-    this.actions = new Map();
-  }
+	constructor(parameters: ActionParameters) {
+		this.callback = parameters.callback;
+		this.options = parameters.options;
+		this.type = parameters.type;
+	}
+}
 
-  add(name: string, target: Element): void {
-    const action = this.actions.get(name);
+export class Actions {
+	private readonly store = new Map<string, Action>();
 
-    if (action == null) {
-      return;
-    }
+	add(name: string, target: EventTarget): void {
+		const action = this.store.get(name);
 
-    action.targets.add(target);
+		if (action != null) {
+			addActionTarget(action, target);
+		}
+	}
 
-    if (action.target == null || action.targets.size === 1) {
-      (action.target || target).addEventListener(action.type, action.callback, action.options);
-    }
-  }
+	clear(): void {
+		const actions = [...this.store.entries()];
+		const actionsLength = actions.length;
 
-  clear(): void {
-    const actions = this.actions.values();
+		for (let actionIndex = 0; actionIndex < actionsLength; actionIndex += 1) {
+			const [name, action] = actions[actionIndex];
+			const targets = [...action.targets];
+			const targetsLength = targets.length;
 
-    for (const action of actions) {
-      if (action.target != null) {
-        action.target.removeEventListener(action.type, action.callback, action.options);
-      } else {
-        for (const target of action.targets) {
-          target.removeEventListener(action.type, action.callback, action.options);
-        }
-      }
+			for (let targetIndex = 0; targetIndex < targetsLength; targetIndex += 1) {
+				removeActionTarget(this.store, name, action, targets[targetIndex]);
+			}
+		}
 
-      action.targets.clear();
-    }
-  }
+		this.store.clear();
+	}
 
-  create(parameters: ActionParameters, callback: (event: Event) => void): void {
-    if (this.actions.has(parameters.action)) {
-      return;
-    }
+	create(parameters: ActionParameters, target: EventTarget): void {
+		if (!this.store.has(parameters.name)) {
+			const action = new Action(parameters);
 
-    this.actions.set(parameters.action, {
-      callback,
-      target: parameters.target,
-      targets: new Set(),
-      options: getActionOptions(parameters.options || ''),
-      type: parameters.type,
-    });
-  }
+			addActionTarget(action, target);
 
-  has(name: string): boolean {
-    return this.actions.has(name);
-  }
+			this.store.set(parameters.name, action);
+		}
+	}
 
-  remove(name: string, target: Element): void {
-    const action = this.actions.get(name);
+	has(name: string): boolean {
+		return this.store.has(name);
+	}
 
-    if (action == null) {
-      return;
-    }
+	remove(name: string, target: EventTarget): void {
+		const action = this.store.get(name);
 
-    action.targets.delete(target);
+		if (action != null) {
+			removeActionTarget(this.store, name, action, target);
+		}
+	}
+}
 
-    if (action.target == null) {
-      target.removeEventListener(action.type, action.callback, action.options);
-    }
+function addActionTarget(action: Action, target: EventTarget): void {
+	if (!action.targets.has(target)) {
+		action.targets.add(target);
 
-    if (action.targets.size > 0) {
-      return;
-    }
+		target.addEventListener(action.type, action.callback, action.options);
+	}
+}
 
-    this.actions.delete(name);
+function removeActionTarget(
+	store: Map<string, Action>,
+	name: string,
+	action: Action,
+	target: EventTarget,
+): void {
+	target.removeEventListener(action.type, action.callback, action.options);
 
-    action.target?.removeEventListener(action.type, action.callback, action.options);
-  }
+	action.targets.delete(target);
+
+	if (action.targets.size === 0) {
+		store.delete(name);
+	}
 }

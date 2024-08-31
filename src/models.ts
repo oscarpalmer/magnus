@@ -1,66 +1,121 @@
-import {Context} from './controller/context';
-import {Constructor} from './controller/controller';
+import type {GenericCallback} from '@oscarpalmer/atoms/models';
+import type {Controller} from './controller';
+import type {Context} from './controller/context';
 
-export interface ActionParameters {
-  action: string;
-  name: string;
-  options?: string;
-  target?: EventTarget;
-  type: string;
-}
+export type ActionParameters = {
+	callback: (event: Event) => void;
+	name: string;
+	options: AddEventListenerOptions;
+	type: string;
+};
 
-export interface ActionOptions {
-  capture: boolean;
-  once: boolean;
-  passive: boolean;
-}
+//
 
-export interface Action {
-  callback: (event: Event) => void;
-  options: ActionOptions;
-  target?: EventTarget;
-  targets: Set<EventTarget>;
-  type: string;
-}
+export type AttributeChangeCallback = (
+	element: Element,
+	value: string,
+	added: boolean,
+) => void;
 
-export interface DataChange {
-  property: string;
-  values: DataChangeValues;
-}
+export type AttributeChangesParameters = {
+		callback?: AttributeChangeCallback;
+		element: Element;
+		from: string;
+		name: string;
+		to: string;
+	};
 
-export interface DataChangeValues {
-  new: unknown;
-  old: unknown;
-}
+export type AttributeHandleCallback = (
+		context: Context,
+		element: Element,
+		value: string,
+		added: boolean,
+		custom?: {
+			event: string;
+			callback: GenericCallback;
+		},
+	) => void;
 
-export interface Dispatch {
-  data?: unknown;
-  options?: DispatchOptions;
-  target?: EventTarget;
-}
+export type AttributeHandleCallbackCustomParameters = {
+		callback: GenericCallback;
+		event: string;
+	};
 
-export interface DispatchOptions {
-  bubbles?: boolean;
-  cancelable?: boolean;
-  composed?: boolean;
-}
+export type AttributeHandleParameters = {
+		callback?: AttributeChangeCallback;
+		element: Element;
+		value: string;
+	};
 
-export interface IObserver {
-  start: () => void;
-  stop: () => void;
-}
+export type AttributeType = 'action' | 'input' | 'output' | 'target';
 
-export interface KeyValueStore<T> {
-  [key: number|string|symbol]: T;
-}
+//
 
-export interface StoredController {
-  constructor: Constructor;
-  instances: Map<Element, Context>;
-}
+export type ControllerConstructor = new (context: Context) => Controller;
 
-export interface TargetChange {
-  added: boolean;
-  name: string;
-  target: Element;
-}
+//
+
+export type DataType = 'boolean' | 'parseable' | 'string';
+
+//
+
+export type EventParameters = {
+	callback: string;
+	external?: EventController;
+	options: AddEventListenerOptions;
+	type: string;
+};
+
+export type EventController = {
+	id?: string;
+	name: string;
+};
+
+export type EventMatches = {
+	callback: string;
+	event?: string;
+	id?: string;
+	name?: string;
+	options?: string;
+};
+
+//
+
+export type ExtendedEventTarget = string | EventTarget;
+
+//
+
+export type ObserverCallback = (
+	element: Element,
+	name: string,
+	value: string,
+) => void;
+
+//
+
+export type ParsedAttribute = {
+	id?: string;
+	name: string;
+	value: string;
+};
+
+//
+
+export type ReadonlyTargets = {
+	/**
+	 * Find elements within the controller's element
+	 */
+	find<Found extends Element = Element>(selector: string): Found[];
+	/**
+	 * Get the first element with the given target name
+	 */
+	get<Target extends Element = Element>(name: string): Target | undefined;
+	/**
+	 * Get all elements with the given target name
+	 */
+	getAll<Target extends Element = Element>(name: string): Target[];
+	/**
+	 * Does the controller have any elements with the given target name?
+	 */
+	has(name: string): boolean;
+};

@@ -1,55 +1,39 @@
-import {ControllerStore} from '../store/controller.store';
-import {Observer, observerOptions} from './observer';
+import {attributeTypes, controllerAttribute} from '../constants';
+import type {AttributeType} from '../models';
+import {handleControllerAttribute} from './attributes';
+import {handleAttributeChanges} from './attributes/changes.attribute';
+import {type Observer, createObserver} from './index';
 
-const dataControllerAttribute = 'data-controller';
+const attributes = [
+	controllerAttribute,
+	...attributeTypes.map(type => `data-${type}`),
+];
 
-export class DocumentObserver extends Observer {
-  constructor(private readonly controllers: ControllerStore) {
-    super(document.documentElement);
-  }
-
-  protected getOptions(): MutationObserverInit {
-    const options: MutationObserverInit = Object.assign({}, observerOptions);
-
-    options.attributeFilter = [dataControllerAttribute];
-
-    return options;
-  }
-
-  protected handleAttribute(element: Element, name: string, value: string, removed: boolean): void {
-    let newValue = element.getAttribute(name) || '';
-
-    if (newValue === value) {
-      return;
-    }
-
-    if (removed) {
-      value = newValue;
-      newValue = '';
-    }
-
-    this.handleChanges(element, newValue, value);
-  }
-
-  protected handleElement(element: Element, added: boolean): void {
-    if (element.hasAttribute(dataControllerAttribute)) {
-      this.handleAttribute(element, dataControllerAttribute, '', !added);
-    }
-  }
-
-  private handleChanges(element: Element, newValue: string, oldValue: string): void {
-    const allAttributes = this.getAttributes(oldValue, newValue);
-
-    for (const attributes of allAttributes) {
-      const added = allAttributes.indexOf(attributes) === 0;
-
-      for (const attribute of attributes) {
-        if (added) {
-          this.controllers.add(attribute, element);
-        } else {
-          this.controllers.remove(attribute, element);
-        }
-      }
-    }
-  }
+export function observeDocument(): Observer {
+	return createObserver(
+		document.body,
+		{
+			attributeFilter: attributes,
+			attributeOldValue: true,
+			attributes: true,
+			childList: true,
+			subtree: true,
+		},
+		(element, name, value) => {
+			if (attributes.includes(name)) {
+				handleAttributeChanges(
+					name.slice(5) as AttributeType,
+					{
+						element,
+						value,
+						callback:
+							name === controllerAttribute
+								? handleControllerAttribute
+								: undefined,
+					},
+					false,
+				);
+			}
+		},
+	);
 }

@@ -1,68 +1,231 @@
-import {KeyValueStore} from '../models';
-import {debounce, getDataAttributeName, getStringValue} from '../helpers';
-import {Context} from '../controller/context';
-import {Controller} from '../controller/controller';
+import {
+	isArrayOrPlainObject,
+	isNullableOrWhitespace,
+} from '@oscarpalmer/atoms/is';
+import type {PlainObject} from '@oscarpalmer/atoms/models';
+import {
+	camelCase,
+	getString,
+	kebabCase,
+	parse,
+} from '@oscarpalmer/atoms/string';
+import {changeEventTypes} from '../constants';
+import type {Context} from '../controller/context';
 
-class DataStoreHandlers {
-  private get controller(): Controller {
-    return this.store.context.controller;
-  }
+type Value = {
+	original: unknown;
+	stringified: string;
+};
 
-  constructor(private readonly store: DataStore) {}
+const frames: WeakMap<Context, number> = new WeakMap();
 
-  get(target: KeyValueStore<unknown>, property: string|symbol): unknown {
-    return Reflect.get(target, property);
-  }
+export class Data {
+	readonly value: PlainObject;
 
-  set(target: KeyValueStore<unknown>, property: string|symbol, value: unknown): boolean {
-    const oldValue = Reflect.get(target, property);
-    const set = Reflect.set(target, property, value);
+	constructor(context: Context) {
+		const frames: Record<string, number> = {};
+		const prefix = `data-${context.name}-`;
 
-    if (set) {
-      debounce(this.store.timers, property as string, () => {
-        this.store.setAttribute(property as string, value);
-      });
+		this.value = new Proxy(
+			{},
+			{
+				deleteProperty(target, property) {
+					return updateProperty(
+						context,
+						prefix,
+						target,
+						property,
+						undefined,
+						'',
+						frames,
+					);
+				},
+				get(target, property) {
+					return Reflect.get(target, camelCase(String(property)));
+				},
+				set(target, property, next) {
+					const name = camelCase(String(property));
+					const previous = Reflect.get(target, name);
+					const nextAsString = getString(next);
 
-      this.controller.events.data.emit({
-        property: property as string,
-        values: {
-          new: value,
-          old: oldValue,
-        },
-      });
-    }
+					if (getString(previous) === nextAsString) {
+						return true;
+					}
 
-    return set;
-  }
+					return updateProperty(
+						context,
+						prefix,
+						target,
+						name,
+						next,
+						nextAsString,
+						frames,
+					);
+				},
+			},
+		);
+	}
 }
 
-export class DataStore {
-  readonly handlers: DataStoreHandlers;
-  readonly proxy: KeyValueStore<unknown>;
+export function replaceData(context: Context, value: unknown): void {
+	const previous = Object.keys(context.data.value).filter(
+		key => key.length > 0,
+	);
 
-  readonly skip: KeyValueStore<number> = {};
-  readonly timers: KeyValueStore<number> = {};
+	const next = isArrayOrPlainObject(value)
+		? Object.keys(value).filter(key => key.length > 0)
+		: [];
 
-  constructor(readonly context: Context) {
-    this.handlers = new DataStoreHandlers(this);
-    this.proxy = new Proxy({}, this.handlers);
-  }
+	for (const key of previous) {
+		if (value == null || !next.includes(key)) {
+			delete context.data.value[key];
+		} else {
+			context.data.value[key] = next.includes(key)
+				? (value as PlainObject)[key]
+				: undefined;
+		}
+	}
 
-  setAttribute(property: string, value: unknown): void {
-    if (this.skip[property] != null) {
-      delete this.skip[property];
+	for (const key of next) {
+		const val = (value as PlainObject)[key];
 
-      return;
-    }
+		if (!previous.includes(key) && val != null) {
+			context.data.value[key] = (value as PlainObject)[key];
+		}
+	}
+}
 
-    this.skip[property] = 0;
+function setAttribute(element: Element, name: string, value: Value): void {
+	if (isNullableOrWhitespace(value.original)) {
+		element.removeAttribute(name);
+	} else {
+		element.setAttribute(name, value.stringified);
+	}
+}
 
-    if (value == null || value === '') {
-      this.context.element.removeAttribute(getDataAttributeName(this.context.identifier, property));
+function setElementContents(elements: Element[], value: string): void {
+	const {length} = elements;
 
-      return;
-    }
+	for (let index = 0; index < length; index += 1) {
+		elements[index].textContent = value;
+	}
+}
 
-    this.context.element.setAttribute(getDataAttributeName(this.context.identifier, property), getStringValue(value));
-  }
+function setElementValue(element: Element, value: string): void {
+	switch (true) {
+		case element === document.activeElement:
+			return;
+
+		case element instanceof HTMLInputElement &&
+			changeEventTypes.has(element.type):
+			element.checked =
+				element.value === value ||
+				(element.type === 'checkbox' && value === 'true');
+			return;
+
+		case (element instanceof HTMLInputElement ||
+			element instanceof HTMLTextAreaElement) &&
+			element.value !== value:
+			element.value = value;
+			return;
+
+		case element instanceof HTMLSelectElement && element.value !== value:
+			element.value =
+				[...element.options].findIndex(option => option.value === value) > -1
+					? value
+					: '';
+			return;
+	}
+}
+
+function setElementValues(elements: Element[], value: string): void {
+	const {length} = elements;
+
+	for (let index = 0; index < length; index += 1) {
+		setElementValue(elements[index], value);
+	}
+}
+
+function setValue(
+	context: Context,
+	prefix: string,
+	name: string,
+	value: Value,
+): void {
+	cancelAnimationFrame(frames.get(context) as never);
+
+	setAttribute(context.element, `${prefix}${kebabCase(name)}`, value);
+	setElementValues(context.targets.getAll(`input:${name}`), value.stringified);
+
+	const json = JSON.stringify(
+		value.original,
+		null,
+		+(getComputedStyle(context.element)?.tabSize ?? '4'),
+	);
+
+	setElementContents(
+		context.targets.getAll(`output:${name}`),
+		value.stringified,
+	);
+
+	setElementContents(context.targets.getAll(`output:${name}:json`), json);
+	setElementValues(context.targets.getAll(`input:${name}:json`), json);
+
+	frames.set(
+		context,
+		requestAnimationFrame(() => {
+			const json = JSON.stringify(
+				context.data.value,
+				null,
+				+(getComputedStyle(context.element)?.tabSize ?? '4'),
+			);
+
+			setElementContents(context.targets.getAll('output:$:json'), json);
+			setElementValues(context.targets.getAll('input:$:json'), json);
+		}),
+	);
+}
+
+export function setValueFromAttribute(
+	context: Context,
+	name: string,
+	value: string,
+): void {
+	if (getString(context.data.value[name]) !== value) {
+		context.data.value[name] = value == null ? value : parse(value) ?? value;
+	}
+}
+
+function updateProperty(
+	context: Context,
+	prefix: string,
+	target: PlainObject,
+	property: PropertyKey,
+	original: unknown,
+	stringified: string,
+	frames: Record<string, number>,
+): boolean {
+	const name = camelCase(String(property));
+
+	if (name.trim().length === 0) {
+		return true;
+	}
+
+	const result =
+		original == null
+			? Reflect.deleteProperty(target, name)
+			: Reflect.set(target, name, original);
+
+	if (result) {
+		cancelAnimationFrame(frames[name]);
+
+		frames[name] = requestAnimationFrame(() => {
+			setValue(context, prefix, name, {
+				original,
+				stringified,
+			});
+		});
+	}
+
+	return result;
 }

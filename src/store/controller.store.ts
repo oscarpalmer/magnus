@@ -1,47 +1,90 @@
-import {StoredController} from '../models';
-import {Application} from '../application';
+import {findRelatives} from '@oscarpalmer/toretto/find';
 import {Context} from '../controller/context';
-import {Constructor} from '../controller/controller';
+import type {ControllerConstructor} from '../models';
 
-export class ControllerStore {
-  private readonly controllers: Map<string, StoredController>;
+class Controllers {
+	private readonly stored = new Map<string, StoredController>();
 
-  constructor(private readonly application: Application) {
-    this.controllers = new Map();
-  }
+	add(name: string, element: Element): void {
+		const controller = this.stored.get(name);
 
-  add(identifier: string, element: Element): void {
-    const controller = this.controllers.get(identifier);
+		if (controller != null && !controller.instances.has(element)) {
+			controller.instances.set(
+				element,
+				new Context(name, element, controller.ctor),
+			);
+		}
+	}
 
-    controller?.instances.set(element, new Context(this.application, identifier, element, controller.constructor));
-  }
+	create(name: string, ctor: ControllerConstructor): void {
+		if (!this.stored.has(name)) {
+			this.stored.set(name, new StoredController(ctor));
+		}
+	}
 
-  create(identifier: string, constructor: Constructor): void {
-    if (!this.controllers.has(identifier)) {
-      this.controllers.set(identifier, { constructor, instances: new Map(), });
-    }
-  }
+	find(origin: Element, name: string, id?: string): Context | undefined {
+		let found: Element | null;
 
-  remove(identifier: string, element: Element): void {
-    const controller = this.controllers.get(identifier);
+		if (id == null) {
+			found = findRelatives(origin, `[data-controller~="${name}"]`)[0];
+		} else {
+			found = document.querySelector(`#${id}`);
+		}
 
-    if (controller == null) {
-      return;
-    }
+		return found == null
+			? undefined
+			: this.stored.get(name)?.instances.get(found);
+	}
 
-    const instance = controller.instances.get(element);
+	has(name: string): boolean {
+		return this.stored.has(name);
+	}
 
-    if (instance == null) {
-      return;
-    }
+	remove(name: string, element?: Element): void {
+		const stored = this.stored.get(name);
 
-    instance.observer.stop();
+		if (stored != null) {
+			if (element == null) {
+				const instances = [...stored.instances.values()];
+				const {length} = instances;
 
-    instance.store.actions.clear();
-    instance.store.targets.clear();
+				for (let index = 0; index < length; index += 1) {
+					this.removeInstance(stored, instances[index]);
+				}
 
-    controller.instances.delete(element);
+				stored.instances.clear();
 
-    instance.controller.disconnect?.call(instance.controller);
-  }
+				this.stored.delete(name);
+			} else {
+				this.removeInstance(stored, stored.instances.get(element));
+			}
+		}
+	}
+
+	private removeInstance(
+		controller: StoredController,
+		context?: Context,
+	): void {
+		if (context != null) {
+			context.observer.stop();
+
+			context.actions.clear();
+			context.targets.clear();
+
+			context.controller.disconnect?.();
+
+			controller?.instances.delete(context.element);
+		}
+	}
 }
+
+export class StoredController {
+	readonly ctor: ControllerConstructor;
+	readonly instances = new Map<Element, Context>();
+
+	constructor(ctor: ControllerConstructor) {
+		this.ctor = ctor;
+	}
+}
+
+export const controllers = new Controllers();

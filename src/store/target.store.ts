@@ -1,51 +1,63 @@
-import {Context} from '../controller/context';
+import type {Context} from '../controller/context';
+import type {ReadonlyTargets} from '../models';
 
-export class TargetStore {
-  private readonly targets: Map<string, Set<Element>>;
+export class Targets {
+	private readonly callbacks: ReadonlyTargets;
+	private readonly store = new Map<string, Set<Element>>();
 
-  constructor(private readonly context: Context) {
-    this.targets = new Map();
-  }
+	get readonly(): ReadonlyTargets {
+		return this.callbacks;
+	}
 
-  add(name: string, element: Element): void {
-    if (this.targets.has(name)) {
-      this.targets.get(name)?.add(element);
-    } else {
-      this.targets.set(name, new Set()).get(name)?.add(element);
-    }
+	constructor(private readonly context: Context) {
+		this.callbacks = Object.create({
+			find: this.find.bind(this) as never,
+			get: this.get.bind(this) as never,
+			getAll: this.getAll.bind(this) as never,
+			has: this.has.bind(this),
+		});
+	}
 
-    this.context.events.target.emit({ name, added: true, target: element, });
-  }
+	add(name: string, element: Element): void {
+		let targets = this.store.get(name);
 
-  clear(): void {
-    const targets = this.targets.values();
+		if (targets == null) {
+			targets = new Set();
 
-    for (const elements of targets) {
-      elements.clear();
-    }
-  }
+			this.store.set(name, targets);
+		}
 
-  get(name: string): Element[] {
-    return Array.from(this.targets.get(name) || []);
-  }
+		targets.add(element);
+	}
 
-  has(name: string): boolean {
-    return this.targets.has(name);
-  }
+	clear(): void {
+		const targets = [...this.store.values()];
+		const {length} = targets;
 
-  remove(name: string, element: Element): void {
-    const targets = this.targets.get(name);
+		for (let index = 0; index < length; index += 1) {
+			targets[index].clear();
+		}
 
-    if (targets == null) {
-      return;
-    }
+		this.store.clear();
+	}
 
-    targets.delete(element);
+	find(selector: string): Element[] {
+		return [...this.context.element.querySelectorAll(selector)] as Element[];
+	}
 
-    if (targets.size === 0) {
-      this.targets.delete(name);
-    }
+	get(name: string): Element | undefined {
+		return this.getAll(name)[0];
+	}
 
-    this.context.events.target.emit({ name, added: false, target: element, });
-  }
+	getAll(name: string): Element[] {
+		return [...(this.store.get(name) ?? [])];
+	}
+
+	has(name: string): boolean {
+		return (this.store.get(name)?.size ?? 0) > 0;
+	}
+
+	remove(name: string, element: Element): void {
+		this.store.get(name)?.delete(element);
+	}
 }

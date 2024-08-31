@@ -1,33 +1,35 @@
-import {IObserver} from '../models';
-import {Application} from '../application';
-import {ControllerObserver} from '../observer/controller.observer';
-import {Store} from '../store/store';
-import {Controller, Constructor} from './controller';
+import type {ControllerConstructor} from '../models';
+import type {Observer} from '../observer';
+import {handleAttributes} from '../observer/attributes';
+import {observeController} from '../observer/controller.observer';
+import {Actions} from '../store/action.store';
+import {Data} from '../store/data.store';
+import {Targets} from '../store/target.store';
 import {Events} from './events';
-import {Targets} from './targets';
 
 export class Context {
-  readonly controller: Controller;
-  readonly events: Events;
-  readonly observer: IObserver;
-  readonly store: Store;
-  readonly targets: Targets;
+	readonly actions: Actions;
+	readonly controller: InstanceType<ControllerConstructor>;
+	readonly data: Data;
+	readonly events: Events;
+	readonly observer: Observer;
+	readonly targets: Targets;
 
-  constructor(
-    readonly application: Application,
-    readonly identifier: string,
-    readonly element: Element,
-    controller: Constructor,
-  ) {
-    this.events = new Events(this);
-    this.store = new Store(this);
-    this.targets = new Targets(this);
+	constructor(
+		readonly name: string,
+		readonly element: Element,
+		ctor: ControllerConstructor,
+	) {
+		this.actions = new Actions();
+		this.data = new Data(this);
+		this.events = new Events(this);
+		this.observer = observeController(name, element);
+		this.targets = new Targets(this);
 
-    this.observer = new ControllerObserver(this);
-    this.controller = new controller(this);
+		this.controller = new ctor(this);
 
-    this.observer.start();
+		handleAttributes(this);
 
-    this.controller.connect?.call(this.controller);
-  }
+		this.controller.connect?.();
+	}
 }

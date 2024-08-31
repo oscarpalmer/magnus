@@ -1,2 +1,9 @@
 node_modules/
-test/
+www/
+
+dist/**/*.js
+dist/**/*.mjs
+
+*.tsbuildinfo
+
+!dist/index.js
