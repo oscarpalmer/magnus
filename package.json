@@ -29,12 +29,7 @@
 			}
 		}
 	},
-	"files": [
-		"dist/index.js",
-		"dist/**/*.mjs",
-		"src",
-		"types"
-	],
+	"files": ["dist/index.js", "dist/**/*.mjs", "src", "types"],
 	"jsdelivr": "dist/index.js",
 	"keywords": [
 		"framework",
@@ -63,5 +58,5 @@
 	"type": "module",
 	"types": "types/index.d.ts",
 	"unpkg": "dist/index.js",
-	"version": "0.30.0"
+	"version": "0.31.0"
 }

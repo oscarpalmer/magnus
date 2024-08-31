@@ -292,4 +292,4 @@ Magnus also lets you set a custom type for your data model to allow for nicer ma
 
 ## License
 
-[MIT licensed](LICENSE); you're free to do whatever you'd like with whatever this is :wink:
+[MIT licensed](LICENSE), natch :wink:
