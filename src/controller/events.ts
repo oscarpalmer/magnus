@@ -236,6 +236,7 @@ function getTarget(
 	}
 
 	return target instanceof EventTarget ||
+		(target as unknown as Document)?.documentElement instanceof Element ||
 		(target != null && (target as Window).window === (target as Window))
 		? target
 		: context.element;

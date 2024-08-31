@@ -45,6 +45,28 @@ function getEventType(
 	return 'input';
 }
 
+function handleDataValue(
+	type: DataType,
+	context: Context,
+	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
+	name: string,
+	json: boolean,
+): void {
+	if (json) {
+		const value = parse(element.value);
+
+		if (name === '$' && element.value.trim().length > 0 && value != null) {
+			replaceData(context, value);
+		}
+
+		if (value != null) {
+			setDataValue(type, context, element, name, value);
+		}
+	} else {
+		setDataValue(type, context, element, name);
+	}
+}
+
 export function handleInputAttribute(
 	context: Context,
 	element: Element,
@@ -61,7 +83,7 @@ export function handleInputAttribute(
 		handleActionAttribute(context, element, name, added, {
 			event,
 			callback: event => {
-				setDataValue(data, context, event.target as never, key, json != null);
+				handleDataValue(data, context, event.target as never, key, json != null);
 			},
 		});
 
@@ -83,24 +105,10 @@ function setDataValue(
 	context: Context,
 	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
 	name: string,
-	json: boolean,
+	value?: unknown,
 ): void {
-	let actual: unknown;
-
-	if (json) {
-		actual = parse(element.value);
-
-		if (name === '$' && element.value.trim().length > 0 && actual != null) {
-			replaceData(context, actual);
-		}
-
-		if (actual == null) {
-			return;
-		}
-	}
-
 	context.data.value[name] =
-		actual ??
+		value ??
 		(type === 'boolean'
 			? (element as HTMLInputElement).checked
 			: type === 'parseable'

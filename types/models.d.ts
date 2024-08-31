@@ -9,23 +9,23 @@ export type ActionParameters = {
 };
 export type AttributeChangeCallback = (element: Element, value: string, added: boolean) => void;
 export type AttributeChangesParameters = {
+    callback?: AttributeChangeCallback;
     element: Element;
     from: string;
-    handler: AttributeChangeCallback | undefined;
     name: string;
     to: string;
 };
 export type AttributeHandleCallback = (context: Context, element: Element, value: string, added: boolean, custom?: {
     event: string;
-    handler: GenericCallback;
+    callback: GenericCallback;
 }) => void;
 export type AttributeHandleCallbackCustomParameters = {
+    callback: GenericCallback;
     event: string;
-    handler: GenericCallback;
 };
 export type AttributeHandleParameters = {
+    callback?: AttributeChangeCallback;
     element: Element;
-    handler: AttributeChangeCallback | undefined;
     value: string;
 };
 export type AttributeType = 'action' | 'input' | 'output' | 'target';

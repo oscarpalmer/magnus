@@ -78,13 +78,6 @@ function removeActionTarget(
 	action: Action,
 	target: EventTarget,
 ): void {
-	console.log(
-		name,
-		action.type,
-		action.callback,
-		(target as Element).tagName ?? 'x',
-	);
-
 	target.removeEventListener(action.type, action.callback, action.options);
 
 	action.targets.delete(target);

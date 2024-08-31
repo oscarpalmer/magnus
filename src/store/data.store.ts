@@ -112,11 +112,10 @@ function setElementContents(elements: Element[], value: string): void {
 }
 
 function setElementValue(element: Element, value: string): void {
-	if (element === document.activeElement) {
-		return;
-	}
-
 	switch (true) {
+		case element === document.activeElement:
+			return;
+
 		case element instanceof HTMLInputElement &&
 			changeEventTypes.has(element.type):
 			element.checked =

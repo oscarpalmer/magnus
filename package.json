@@ -10,7 +10,7 @@
 	"description": "A JavaScript framework for developers who like HTML.",
 	"devDependencies": {
 		"@biomejs/biome": "^1.8.3",
-		"@happy-dom/global-registrator": "^15.0.0",
+		"@happy-dom/global-registrator": "^15.7.2",
 		"@types/bun": "^1.1.8",
 		"bun": "^1.1.26",
 		"dts-bundle-generator": "^9.5.1",

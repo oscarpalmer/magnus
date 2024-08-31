@@ -35,11 +35,11 @@ export type PlainObject = UnknownRecord;
 declare class Observer {
 	private readonly element;
 	private readonly options;
-	private readonly handler;
+	private readonly callback;
 	private frame;
 	private readonly observer;
 	private running;
-	constructor(element: Element, options: MutationObserverInit, handler: ObserverCallback);
+	constructor(element: Element, options: MutationObserverInit, callback: ObserverCallback);
 	start(): void;
 	stop(): void;
 	update(): void;
@@ -48,7 +48,7 @@ declare class Actions {
 	private readonly store;
 	add(name: string, target: EventTarget): void;
 	clear(): void;
-	create(parameters: ActionParameters): void;
+	create(parameters: ActionParameters, target: EventTarget): void;
 	has(name: string): boolean;
 	remove(name: string, target: EventTarget): void;
 }

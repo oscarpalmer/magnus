@@ -6,16 +6,13 @@ import type {
 } from '../../models';
 import {handleTargetAttribute} from './target.attribute';
 
-function getAttribute(
-	type: AttributeType,
-	element: Element,
-): string | undefined {
+function getAttributeValue(element: Element, type: AttributeType): string {
 	const attribute = element.getAttribute(`data-${type}`) ?? '';
 
 	return strictTypes.has(type)
 		? attribute
 				.split(/\s+/g)
-				.find(part => inputAndOutputAttributePattern.test(part))
+				.find(part => inputAndOutputAttributePattern.test(part)) ?? ''
 		: attribute;
 }
 
@@ -58,19 +55,17 @@ export function handleAttributeChanges(
 
 	const to = initial
 		? parameters.value
-		: getAttribute(type, parameters.element) ?? '';
+		: getAttributeValue(parameters.element, type);
 
-	if (from === to) {
-		return;
+	if (from !== to) {
+		handleChanges(type, {
+			from,
+			to,
+			callback: parameters.callback,
+			element: parameters.element,
+			name: `data-${type}`,
+		});
 	}
-
-	handleChanges(type, {
-		from,
-		to,
-		callback: parameters.callback,
-		element: parameters.element,
-		name: `data-${type}`,
-	});
 }
 
 function handleChanges(

@@ -75,10 +75,10 @@ test('action attribute', done => {
 			button?.click();
 		}
 
-		button?.setAttribute('data-action', '');
+		button?.removeAttribute('data-action');
 
 		setTimeout(() => {
-			// expect(multiple).toBe(10);
+			expect(multiple).toBe(10);
 			expect(once).toBe(1);
 
 			expect(fromDocument).toBe('Hello, world! -- fromDocument');

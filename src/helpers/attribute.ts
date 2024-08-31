@@ -45,15 +45,13 @@ function parseInputAndOutputAttribute(
 	if (matches != null) {
 		const [, name, id, value, json] = matches;
 
-		if (value == null && json == null) {
-			return;
+		if (!(value == null && json == null)) {
+			return {
+				id,
+				name,
+				value: `${value ?? '$'}${json ?? ''}`,
+			};
 		}
-
-		return {
-			id,
-			name,
-			value: `${value ?? '$'}${json ?? ''}`,
-		};
 	}
 }
 

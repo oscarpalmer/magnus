@@ -43,23 +43,21 @@ class Controllers {
 	remove(name: string, element?: Element): void {
 		const stored = this.stored.get(name);
 
-		if (stored == null) {
-			return;
-		}
+		if (stored != null) {
+			if (element == null) {
+				const instances = [...stored.instances.values()];
+				const {length} = instances;
 
-		if (element == null) {
-			const instances = [...stored.instances.values()];
-			const {length} = instances;
+				for (let index = 0; index < length; index += 1) {
+					this.removeInstance(stored, instances[index]);
+				}
 
-			for (let index = 0; index < length; index += 1) {
-				this.removeInstance(stored, instances[index]);
+				stored.instances.clear();
+
+				this.stored.delete(name);
+			} else {
+				this.removeInstance(stored, stored.instances.get(element));
 			}
-
-			stored.instances.clear();
-
-			this.stored.delete(name);
-		} else {
-			this.removeInstance(stored, stored.instances.get(element));
 		}
 	}
 

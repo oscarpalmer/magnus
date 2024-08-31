@@ -34,39 +34,33 @@ export class Observer {
 		}
 
 		start() {
-			if (this.running) {
-				return;
+			if (!this.running) {
+				this.running = true;
+
+				this.observer.observe(this.element, this.options);
+
+				this.update();
 			}
-
-			this.running = true;
-
-			this.observer.observe(this.element, this.options);
-
-			this.update();
 		}
 
 		stop() {
-			if (!this.running) {
-				return;
+			if (this.running) {
+				this.running = false;
+
+				cancelAnimationFrame(this.frame);
+
+				this.observer.disconnect();
 			}
-
-			this.running = false;
-
-			cancelAnimationFrame(this.frame);
-
-			this.observer.disconnect();
 		}
 
 		update() {
-			if (!this.running) {
-				return;
+			if (this.running) {
+				cancelAnimationFrame(this.frame);
+
+				this.frame = requestAnimationFrame(() => {
+					handleNodes([this.element], this.callback);
+				});
 			}
-
-			cancelAnimationFrame(this.frame);
-
-			this.frame = requestAnimationFrame(() => {
-				handleNodes([this.element], this.callback);
-			});
 		}
 	}
 

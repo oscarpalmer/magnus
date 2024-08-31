@@ -10,7 +10,7 @@ export declare class Actions {
     private readonly store;
     add(name: string, target: EventTarget): void;
     clear(): void;
-    create(parameters: ActionParameters): void;
+    create(parameters: ActionParameters, target: EventTarget): void;
     has(name: string): boolean;
     remove(name: string, target: EventTarget): void;
 }

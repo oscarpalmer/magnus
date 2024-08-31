@@ -2,9 +2,45 @@ import type {PlainObject} from '@oscarpalmer/atoms/models';
 import type {Context} from '../../controller/context';
 import {getEventParameters} from '../../helpers/event';
 import {findTarget} from '../../helpers/index';
-import type {AttributeHandleCallbackCustomParameters} from '../../models';
+import type {
+	AttributeHandleCallbackCustomParameters,
+	EventParameters,
+} from '../../models';
 
 function createAction(
+	context: Context,
+	element: Element,
+	value: string,
+	parameters: EventParameters,
+	custom?: AttributeHandleCallbackCustomParameters,
+): void {
+	const callback =
+		custom?.callback ??
+		((context.controller as unknown as PlainObject)[parameters.callback] as (
+			event: Event,
+		) => void);
+
+	const target =
+		typeof callback === 'function'
+			? parameters.external == null
+				? element
+				: findTarget(element, parameters.external.name, parameters.external.id)
+			: null;
+
+	if (target != null) {
+		context.actions.create(
+			{
+				callback: callback.bind(context.controller),
+				name: value,
+				options: parameters.options,
+				type: parameters.type,
+			},
+			target,
+		);
+	}
+}
+
+function handleAction(
 	context: Context,
 	element: Element,
 	action: string,
@@ -24,35 +60,8 @@ function createAction(
 					type: action,
 				};
 
-	if (parameters == null) {
-		return;
-	}
-
-	const callback =
-		custom?.callback ??
-		((context.controller as unknown as PlainObject)[parameters.callback] as (
-			event: Event,
-		) => void);
-
-	if (typeof callback !== 'function') {
-		return;
-	}
-
-	const target =
-		parameters.external == null
-			? element
-			: findTarget(element, parameters.external.name, parameters.external.id);
-
-	if (target != null) {
-		context.actions.create(
-			{
-				callback: callback.bind(context.controller),
-				name: value,
-				options: parameters.options,
-				type: parameters.type,
-			},
-			target,
-		);
+	if (parameters != null) {
+		createAction(context, element, value, parameters, custom);
 	}
 }
 
@@ -71,11 +80,7 @@ export function handleActionAttribute(
 		} else {
 			context.actions.remove(value, element);
 		}
-
-		return;
-	}
-
-	if (added) {
-		createAction(context, element, action, value, custom);
+	} else if (added) {
+		handleAction(context, element, action, value, custom);
 	}
 }
