@@ -1,47 +1,55 @@
 import type {AttributeHandleCallback, AttributeType} from './models';
+import {handleTargetAttribute} from './observer/attributes';
 import {handleActionAttribute} from './observer/attributes/action.attribute';
-import {
-	handleInputAttribute,
-	handleOutputAttribute,
-} from './observer/attributes/input-output.attribute';
-import {handleTargetElement} from './observer/attributes/target.attribute';
+import {handleInputOutputAttribute} from './observer/attributes/input-output.attribute';
 
-export const attributeCallbacks: Record<
-	AttributeType,
-	AttributeHandleCallback
+export const attributeCallbacks: Partial<
+	Record<AttributeType, AttributeHandleCallback>
 > = {
 	action: handleActionAttribute,
-	input: handleInputAttribute,
-	output: handleOutputAttribute,
-	target: handleTargetElement,
+	'input-output': handleInputOutputAttribute,
+	target: handleTargetAttribute,
 };
 
-export const attributeTypes = Object.keys(
-	attributeCallbacks,
-) as AttributeType[];
-
-export const attributeTypesLength = attributeTypes.length;
-
 //
 
-export const controllerAttribute = 'data-controller';
+/**
+ * - `::controller(.identifier).action(:options)` _(options allowed, should not have attribute value)_
+ * - `::(external(.identifier).)event` _(options ignored, should have attribute value)_
+ * - `[, name, id?, value, options?]`
+ */
+export const actionAttributeNamePattern =
+	/^::(?:([\w-]+)(?:\.([\w-]+))?\.)?([\w-]+)(?::([a-z:]+))?$/i;
 
-//
+/**
+ * - `controller(.identifier)::action(:options)`
+ * - `[, name, id?, value, options?]`
+ */
+export const actionAttributeValuePattern =
+	/^([\w-]+)(?:\.([\w-]+))?\.([\w-]+)(?::([a-z:]+))?$/;
 
-// (event->)controller(#id)@method(:options)
-export const actionAttributePattern =
-	/^(?:([\w-]+)->)?([\w-]+)(?:#([\w-]+))?@([\w-]+)(?::([a-z:]+))?/i;
+/**
+ * - `:controller`
+ * - `[, name]`
+ */
+export const controllerAttributePattern = /^:([\w-]+)$/;
 
-// ((external(#id)@)event->)controller(#id)@method(:options)
-export const extendedActionAttributePattern =
-	/^(?:(?:(?:([\w-]+)(?:#([\w-]+))?)?@)?([\w-]+)->)?([\w-]+)(?:#([\w-]+))?@([\w-]+)(?::([a-z:]+))?/i;
+/**
+ * - `:controller(.identifier):property``
+ * - `[, name, id?, value]`
+ */
+export const inputOutputAttributePattern =
+	/^:([\w-]+)(?:\.([\w-]+))?\:([\w-]*)(?::json)?$/;
 
-// controller(#id).data(:json)
-export const inputAndOutputAttributePattern =
-	/^([\w-]+)(?:#([\w-]+))?(?:\.([\w-]+))?(:json)?$/i;
+export const inputOutputAttributePrefixPattern = /^:[\w-]+:/;
 
-// controller(#id).target
-export const targetAttributePattern = /^([\w-]+)(?:#([\w-]+))?\.([\w-]+)$/;
+/**
+ * - `:target(.identifier).target`
+ * - `[, name, id?, value]`
+ */
+export const targetAttributePattern = /^:([\w-]+)(?:\.([\w-]+))?\.([\w-]+)$/;
+
+export const targetAttributePrefixPattern = /^:[\w-]+\./;
 
 //
 
@@ -72,7 +80,3 @@ export const parseableInputTypes = new Set([
 	'range',
 	'week',
 ]);
-
-//
-
-export const strictTypes = new Set(['input', 'output']);

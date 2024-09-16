@@ -17,37 +17,30 @@ export type AttributeChangeCallback = (
 	added: boolean,
 ) => void;
 
-export type AttributeChangesParameters = {
-		callback?: AttributeChangeCallback;
-		element: Element;
-		from: string;
-		name: string;
-		to: string;
-	};
-
 export type AttributeHandleCallback = (
-		context: Context,
-		element: Element,
-		value: string,
-		added: boolean,
-		custom?: {
-			event: string;
-			callback: GenericCallback;
-		},
-	) => void;
+	context: Context,
+	element: Element,
+	name: string,
+	value: string,
+	added: boolean,
+	custom?: {
+		event: string;
+		callback: GenericCallback;
+	},
+) => void;
 
 export type AttributeHandleCallbackCustomParameters = {
-		callback: GenericCallback;
-		event: string;
-	};
+	callback: GenericCallback;
+	event: string;
+};
 
 export type AttributeHandleParameters = {
-		callback?: AttributeChangeCallback;
-		element: Element;
-		value: string;
-	};
+	callback?: AttributeChangeCallback;
+	element: Element;
+	value: string;
+};
 
-export type AttributeType = 'action' | 'input' | 'output' | 'target';
+export type AttributeType = 'action' | 'controller' | 'input-output' | 'target';
 
 //
 
@@ -61,22 +54,14 @@ export type DataType = 'boolean' | 'parseable' | 'string';
 
 export type EventParameters = {
 	callback: string;
-	external?: EventController;
+	external?: EventExternal;
 	options: AddEventListenerOptions;
 	type: string;
 };
 
-export type EventController = {
-	id?: string;
+export type EventExternal = {
+	identifier?: string;
 	name: string;
-};
-
-export type EventMatches = {
-	callback: string;
-	event?: string;
-	id?: string;
-	name?: string;
-	options?: string;
 };
 
 //
@@ -94,9 +79,8 @@ export type ObserverCallback = (
 //
 
 export type ParsedAttribute = {
-	id?: string;
+	identifier?: string;
 	name: string;
-	value: string;
 };
 
 //

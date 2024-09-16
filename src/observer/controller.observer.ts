@@ -4,7 +4,7 @@ import {setValueFromAttribute} from '../store/data.store';
 import {type Observer, createObserver} from './index';
 
 export function observeController(name: string, element: Element): Observer {
-	const prefix = `data-${name}-`;
+	const prefix = `\:${name}-`;
 
 	let context: Context | undefined;
 

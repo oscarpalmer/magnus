@@ -37,8 +37,8 @@ class EventsController extends Controller {
 }
 
 document.body.innerHTML = `<div
-	data-controller="events-test"
-	data-action="global->events-test@onGlobal"
+	:events-test
+	::global="events-test.onGlobal"
 >
 	<button data-target="events-test.button"></button>
 </div>`;

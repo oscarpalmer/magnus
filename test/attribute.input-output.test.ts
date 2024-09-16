@@ -147,39 +147,39 @@ const output: Data<string> = {
 };
 
 document.body.innerHTML = `<div
-	data-controller="io-test"
-	data-io-test-boolean="true"
-	data-io-test-number="42"
-	data-io-test-select="2"
-	data-io-test-text="Hello, world!"
-	data-io-test-textarea="Hello, universe!"
+	:io-test
+	:io-test-boolean="true"
+	:io-test-number="42"
+	:io-test-select="2"
+	:io-test-text="Hello, world!"
+	:io-test-textarea="Hello, universe!"
 >
-	<input type="checkbox" data-input="io-test.boolean" />
-	<input type="number" data-input="io-test.number" />
-	<input type="text" data-input="io-test.text" />
+	<input type="checkbox" :io-test:boolean" />
+	<input type="number" :io-test:number" />
+	<input type="text" :io-test:text" />
 
-	<select data-input="io-test.select">
+	<select :io-test:select">
 		<option value="1">A</option>
 		<option value="2">B</option>
 		<option value="3">C</option>
 	</select>
 
-	<textarea data-input="io-test.textarea"></textarea>
+	<textarea :io-test:textarea"></textarea>
 
-	<div data-input="io-test.ignored"></div>
+	<div :io-test.ignored"></div>
 
 	<ul>
-		<li data-output="io-test.boolean"></li>
-		<li data-output="io-test.number"></li>
-		<li data-output="io-test.select"></li>
-		<li data-output="io-test.text"></li>
-		<li data-output="io-test.textarea"></li>
+		<li :io-test:boolean"></li>
+		<li :io-test:number"></li>
+		<li :io-test:select"></li>
+		<li :io-test:text"></li>
+		<li :io-test:textarea"></li>
 	</ul>
 
-	<textarea data-input="io-test:json"></textarea>
-	<textarea data-input="io-test"></textarea>
+	<textarea :io-test::json"></textarea>
+	<textarea :io-test"></textarea>
 
-	<pre data-output="io-test:json"></pre>
+	<pre io-test::json></pre>
 </div>`;
 
 magnus.add('io-test', InputOutputController);

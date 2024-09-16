@@ -9,7 +9,7 @@ class ObserverController extends Controller {
 
 let controller: ObserverController;
 
-document.body.innerHTML = `<div data-controller="observer-test"></div>`;
+document.body.innerHTML = '<div :observer-test></div>';
 
 magnus.stop();
 magnus.add('observer-test', ObserverController);

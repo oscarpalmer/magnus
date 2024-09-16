@@ -24,7 +24,7 @@ export class Data {
 
 	constructor(context: Context) {
 		const frames: Record<string, number> = {};
-		const prefix = `data-${context.name}-`;
+		const prefix = `\:${context.name}-`;
 
 		this.value = new Proxy(
 			{},
@@ -107,7 +107,11 @@ function setElementContents(elements: Element[], value: string): void {
 	const {length} = elements;
 
 	for (let index = 0; index < length; index += 1) {
-		elements[index].textContent = value;
+		const element = elements[index];
+
+		if (element.textContent !== value) {
+			element.textContent = value;
+		}
 	}
 }
 
@@ -180,8 +184,8 @@ function setValue(
 				+(getComputedStyle(context.element)?.tabSize ?? '4'),
 			);
 
-			setElementContents(context.targets.getAll('output:$:json'), json);
-			setElementValues(context.targets.getAll('input:$:json'), json);
+			setElementContents(context.targets.getAll('output::json'), json);
+			setElementValues(context.targets.getAll('input::json'), json);
 		}),
 	);
 }

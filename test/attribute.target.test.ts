@@ -13,10 +13,10 @@ document.body.innerHTML = `<ul>
 	<li></li>
 	<li></li>
 	<li>
-		<ul data-controller="target-test">
-			<li data-target="target-test.item"></li>
-			<li data-target="target-test.item"></li>
-			<li data-target="target-test.item"></li>
+		<ul :target-test>
+			<li :target-test.item></li>
+			<li :target-test.item></li>
+			<li :target-test.item></li>
 		</ul>
 	</li>
 	<li></li>

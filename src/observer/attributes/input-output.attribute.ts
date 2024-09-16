@@ -1,14 +1,15 @@
 import {parse} from '@oscarpalmer/atoms/string';
+import {handleTargetAttribute} from '.';
 import {
 	changeEventTypes,
 	ignoredInputTypes,
+	inputOutputAttributePrefixPattern,
 	parseableInputTypes,
 } from '../../constants';
 import type {Context} from '../../controller/context';
 import type {DataType} from '../../models';
 import {replaceData} from '../../store/data.store';
 import {handleActionAttribute} from './action.attribute';
-import {handleTargetElement} from './target.attribute';
 
 function getDataType(element: Element): DataType | undefined {
 	switch (true) {
@@ -67,37 +68,54 @@ function handleDataValue(
 	}
 }
 
-export function handleInputAttribute(
+function handleInputAttribute(
 	context: Context,
 	element: Element,
+	type: DataType,
+	name: string,
 	value: string,
 	added: boolean,
 ): void {
-	const [key, json] = value.split(':');
-	const data = getDataType(element);
+	const event = getEventType(element as never);
+	const unprefixed = name.replace(inputOutputAttributePrefixPattern, '');
+	const property = unprefixed.replace(/:json$/, '');
 
-	if (context != null && data != null) {
-		const name = `input:${value}`;
-		const event = getEventType(element as never);
+	handleActionAttribute(context, element, `input:${unprefixed}`, value, added, {
+		event,
+		callback: event => {
+			handleDataValue(
+				type,
+				context,
+				event.target as never,
+				property,
+				unprefixed.endsWith(':json'),
+			);
+		},
+	});
 
-		handleActionAttribute(context, element, name, added, {
-			event,
-			callback: event => {
-				handleDataValue(data, context, event.target as never, key, json != null);
-			},
-		});
-
-		handleTargetElement(context, element, name, added);
-	}
+	handleTargetAttribute(context, element, `input:${unprefixed}`, value, added);
 }
 
-export function handleOutputAttribute(
+export function handleInputOutputAttribute(
 	context: Context,
 	element: Element,
+	name: string,
 	value: string,
 	added: boolean,
 ): void {
-	handleTargetElement(context, element, `output:${value}`, added);
+	const type = getDataType(element);
+
+	if (type == null) {
+		handleTargetAttribute(
+			context,
+			element,
+			`output:${name.replace(inputOutputAttributePrefixPattern, '')}`,
+			'',
+			added,
+		);
+	} else {
+		handleInputAttribute(context, element, type, name, value, added);
+	}
 }
 
 function setDataValue(

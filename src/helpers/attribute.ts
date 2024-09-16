@@ -1,70 +1,61 @@
-import {camelCase} from '@oscarpalmer/atoms/string';
 import {
-	extendedActionAttributePattern,
-	inputAndOutputAttributePattern,
+	actionAttributeNamePattern,
+	actionAttributeValuePattern,
+	controllerAttributePattern,
+	inputOutputAttributePattern,
 	targetAttributePattern,
 } from '../constants';
 import type {AttributeType, ParsedAttribute} from '../models';
 
-function parseActionAttribute(attribute: string): ParsedAttribute | undefined {
-	const matches = extendedActionAttributePattern.exec(attribute);
+export function getAttributeType(name: string): AttributeType | undefined {
+	switch (true) {
+		case actionAttributeNamePattern.test(name):
+			return 'action';
 
-	if (matches != null) {
-		const [, , , , name, id, method] = matches;
+		case controllerAttributePattern.test(name):
+			return 'controller';
 
-		return {
-			id: name == null ? undefined : id,
-			name: name == null ? id : name,
-			value: camelCase(method),
-		};
+		case inputOutputAttributePattern.test(name):
+			return 'input-output';
+
+		case targetAttributePattern.test(name):
+			return 'target';
+
+		default:
+			break;
 	}
 }
 
 export function parseAttribute(
 	type: AttributeType,
+	name: string,
 	value: string,
 ): ParsedAttribute | undefined {
+	let matches: RegExpExecArray | null = null;
+
 	switch (type) {
 		case 'action':
-			return parseActionAttribute(value);
+			matches =
+				actionAttributeValuePattern.exec(value) ??
+				actionAttributeNamePattern.exec(name);
+			break;
 
-		case 'input':
-		case 'output':
-			return parseInputAndOutputAttribute(value);
+		case 'input-output':
+			matches = inputOutputAttributePattern.exec(name);
+			break;
+
+		case 'target':
+			matches = targetAttributePattern.exec(name);
+			break;
 
 		default:
-			return parseTargetAttribute(value);
+			break;
 	}
-}
-
-function parseInputAndOutputAttribute(
-	attribute: string,
-): ParsedAttribute | undefined {
-	const matches = inputAndOutputAttributePattern.exec(attribute);
 
 	if (matches != null) {
-		const [, name, id, value, json] = matches;
-
-		if (!(value == null && json == null)) {
-			return {
-				id,
-				name,
-				value: `${value ?? '$'}${json ?? ''}`,
-			};
-		}
-	}
-}
-
-function parseTargetAttribute(attribute: string): ParsedAttribute | undefined {
-	const matches = targetAttributePattern.exec(attribute);
-
-	if (matches != null) {
-		const [, name, id, value] = matches;
-
 		return {
-			id,
-			name,
-			value,
+			identifier: matches[2],
+			name: matches[1],
 		};
 	}
 }

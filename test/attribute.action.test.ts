@@ -42,21 +42,21 @@ let multiple = 0;
 let once = 0;
 
 document.body.innerHTML = `<div
-	data-controller="action-one"
-	data-action="
-		btn@click->action-one@fromElement
-		document@fromDocument->action-one@fromDocument
-		window@fromWindow->action-one@fromWindow
-	"
+	:action-one
+	::btn.click="action-one.fromElement"
+	::document.fromDocument="action-one.fromDocument"
+	::window.fromWindow="action-one@fromWindow"
 ></div>
-<div data-controller="action-two">
+<div :action-two>
 	<button
 		id="btn"
-		data-action="action-two@onMultiple action-two@onOnce:once"
+		::action-two.onMultiple
+		::action-two.onOnce:once
 	></button>
-	<input type="submit" data-action="action-two@onSubmit" />
+	<input type="submit" ::action-two@onSubmit />
 	<div
-		data-action="this-will@be-ignored action-two@and-so-will-this"
+		::this-will@be-ignored
+		::action-two@and-so-will-this
 	></div>
 </div>`;
 

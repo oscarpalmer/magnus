@@ -1,20 +1,5 @@
-import {inputAndOutputAttributePattern, strictTypes} from '../../constants';
-import type {
-	AttributeChangesParameters,
-	AttributeHandleParameters,
-	AttributeType,
-} from '../../models';
-import {handleTargetAttribute} from './target.attribute';
-
-function getAttributeValue(element: Element, type: AttributeType): string {
-	const attribute = element.getAttribute(`data-${type}`) ?? '';
-
-	return strictTypes.has(type)
-		? attribute
-				.split(/\s+/g)
-				.find(part => inputAndOutputAttributePattern.test(part)) ?? ''
-		: attribute;
-}
+import type {AttributeType} from '../../models';
+import {handleContextualAttribute, handleControllerAttribute} from './index';
 
 function getChanges(from: string, to: string): string[][] {
 	const fromValues = getParts(from);
@@ -48,31 +33,31 @@ function getParts(value: string): string[] {
 
 export function handleAttributeChanges(
 	type: AttributeType,
-	parameters: AttributeHandleParameters,
+	element: Element,
+	name: string,
+	value: string,
 	initial: boolean,
 ): void {
-	const from = initial ? '' : parameters.value;
+	const from = initial ? null : value;
+	const to = initial ? value : element.getAttribute(name);
 
-	const to = initial
-		? parameters.value
-		: getAttributeValue(parameters.element, type);
-
-	if (from !== to) {
-		handleChanges(type, {
-			from,
-			to,
-			callback: parameters.callback,
-			element: parameters.element,
-			name: `data-${type}`,
-		});
+	if (type === 'action' && value.length > 0) {
+		handleChanges(type, element, name, from ?? '', to ?? '');
+	} else if (type === 'controller') {
+		handleControllerAttribute(element, name, to != null);
+	} else {
+		handleContextualAttribute(type, element, name, to ?? '', to != null);
 	}
 }
 
 function handleChanges(
 	type: AttributeType,
-	parameters: AttributeChangesParameters,
+	element: Element,
+	name: string,
+	from: string,
+	to: string,
 ): void {
-	const changes = getChanges(parameters.from, parameters.to);
+	const changes = getChanges(from, to);
 	const changesLength = changes.length;
 
 	for (let changesIndex = 0; changesIndex < changesLength; changesIndex += 1) {
@@ -85,16 +70,13 @@ function handleChanges(
 			changedIndex < changedLength;
 			changedIndex += 1
 		) {
-			if (parameters.callback == null) {
-				handleTargetAttribute(
-					type,
-					parameters.element,
-					changed[changedIndex],
-					added,
-				);
-			} else {
-				parameters.callback(parameters.element, changed[changedIndex], added);
-			}
+			handleContextualAttribute(
+				type,
+				element,
+				name,
+				changed[changedIndex],
+				added,
+			);
 		}
 	}
 }

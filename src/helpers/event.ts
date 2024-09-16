@@ -1,48 +1,54 @@
+import {camelCase} from '@oscarpalmer/atoms';
 import {
-	actionAttributePattern,
+	actionAttributeNamePattern,
+	actionAttributeValuePattern,
 	defaultEvents,
-	extendedActionAttributePattern,
 } from '../constants';
-import type {EventMatches, EventParameters} from '../models';
+import type {EventParameters} from '../models';
 
 export function getEventParameters(
-	element: Element,
-	action: string,
-	isParent: boolean,
-): EventParameters | undefined {
-	const results = (
-		isParent ? extendedActionAttributePattern : actionAttributePattern
-	).exec(action);
+		element: Element,
+		name: string,
+		value: string,
+	): EventParameters | undefined {
+		const nameMatches = actionAttributeNamePattern.exec(name);
 
-	if (results != null) {
-		const matches = getMatches(results, isParent);
-
-		const parameters: EventParameters = {
-			callback: matches.callback,
-			options: getOptions(matches.options ?? ''),
-			type: (matches.event ?? getType(element)) as never,
-		};
-
-		if (typeof matches.name === 'string') {
-			parameters.external = {
-				name: matches.name,
-				id: matches.id,
-			};
+		if (nameMatches == null) {
+			return;
 		}
 
-		return parameters.type == null ? undefined : parameters;
-	}
-}
+		const valueMatches = actionAttributeValuePattern.exec(value);
 
-function getMatches(matches: RegExpExecArray, isParent: boolean): EventMatches {
-	return {
-		callback: matches[isParent ? 6 : 4],
-		event: matches[isParent ? 3 : 1],
-		id: matches[isParent ? 2 : -1],
-		name: matches[isParent ? 1 : -1],
-		options: matches[isParent ? 7 : 5],
-	};
-}
+		let external: string | undefined;
+		let identifier: string | undefined;
+		let method: string | undefined;
+		let options: string | undefined;
+		let type: string | undefined;
+
+		if (valueMatches == null) {
+			[, , , method, options] = nameMatches;
+		} else {
+			[, external, identifier, type] = nameMatches;
+			[, , , method, options] = valueMatches;
+		}
+
+		type = type ?? getType(element);
+
+		if (type != null) {
+			return {
+				type,
+				callback: camelCase(method),
+				external:
+					external == null
+						? undefined
+						: {
+								identifier,
+								name: external,
+							},
+				options: getOptions(options ?? ''),
+			};
+		}
+	}
 
 function getOptions(options: string): AddEventListenerOptions {
 	const items = options.toLowerCase().split(':');
