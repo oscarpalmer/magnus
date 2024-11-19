@@ -1,6 +1,6 @@
+import type { RemovableEventListener } from '@oscarpalmer/toretto/models';
 import type { ExtendedEventTarget } from '../models';
 import type { Context } from './context';
-type RemoveEventListener = () => void;
 export declare class Events {
     private readonly context;
     constructor(context: Context);
@@ -75,40 +75,39 @@ export declare class Events {
      * ---
      * - Returns a function that removes the event listener
      */
-    on<Type extends keyof HTMLElementEventMap>(type: Type, listener: EventListener): RemoveEventListener;
+    on<Type extends keyof HTMLElementEventMap>(type: Type, listener: EventListener): RemovableEventListener;
     /**
      * - Add an event listener to the controller's element
      * ---
      * - Returns a function that removes the event listener
      */
-    on(type: string, listener: EventListener): RemoveEventListener;
+    on(type: string, listener: EventListener): RemovableEventListener;
     /**
      * - Add an event listener to a target element
      * ---
      * - If target is a `string`, the controller will use the first matching target element
      * - Returns a function that removes the event listener
      */
-    on<Type extends keyof HTMLElementEventMap>(type: Type, listener: EventListener, target: ExtendedEventTarget): RemoveEventListener;
+    on<Type extends keyof HTMLElementEventMap>(type: Type, listener: EventListener, target: ExtendedEventTarget): RemovableEventListener;
     /**
      * - Add an event listener to a target element
      * ---
      * - If target is a `string`, the controller will use the first matching target element
      * - Returns a function that removes the event listener
      */
-    on(type: string, listener: EventListener, target: ExtendedEventTarget): RemoveEventListener;
+    on(type: string, listener: EventListener, target: ExtendedEventTarget): RemovableEventListener;
     /**
      * - Add an event listener to a target element
      * ---
      * - If target is a `string`, the controller will use the first matching target element
      * - Returns a function that removes the event listener
      */
-    on<Type extends keyof HTMLElementEventMap>(type: Type, listener: EventListener, options: boolean | AddEventListenerOptions, target?: ExtendedEventTarget): RemoveEventListener;
+    on<Type extends keyof HTMLElementEventMap>(type: Type, listener: EventListener, options: boolean | AddEventListenerOptions, target?: ExtendedEventTarget): RemovableEventListener;
     /**
      * - Add an event listener to a target element
      * ---
      * - If target is a `string`, the controller will use the first matching target element
      * - Returns a function that removes the event listener
      */
-    on(type: string, listener: EventListener, options: boolean | AddEventListenerOptions, target?: ExtendedEventTarget): RemoveEventListener;
+    on(type: string, listener: EventListener, options: boolean | AddEventListenerOptions, target?: ExtendedEventTarget): RemovableEventListener;
 }
-export {};

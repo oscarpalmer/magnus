@@ -1,6 +1,7 @@
 import {noop} from '@oscarpalmer/atoms/function';
 import {isPlainObject} from '@oscarpalmer/atoms/is';
 import {dispatch, off, on} from '@oscarpalmer/toretto/event';
+import type {RemovableEventListener} from '@oscarpalmer/toretto/models';
 import type {ExtendedEventTarget} from '../models';
 import type {Context} from './context';
 
@@ -10,8 +11,6 @@ type HandleEventParameters = {
 	second?: ExtendedEventTarget;
 	type: string;
 };
-
-type RemoveEventListener = () => void;
 
 export class Events {
 	constructor(private readonly context: Context) {}
@@ -158,14 +157,14 @@ export class Events {
 	on<Type extends keyof HTMLElementEventMap>(
 		type: Type,
 		listener: EventListener,
-	): RemoveEventListener;
+	): RemovableEventListener;
 
 	/**
 	 * - Add an event listener to the controller's element
 	 * ---
 	 * - Returns a function that removes the event listener
 	 */
-	on(type: string, listener: EventListener): RemoveEventListener;
+	on(type: string, listener: EventListener): RemovableEventListener;
 
 	/**
 	 * - Add an event listener to a target element
@@ -177,7 +176,7 @@ export class Events {
 		type: Type,
 		listener: EventListener,
 		target: ExtendedEventTarget,
-	): RemoveEventListener;
+	): RemovableEventListener;
 
 	/**
 	 * - Add an event listener to a target element
@@ -189,7 +188,7 @@ export class Events {
 		type: string,
 		listener: EventListener,
 		target: ExtendedEventTarget,
-	): RemoveEventListener;
+	): RemovableEventListener;
 
 	/**
 	 * - Add an event listener to a target element
@@ -202,7 +201,7 @@ export class Events {
 		listener: EventListener,
 		options: boolean | AddEventListenerOptions,
 		target?: ExtendedEventTarget,
-	): RemoveEventListener;
+	): RemovableEventListener;
 
 	/**
 	 * - Add an event listener to a target element
@@ -215,14 +214,14 @@ export class Events {
 		listener: EventListener,
 		options: boolean | AddEventListenerOptions,
 		target?: ExtendedEventTarget,
-	): RemoveEventListener;
+	): RemovableEventListener;
 
 	on(
 		type: string,
 		listener: EventListener,
 		first?: boolean | AddEventListenerOptions | ExtendedEventTarget,
 		second?: ExtendedEventTarget,
-	): RemoveEventListener {
+	): RemovableEventListener {
 		return handleEvent(this.context, {listener, type, first, second}, true);
 	}
 }

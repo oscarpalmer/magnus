@@ -3,11 +3,10 @@ import {
 	targetAttributePrefixPattern,
 } from '../../constants';
 import type {Context} from '../../controller/context';
-import {getAttributeType, parseAttribute} from '../../helpers/attribute';
+import {parseAttribute} from '../../helpers/attribute';
 import type {AttributeType} from '../../models';
 import {controllers} from '../../store/controller.store';
 import {setValueFromAttribute} from '../../store/data.store';
-import {handleAttributeChanges} from './changes.attribute';
 
 export function handleContextualAttribute(
 	type: AttributeType,
@@ -45,75 +44,61 @@ export function handleControllerAttribute(
 	name: string,
 	added: boolean,
 ): void {
-	controllers[added ? 'add' : 'remove'](name.slice(1), element);
+	const unprefixed = name.slice(1);
+
+	if (controllers.has(unprefixed)) {
+		controllers[added ? 'add' : 'remove'](unprefixed, element);
+	} else {
+		handlePossibleDataAttribute(element, unprefixed, added);
+	}
 }
 
-export function handleAttributes(context: Context): void {
-	const name = context.name.toLowerCase();
-	const prefix = `\:${name}-`;
+function handleDataAttribute(
+	element: Element,
+	controller: string,
+	property: string,
+): void {
+	const context = controllers.find(element, controller);
 
-	const attributes = [...context.element.attributes].filter(attribute =>
-		attribute.name.startsWith(prefix),
-	);
-
-	const {length} = attributes;
-
-	for (let index = 0; index < length; index += 1) {
-		const attribute = attributes[index];
-
+	if (context != null) {
 		setValueFromAttribute(
 			context,
-			attribute.name.slice(prefix.length),
-			attribute.value,
+			property,
+			element.getAttribute(`\:${controller}-${property}`) ?? '',
 		);
 	}
+}
 
-	const attributedElements = [
-		...context.element.ownerDocument.querySelectorAll('*'),
-	]
-		.map(element => {
-			const validAttributes = [];
-			const {length} = element.attributes;
+function handlePossibleDataAttribute(
+	element: Element,
+	name: string,
+	added: boolean,
+): void {
+	const parts = name.split('-');
+	const {length} = parts;
 
-			for (let index = 0; index < length; index += 1) {
-				const {name, value} = element.attributes[index];
+	if (parts[0] === name) {
+		return;
+	}
 
-				const type = getAttributeType(name);
+	let index = 0;
 
-				if (
-					type != null &&
-					type !== 'controller' &&
-					(name.includes(context.name) || value.includes(context.name))
-				) {
-					validAttributes.push({
-						name,
-						type,
-						value,
-					});
-				}
-			}
+	let controller: string | undefined;
+	let property: string | undefined;
 
-			return {
-				element,
-				attributes: validAttributes,
-			};
-		})
-		.filter(({attributes}) => attributes.length > 0);
+	while (true) {
+		controller = parts.slice(index, index + 1).join('-');
+		property = parts.slice(index + 1).join('-');
 
-	const elementsLength = attributedElements.length;
+		if (controllers.has(controller)) {
+			handleDataAttribute(element, controller, property);
+			break;
+		}
 
-	for (let elementIndex = 0; elementIndex < elementsLength; elementIndex += 1) {
-		const {element, attributes} = attributedElements[elementIndex];
-		const attributesLength = attributes.length;
+		index += 1;
 
-		for (
-			let attributeIndex = 0;
-			attributeIndex < attributesLength;
-			attributeIndex += 1
-		) {
-			const {name, type, value} = attributes[attributeIndex];
-
-			handleAttributeChanges(type, element, name, value, true);
+		if (index >= length) {
+			break;
 		}
 	}
 }

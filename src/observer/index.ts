@@ -1,86 +1,97 @@
+import {debounce} from '@oscarpalmer/atoms';
+import {getAttributeType} from '../helpers/attribute';
 import type {ObserverCallback} from '../models';
+import {handleAttributeChanges} from './attributes/changes.attribute';
+
+const debouncer = debounce(() => {
+	handleNodes([document.body], handleChanges);
+}, 250);
 
 export class Observer {
-		private frame!: number;
-		private readonly observer: MutationObserver;
-		private running = false;
+	private readonly observer: MutationObserver;
 
-		constructor(
-			private readonly element: Element,
-			private readonly options: MutationObserverInit,
-			private readonly callback: ObserverCallback,
-		) {
-			this.observer = new MutationObserver(entries => {
-				const {length} = entries;
+	private readonly options: MutationObserverInit = {
+		attributeOldValue: true,
+		attributes: true,
+		childList: true,
+		subtree: true,
+	};
 
-				for (let index = 0; index < length; index += 1) {
-					const entry = entries[index];
+	private running = false;
 
-					if (entry.type === 'childList') {
-						handleNodes(entry.addedNodes, callback);
-						handleNodes(entry.removedNodes, callback);
-					} else if (
-						entry.type === 'attributes' &&
-						entry.target instanceof Element
-					) {
-						callback(
-							entry.target,
-							entry.attributeName ?? '',
-							entry.oldValue ?? '',
-						);
-					}
+	constructor() {
+		this.observer = new MutationObserver(entries => {
+			const {length} = entries;
+
+			for (let index = 0; index < length; index += 1) {
+				const entry = entries[index];
+
+				if (entry.type === 'childList') {
+					handleNodes(entry.addedNodes, handleChanges);
+					handleNodes(entry.removedNodes, handleChanges);
+				} else if (
+					entry.type === 'attributes' &&
+					entry.target instanceof Element
+				) {
+					handleChanges(
+						entry.target,
+						entry.attributeName ?? '',
+						entry.oldValue ?? '',
+					);
 				}
-			});
-		}
-
-		start() {
-			if (!this.running) {
-				this.running = true;
-
-				this.observer.observe(this.element, this.options);
-
-				this.update();
 			}
-		}
+		});
+	}
 
-		stop() {
-			if (this.running) {
-				this.running = false;
+	start() {
+		if (!this.running) {
+			this.running = true;
 
-				cancelAnimationFrame(this.frame);
+			this.observer.observe(document.body, this.options);
 
-				this.observer.disconnect();
-			}
-		}
-
-		update() {
-			if (this.running) {
-				cancelAnimationFrame(this.frame);
-
-				this.frame = requestAnimationFrame(() => {
-					handleNodes([this.element], this.callback);
-				});
-			}
+			this.update();
 		}
 	}
 
-export function createObserver(
-		element: Element,
-		options: MutationObserverInit,
-		callback: ObserverCallback,
-	): Observer {
-		const instance = new Observer(element, options, callback);
+	stop() {
+		if (this.running) {
+			this.running = false;
 
-		if (element.ownerDocument.readyState === 'complete') {
+			debouncer.cancel();
+
+			this.observer.disconnect();
+		}
+	}
+
+	update() {
+		if (this.running) {
+			console.log('update');
+			debouncer();
+		}
+	}
+}
+
+function createObserver(): Observer {
+	const instance = new Observer();
+
+	if (document.readyState === 'complete') {
+		instance.start();
+	} else {
+		document.addEventListener('DOMContentLoaded', () => {
 			instance.start();
-		} else {
-			element.ownerDocument.addEventListener('DOMContentLoaded', () => {
-				instance.start();
-			});
-		}
-
-		return instance;
+		});
 	}
+
+	return instance;
+}
+
+function handleChanges(element: Element, name: string, value: string): void {
+	const type = getAttributeType(name);
+
+	if (type != null) {
+		handleAttributeChanges(type, element, name, value, false);
+	}
+}
 
 function handleElement(element: Element, callback: ObserverCallback): void {
 	const attributes = [...element.attributes];
@@ -106,3 +117,7 @@ function handleNodes(
 		}
 	}
 }
+
+const observer = createObserver();
+
+export {observer};

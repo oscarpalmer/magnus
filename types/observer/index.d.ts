@@ -1,14 +1,11 @@
-import type { ObserverCallback } from '../models';
 export declare class Observer {
-    private readonly element;
-    private readonly options;
-    private readonly callback;
-    private frame;
     private readonly observer;
+    private readonly options;
     private running;
-    constructor(element: Element, options: MutationObserverInit, callback: ObserverCallback);
+    constructor();
     start(): void;
     stop(): void;
     update(): void;
 }
-export declare function createObserver(element: Element, options: MutationObserverInit, callback: ObserverCallback): Observer;
+declare const observer: Observer;
+export { observer };

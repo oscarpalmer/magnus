@@ -65,16 +65,12 @@ class Controllers {
 		controller: StoredController,
 		context?: Context,
 	): void {
-		if (context != null) {
-			context.observer.stop();
+		context?.actions.clear();
+		context?.targets.clear();
 
-			context.actions.clear();
-			context.targets.clear();
+		context?.controller.disconnect?.();
 
-			context.controller.disconnect?.();
-
-			controller?.instances.delete(context.element);
-		}
+		controller?.instances.delete(context?.element as never);
 	}
 }
 

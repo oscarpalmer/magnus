@@ -80,18 +80,25 @@ function handleInputAttribute(
 	const unprefixed = name.replace(inputOutputAttributePrefixPattern, '');
 	const property = unprefixed.replace(/:json$/, '');
 
-	handleActionAttribute(context, element, `input:${unprefixed}`, value, added, {
-		event,
-		callback: event => {
-			handleDataValue(
-				type,
-				context,
-				event.target as never,
-				property,
-				unprefixed.endsWith(':json'),
-			);
+	handleActionAttribute(
+		context,
+		element,
+		`${event}:${unprefixed}`,
+		value,
+		added,
+		{
+			event,
+			callback: event => {
+				handleDataValue(
+					type,
+					context,
+					event.target as never,
+					property,
+					unprefixed.endsWith(':json'),
+				);
+			},
 		},
-	});
+	);
 
 	handleTargetAttribute(context, element, `input:${unprefixed}`, value, added);
 }
