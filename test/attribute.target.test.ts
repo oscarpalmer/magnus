@@ -1,4 +1,4 @@
-import {afterAll, expect, test} from 'bun:test';
+import {afterAll, expect, test} from 'vitest';
 import {Controller, magnus} from '../src';
 
 class TargetController extends Controller {
@@ -29,22 +29,24 @@ afterAll(() => {
 	document.body.innerHTML = '';
 });
 
-test('target attribute', done => {
-	setTimeout(() => {
-		expect(controller.targets.find('li')).toHaveLength(3);
-		expect(controller.targets.get('item')).not.toBeUndefined();
-		expect(controller.targets.getAll('item')).toHaveLength(3);
-		expect(controller.targets.has('item')).toBeTrue();
-		expect(controller.targets.has('not-item')).toBeFalse();
-
-		magnus.remove('target-test');
-
+test('target attribute', () =>
+	new Promise<void>(done => {
 		setTimeout(() => {
-			expect(controller.targets.get('item')).toBeUndefined();
-			expect(controller.targets.getAll('item')).toHaveLength(0);
-			expect(controller.targets.has('item')).toBeFalse();
+			expect(controller.targets.find('li')).not.toBeNull();
+			expect(controller.targets.findAll('li')).toHaveLength(3);
+			expect(controller.targets.get('item')).not.toBeUndefined();
+			expect(controller.targets.getAll('item')).toHaveLength(3);
+			expect(controller.targets.has('item')).toBe(true);
+			expect(controller.targets.has('not-item')).toBe(false);
 
-			done();
-		}, 25);
-	}, 125);
-});
+			magnus.remove('target-test');
+
+			setTimeout(() => {
+				expect(controller.targets.get('item')).toBeUndefined();
+				expect(controller.targets.getAll('item')).toHaveLength(0);
+				expect(controller.targets.has('item')).toBe(false);
+
+				done();
+			}, 125);
+		}, 125);
+	}));

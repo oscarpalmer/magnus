@@ -8,7 +8,8 @@ export declare class Targets {
     constructor(context: Context);
     add(name: string, element: Element): void;
     clear(): void;
-    find(selector: string): Element[];
+    find(selector: string): Element | null;
+    findAll(selector: string): Element[];
     get(name: string): Element | undefined;
     getAll(name: string): Element[];
     has(name: string): boolean;

@@ -47,9 +47,6 @@ export function parseAttribute(
 		case 'target':
 			matches = targetAttributePattern.exec(name);
 			break;
-
-		default:
-			break;
 	}
 
 	if (matches != null) {

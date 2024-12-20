@@ -8,16 +8,19 @@
 		"declarationDir": "./types",
 		"downlevelIteration": true,
 		"emitDeclarationOnly": true,
+		"esModuleInterop": true,
 		"forceConsistentCasingInFileNames": true,
 		"jsx": "react-jsx",
+		"isolatedModules": true,
 		"lib": ["DOM", "DOM.Iterable", "ESNext"],
 		"module": "esnext",
 		"moduleDetection": "force",
 		"moduleResolution": "bundler",
-		"rootDir": "./src",
 		"skipLibCheck": true,
 		"strict": true,
-		"target": "esnext"
+		"target": "esnext",
+		"useDefineForClassFields": true
 	},
-	"exclude": ["dist", "node_modules", "test", "types", "www"]
+	"exclude": ["dist", "node_modules", "test", "types", "www"],
+	"include": ["src/**/*.ts"]
 }

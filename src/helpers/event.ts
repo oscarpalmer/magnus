@@ -1,4 +1,4 @@
-import {camelCase} from '@oscarpalmer/atoms';
+import {camelCase} from '@oscarpalmer/atoms/string';
 import {
 	actionAttributeNamePattern,
 	actionAttributeValuePattern,
@@ -11,12 +11,7 @@ export function getEventParameters(
 		name: string,
 		value: string,
 	): EventParameters | undefined {
-		const nameMatches = actionAttributeNamePattern.exec(name);
-
-		if (nameMatches == null) {
-			return;
-		}
-
+		const nameMatches = actionAttributeNamePattern.exec(name) as RegExpExecArray;
 		const valueMatches = actionAttributeValuePattern.exec(value);
 
 		let external: string | undefined;
@@ -36,7 +31,6 @@ export function getEventParameters(
 
 		if (type != null) {
 			return {
-				type,
 				callback: camelCase(method),
 				external:
 					external == null
@@ -46,6 +40,7 @@ export function getEventParameters(
 								name: external,
 							},
 				options: getOptions(options ?? ''),
+				type: camelCase(type),
 			};
 		}
 	}

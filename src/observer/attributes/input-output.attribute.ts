@@ -1,5 +1,4 @@
 import {parse} from '@oscarpalmer/atoms/string';
-import {handleTargetAttribute} from '.';
 import {
 	changeEventTypes,
 	ignoredInputTypes,
@@ -10,6 +9,7 @@ import type {Context} from '../../controller/context';
 import type {DataType} from '../../models';
 import {replaceData} from '../../store/data.store';
 import {handleActionAttribute} from './action.attribute';
+import {handleTargetAttribute} from './index';
 
 function getDataType(element: Element): DataType | undefined {
 	switch (true) {
@@ -53,18 +53,20 @@ function handleDataValue(
 	name: string,
 	json: boolean,
 ): void {
-	if (json) {
-		const value = parse(element.value);
-
-		if (name === '$' && element.value.trim().length > 0 && value != null) {
-			replaceData(context, value);
-		}
-
-		if (value != null) {
-			setDataValue(type, context, element, name, value);
-		}
-	} else {
+	if (!json) {
 		setDataValue(type, context, element, name);
+
+		return;
+	}
+
+	const value = parse(element.value);
+
+	if (name === '$' && element.value.trim().length > 0 && value != null) {
+		replaceData(context, value);
+	}
+
+	if (value != null) {
+		setDataValue(type, context, element, name, value);
 	}
 }
 
@@ -78,6 +80,7 @@ function handleInputAttribute(
 ): void {
 	const event = getEventType(element as never);
 	const unprefixed = name.replace(inputOutputAttributePrefixPattern, '');
+	const isJson = unprefixed.endsWith(':json');
 	const property = unprefixed.replace(/:json$/, '');
 
 	handleActionAttribute(
@@ -89,13 +92,7 @@ function handleInputAttribute(
 		{
 			event,
 			callback: event => {
-				handleDataValue(
-					type,
-					context,
-					event.target as never,
-					property,
-					unprefixed.endsWith(':json'),
-				);
+				handleDataValue(type, context, event.target as never, property, isJson);
 			},
 		},
 	);

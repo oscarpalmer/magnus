@@ -2,6 +2,9 @@ import type { PlainObject } from '@oscarpalmer/atoms/models';
 import type { ReadonlyTargets } from '../models';
 import type { Context } from './context';
 import type { Events } from './events';
+/**
+ * Base controller class
+ */
 export declare abstract class Controller<Data extends PlainObject = PlainObject> {
     protected readonly context: Context;
     /**

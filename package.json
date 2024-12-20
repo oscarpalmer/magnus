@@ -4,31 +4,39 @@
 		"url": "https://oscarpalmer.se"
 	},
 	"dependencies": {
-		"@oscarpalmer/atoms": "^0.78.0",
-		"@oscarpalmer/toretto": "^0.15.1"
+		"@oscarpalmer/atoms": "^0.78",
+		"@oscarpalmer/toretto": "^0.16"
 	},
 	"description": "A JavaScript framework for developers who like HTML.",
 	"devDependencies": {
-		"@biomejs/biome": "^1.9.4",
-		"@happy-dom/global-registrator": "^15.11.6",
-		"@types/bun": "^1.1.13",
-		"bun": "^1.1.34",
-		"dts-bundle-generator": "^9.5.1",
-		"typescript": "^5.6.3"
+		"@biomejs/biome": "^1.9",
+		"@oscarpalmer/oui": "0.1.0",
+		"@types/node": "^22.9",
+		"@vitest/coverage-istanbul": "^2.1",
+		"dts-bundle-generator": "^9.5",
+		"glob": "^11",
+		"happy-dom": "^15.11",
+		"typescript": "^5.6",
+		"vite": "^5.4",
+		"vitest": "^2.1"
 	},
 	"exports": {
 		".": {
 			"import": {
 				"types": "./types/index.d.ts",
-				"default": "./dist/index.mjs"
+				"default": "./dist/index.js"
 			},
 			"require": {
 				"types": "./types/index.d.cts",
-				"default": "./dist/index.js"
+				"default": "./dist/index.cjs"
 			}
 		}
 	},
-	"files": ["dist/index.js", "dist/**/*.mjs", "src", "types"],
+	"files": [
+		"dist",
+		"src",
+		"types"
+	],
 	"jsdelivr": "dist/index.js",
 	"keywords": [
 		"framework",
@@ -38,21 +46,20 @@
 		"stimulusjs"
 	],
 	"license": "MIT",
-	"main": "dist/index.js",
-	"module": "dist/index.mjs",
+	"main": "dist/index.cjs",
+	"module": "dist/index.js",
 	"name": "@oscarpalmer/magnus",
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/oscarpalmer/magnus.git"
 	},
 	"scripts": {
-		"build": "bun run clean && bunx bun ./.bun.ts && bunx bun ./.bun.ts --mjs && bun run types",
-		"clean": "rm -rf ./dist && rm -rf ./types && rm -rf ./tsconfig.tsbuildinfo",
-		"test": "bun test",
-		"types": "bun run types:cjs && bun run types:esm",
-		"types:cjs": "bunx dts-bundle-generator --out-file ./types/index.d.cts --external-inlines '@oscarpalmer/atoms' 'type-fest' --no-check --silent ./src/index.ts",
-		"types:esm": "bunx tsc -p ./tsconfig.json",
-		"watch": "bun build ./src/index.ts --outfile ./dist/index.js --watch"
+		"build": "npm run clean && npm run compile",
+		"compile": "npx vite build && npm run types",
+		"clean": "rm -rf ./dist && rm -rf ./types && rm -f ./tsconfig.tsbuildinfo",
+		"test": "npx vitest --coverage",
+		"types": "npx tsc && npx dts-bundle-generator --config ./dts.config.ts --silent",
+		"watch": "npx vite build --watch"
 	},
 	"type": "module",
 	"types": "types/index.d.ts",

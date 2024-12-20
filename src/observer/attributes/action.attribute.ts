@@ -1,19 +1,35 @@
 import type {PlainObject} from '@oscarpalmer/atoms/models';
+import {camelCase} from '@oscarpalmer/atoms/string';
 import type {Context} from '../../controller/context';
 import {getEventParameters} from '../../helpers/event';
 import {findTarget} from '../../helpers/index';
-import type {
-	AttributeHandleCallbackCustomParameters,
-	EventParameters,
-} from '../../models';
+import type {AttributeHandleCallbackCustomParameters} from '../../models';
 
-function createAction(
+export function handleActionAttribute(
 	context: Context,
 	element: Element,
-	action: string,
-	parameters: EventParameters,
+	name: string,
+	value: string,
+	added: boolean,
 	custom?: AttributeHandleCallbackCustomParameters,
 ): void {
+	const parameters =
+		custom?.callback == null
+			? getEventParameters(element, name, value)
+			: {
+					callback: '',
+					options: {
+						capture: false,
+						once: false,
+						passive: true,
+					},
+					type: camelCase(custom.event),
+				};
+
+	if (parameters == null) {
+		return;
+	}
+
 	const callback =
 		custom?.callback ??
 		((context.controller as unknown as PlainObject)[parameters.callback] as (
@@ -31,7 +47,13 @@ function createAction(
 					)
 			: null;
 
-	if (target != null) {
+	if (target == null) {
+		return;
+	}
+
+	const action = `${name}${value.length === 0 ? '' : `/${value}`}`;
+
+	if (added && !context.actions.has(action)) {
 		context.actions.create(
 			{
 				callback: callback.bind(context.controller),
@@ -41,52 +63,9 @@ function createAction(
 			},
 			target,
 		);
-	}
-}
-
-function handleAction(
-	context: Context,
-	element: Element,
-	name: string,
-	value: string,
-	action: string,
-	custom?: AttributeHandleCallbackCustomParameters,
-): void {
-	const parameters =
-		custom?.callback == null
-			? getEventParameters(element, name, value)
-			: {
-					callback: '',
-					options: {
-						capture: false,
-						once: false,
-						passive: true,
-					},
-					type: custom.event,
-				};
-
-	if (parameters != null) {
-		createAction(context, element, action, parameters, custom);
-	}
-}
-
-export function handleActionAttribute(
-	context: Context,
-	element: Element,
-	name: string,
-	value: string,
-	added: boolean,
-	custom?: AttributeHandleCallbackCustomParameters,
-): void {
-	const action = `${name}${value.length === 0 ? '' : `/${value}`}`;
-
-	if (context.actions.has(value)) {
-		if (added) {
-			context.actions.add(value, element);
-		} else {
-			context.actions.remove(value, element);
-		}
 	} else if (added) {
-		handleAction(context, element, name, value, action, custom);
+		context.actions.add(action, target);
+	} else {
+		context.actions.remove(action, target);
 	}
 }

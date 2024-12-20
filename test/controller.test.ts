@@ -1,4 +1,4 @@
-import {expect, test} from 'bun:test';
+import {expect, test} from 'vitest';
 import {Controller} from '../src/controller';
 import {Context} from '../src/controller/context';
 import {Events} from '../src/controller/events';

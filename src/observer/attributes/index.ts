@@ -47,9 +47,13 @@ export function handleControllerAttribute(
 	const unprefixed = name.slice(1);
 
 	if (controllers.has(unprefixed)) {
-		controllers[added ? 'add' : 'remove'](unprefixed, element);
+		if (added) {
+			controllers.add(unprefixed, element);
+		} else {
+			controllers.remove(unprefixed, element);
+		}
 	} else {
-		handlePossibleDataAttribute(element, unprefixed, added);
+		handlePossibleDataAttribute(element, unprefixed);
 	}
 }
 
@@ -69,11 +73,7 @@ function handleDataAttribute(
 	}
 }
 
-function handlePossibleDataAttribute(
-	element: Element,
-	name: string,
-	added: boolean,
-): void {
+function handlePossibleDataAttribute(element: Element, name: string): void {
 	const parts = name.split('-');
 	const {length} = parts;
 
@@ -110,8 +110,11 @@ export function handleTargetAttribute(
 	_: string,
 	added: boolean,
 ): void {
-	context.targets[added ? 'add' : 'remove'](
-		name.replace(targetAttributePrefixPattern, ''),
-		element,
-	);
+	const unprefixed = name.replace(targetAttributePrefixPattern, '');
+
+	if (added) {
+		context.targets.add(unprefixed, element);
+	} else {
+		context.targets.remove(unprefixed, element);
+	}
 }

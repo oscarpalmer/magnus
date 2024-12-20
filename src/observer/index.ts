@@ -1,4 +1,4 @@
-import {debounce} from '@oscarpalmer/atoms';
+import {debounce} from '@oscarpalmer/atoms/function';
 import {getAttributeType} from '../helpers/attribute';
 import type {ObserverCallback} from '../models';
 import {handleAttributeChanges} from './attributes/changes.attribute';
@@ -33,11 +33,7 @@ export class Observer {
 					entry.type === 'attributes' &&
 					entry.target instanceof Element
 				) {
-					handleChanges(
-						entry.target,
-						entry.attributeName ?? '',
-						entry.oldValue ?? '',
-					);
+					handleChanges(entry.target, entry.attributeName ?? '', entry.oldValue);
 				}
 			}
 		});
@@ -65,7 +61,6 @@ export class Observer {
 
 	update() {
 		if (this.running) {
-			console.log('update');
 			debouncer();
 		}
 	}
@@ -85,11 +80,15 @@ function createObserver(): Observer {
 	return instance;
 }
 
-function handleChanges(element: Element, name: string, value: string): void {
+function handleChanges(
+	element: Element,
+	name: string,
+	value: string | null,
+): void {
 	const type = getAttributeType(name);
 
 	if (type != null) {
-		handleAttributeChanges(type, element, name, value, false);
+		handleAttributeChanges(type, element, name, value);
 	}
 }
 
@@ -121,3 +120,4 @@ function handleNodes(
 const observer = createObserver();
 
 export {observer};
+

@@ -1,4 +1,4 @@
-import {afterAll, expect, test} from 'bun:test';
+import {afterAll, expect, test} from 'vitest';
 import {Controller, magnus} from '../src';
 
 class ObserverController extends Controller {
@@ -9,27 +9,23 @@ class ObserverController extends Controller {
 
 let controller: ObserverController;
 
-document.body.innerHTML = '<div :observer-test></div>';
-
-magnus.stop();
-magnus.add('observer-test', ObserverController);
-
 afterAll(() => {
 	document.body.innerHTML = '';
-
-	magnus.start();
 });
 
-test('observer', done => {
-	setTimeout(() => {
+test('observer', () =>
+	new Promise<void>(done => {
 		expect(controller).toBeUndefined();
 
-		magnus.start();
+		document.body.innerHTML = '<div :observer-test></div>';
+
+		magnus.add('observer-test', ObserverController);
 
 		setTimeout(() => {
-			expect(controller).toBeInstanceOf(ObserverController);
+			setTimeout(() => {
+				expect(controller).toBeInstanceOf(ObserverController);
 
-			done();
-		}, 25);
-	}, 125);
-});
+				done();
+			}, 125);
+		}, 125);
+	}));

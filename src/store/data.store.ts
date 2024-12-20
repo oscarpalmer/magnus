@@ -211,10 +211,6 @@ function updateProperty(
 ): boolean {
 	const name = camelCase(String(property));
 
-	if (name.trim().length === 0) {
-		return true;
-	}
-
 	const result =
 		original == null
 			? Reflect.deleteProperty(target, name)

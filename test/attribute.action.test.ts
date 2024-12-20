@@ -1,4 +1,4 @@
-import {afterAll, expect, test} from 'bun:test';
+import {afterAll, expect, test} from 'vitest';
 import {magnus, Controller} from '../src';
 
 class ActionOneController extends Controller {
@@ -44,19 +44,19 @@ let once = 0;
 document.body.innerHTML = `<div
 	:action-one
 	::btn.click="action-one.fromElement"
-	::document.fromDocument="action-one.fromDocument"
-	::window.fromWindow="action-one@fromWindow"
+	::document.from-document="action-one.fromDocument"
+	::window.from-window="action-one.fromWindow"
 ></div>
 <div :action-two>
 	<button
 		id="btn"
-		::action-two.onMultiple
-		::action-two.onOnce:once
+		::action-two.on-multiple
+		::action-two.on-once:once
 	></button>
-	<input type="submit" ::action-two@onSubmit />
+	<input type="submit" ::action-two.on-submit />
 	<div
-		::this-will@be-ignored
-		::action-two@and-so-will-this
+		::this-will.be-ignored
+		::action-two.and-so-will-this
 	></div>
 </div>`;
 
@@ -67,56 +67,57 @@ afterAll(() => {
 	document.body.innerHTML = '';
 });
 
-test('action attribute', done => {
-	setTimeout(() => {
-		const button = document.querySelector('button');
-
-		for (let index = 0; index < 10; index += 1) {
-			button?.click();
-		}
-
-		button?.removeAttribute('data-action');
-
+test('action attribute', () =>
+	new Promise<void>(done => {
 		setTimeout(() => {
-			expect(multiple).toBe(10);
-			expect(once).toBe(1);
-
-			expect(fromDocument).toBe('Hello, world! -- fromDocument');
-			expect(fromElement).toBe('Hello, world! -- fromElement');
-			expect(fromWindow).toBe('Hello, world! -- fromWindow');
+			const button = document.querySelector('button');
 
 			for (let index = 0; index < 10; index += 1) {
 				button?.click();
 			}
 
-			button?.setAttribute('data-action', 'action-two@onMultiple');
+			button?.removeAttribute(`\:\:action-two.on-multiple`);
 
 			setTimeout(() => {
-				// expect(multiple).toBe(10);
+				expect(multiple).toBe(10);
 				expect(once).toBe(1);
+
+				expect(fromDocument).toBe('Hello, world! -- fromDocument');
+				expect(fromElement).toBe('Hello, world! -- fromElement');
+				expect(fromWindow).toBe('Hello, world! -- fromWindow');
 
 				for (let index = 0; index < 10; index += 1) {
 					button?.click();
 				}
 
-				magnus.remove('action-two');
+				button?.setAttribute(`\:\:action-two.on-multiple`, '');
 
 				setTimeout(() => {
-					// expect(multiple).toBe(20);
+					expect(multiple).toBe(10);
 					expect(once).toBe(1);
 
 					for (let index = 0; index < 10; index += 1) {
 						button?.click();
 					}
 
+					magnus.remove('action-two');
+
 					setTimeout(() => {
-						// expect(multiple).toBe(20);
+						expect(multiple).toBe(20);
 						expect(once).toBe(1);
 
-						done();
+						for (let index = 0; index < 10; index += 1) {
+							button?.click();
+						}
+
+						setTimeout(() => {
+							expect(multiple).toBe(20);
+							expect(once).toBe(1);
+
+							done();
+						}, 25);
 					}, 25);
 				}, 25);
 			}, 25);
 		}, 25);
-	}, 125);
-});
+	}));

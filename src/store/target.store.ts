@@ -12,6 +12,7 @@ export class Targets {
 	constructor(private readonly context: Context) {
 		this.callbacks = Object.create({
 			find: this.find.bind(this) as never,
+			findAll: this.findAll.bind(this) as never,
 			get: this.get.bind(this) as never,
 			getAll: this.getAll.bind(this) as never,
 			has: this.has.bind(this),
@@ -41,8 +42,12 @@ export class Targets {
 		this.store.clear();
 	}
 
-	find(selector: string): Element[] {
-		return [...this.context.element.querySelectorAll(selector)] as Element[];
+	find(selector: string): Element | null {
+		return this.context.element.querySelector(selector);
+	}
+
+	findAll(selector: string): Element[] {
+		return [...this.context.element.querySelectorAll(selector)];
 	}
 
 	get(name: string): Element | undefined {

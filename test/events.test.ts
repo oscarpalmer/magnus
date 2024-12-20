@@ -1,5 +1,5 @@
-import {afterAll, expect, test} from 'bun:test';
-import {magnus, Controller} from '../src';
+import {afterAll, expect, test} from 'vitest';
+import {Controller, magnus} from '../src';
 
 class EventsController extends Controller {
 	connect() {
@@ -28,7 +28,7 @@ class EventsController extends Controller {
 				},
 				'button',
 			);
-		}, 125);
+		}, 25);
 	}
 
 	onGlobal(event: CustomEvent): void {
@@ -40,7 +40,7 @@ document.body.innerHTML = `<div
 	:events-test
 	::global="events-test.onGlobal"
 >
-	<button data-target="events-test.button"></button>
+	<button :events-test.button></button>
 </div>`;
 
 magnus.add('events-test', EventsController);
@@ -53,18 +53,21 @@ afterAll(() => {
 	document.body.innerHTML = '';
 });
 
-test('events', done => {
-	setTimeout(() => {
-		const button = document.querySelector('button');
+test('events', () =>
+	new Promise<void>(done => {
+		setTimeout(() => {
+			const button = document.querySelector('button');
 
-		for (let index = 0; index < 100; index += 1) {
-			button?.click();
-		}
+			for (let index = 0; index < 100; index += 1) {
+				button?.click();
+			}
 
-		expect(global).toBe('Hello, world!');
-		expect(multiple).toBe(10);
-		expect(once).toBe(1);
+			setTimeout(() => {
+				expect(global).toBe('Hello, world!');
+				expect(multiple).toBe(10);
+				expect(once).toBe(1);
 
-		done();
-	}, 250);
-});
+				done();
+			}, 25);
+		}, 50);
+	}));

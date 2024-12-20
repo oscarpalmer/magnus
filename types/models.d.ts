@@ -42,9 +42,13 @@ export type ParsedAttribute = {
 };
 export type ReadonlyTargets = {
     /**
-     * Find elements within the controller's element
+     * Find an element within the controller
      */
-    find<Found extends Element = Element>(selector: string): Found[];
+    find<Found extends Element = Element>(selector: string): Found | null;
+    /**
+     * Find all elements within the controller
+     */
+    findAll<Found extends Element = Element>(selector: string): Found[];
     /**
      * Get the first element with the given target name
      */

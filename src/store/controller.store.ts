@@ -26,7 +26,7 @@ class Controllers {
 		let found: Element | null;
 
 		if (id == null) {
-			found = findRelatives(origin, `[\\:${name}]`)[0];
+			found = findRelatives(origin, `[\:${name}]`)[0];
 		} else {
 			found = document.querySelector(`#${id}`);
 		}

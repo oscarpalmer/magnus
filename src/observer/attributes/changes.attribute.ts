@@ -32,23 +32,21 @@ function getParts(value: string): string[] {
 }
 
 export function handleAttributeChanges(
-	type: AttributeType,
-	element: Element,
-	name: string,
-	value: string,
-	initial: boolean,
-): void {
-	const from = initial ? null : value;
-	const to = initial ? value : element.getAttribute(name);
+		type: AttributeType,
+		element: Element,
+		name: string,
+		value: string | null,
+	): void {
+		const to = element.attributes.getNamedItem(name)?.value;
 
-	if (type === 'action' && value.length > 0) {
-		handleChanges(type, element, name, from ?? '', to ?? '');
-	} else if (type === 'controller') {
-		handleControllerAttribute(element, name, to != null);
-	} else {
-		handleContextualAttribute(type, element, name, to ?? '', to != null);
+		if (type === 'action' && value != null && value.length > 0) {
+			handleChanges(type, element, name, value ?? '', to ?? '');
+		} else if (type === 'controller') {
+			handleControllerAttribute(element, name, to != null);
+		} else {
+			handleContextualAttribute(type, element, name, to ?? '', to != null);
+		}
 	}
-}
 
 function handleChanges(
 	type: AttributeType,
