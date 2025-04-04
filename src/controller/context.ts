@@ -1,5 +1,5 @@
 import type {ControllerConstructor} from '../models';
-import {observer} from '../observer/index';
+import observer from '../observer/index';
 import {Actions} from '../store/action.store';
 import {Data} from '../store/data.store';
 import {Targets} from '../store/target.store';

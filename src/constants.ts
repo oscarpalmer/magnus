@@ -7,26 +7,25 @@ export const attributeCallbacks: Partial<
 	Record<AttributeType, AttributeHandleCallback>
 > = {
 	action: handleActionAttribute,
-	'input-output': handleInputOutputAttribute,
+	io: handleInputOutputAttribute,
 	target: handleTargetAttribute,
 };
 
 //
 
 /**
- * - `::controller(.identifier).action(:options)` _(options allowed, should not have attribute value)_
- * - `::(external(.identifier).)event` _(options ignored, should have attribute value)_
+ * - `::(controller.)(identifier.)action(:options)`
  * - `[, name, id?, value, options?]`
  */
 export const actionAttributeNamePattern =
-	/^::(?:([\w-]+)(?:\.([\w-]+))?\.)?([\w-]+)(?::([a-z:]+))?$/i;
+	/^::(?:([\w-]+)\.(?:([\w-]+)\.)?)?([\w-]+)(?::([a-z:]+))?$/i;
 
 /**
- * - `controller(.identifier)::action(:options)`
+ * - `controller(.identifier)@action(:options)`
  * - `[, name, id?, value, options?]`
  */
 export const actionAttributeValuePattern =
-	/^([\w-]+)(?:\.([\w-]+))?\.([\w-]+)(?::([a-z:]+))?$/;
+	/^([\w-]+)(?:\.([\w-]+))?@([\w-]+)(?::([a-z:]+))?$/i;
 
 /**
  * - `:controller`
@@ -34,22 +33,29 @@ export const actionAttributeValuePattern =
  */
 export const controllerAttributePattern = /^:([\w-]+)$/;
 
+export const controllerAttributePrefixPattern = /^:/;
+
 /**
- * - `:controller(.identifier):property``
+ * `controller-data-attribute`
+ */
+export const dataAttributePattern = /^\w+\-([^.:][\w-])+$/;
+
+/**
+ * - `controller(.identifier).property(:json)`
  * - `[, name, id?, value]`
  */
 export const inputOutputAttributePattern =
-	/^:([\w-]+)(?:\.([\w-]+))?\:([\w-]*)(?::json)?$/;
+	/^([\w-]+)(?:\.([\w-]+))?\.([\w-]*)(?::json)?$/;
 
-export const inputOutputAttributePrefixPattern = /^:[\w-]+:/;
+export const inputOutputAttributePrefixPattern = /^[\w-]+(?:\.[\w-]+)?\./;
 
 /**
- * - `:target(.identifier).target`
+ * - `controller(.identifier):target`
  * - `[, name, id?, value]`
  */
-export const targetAttributePattern = /^:([\w-]+)(?:\.([\w-]+))?\.([\w-]+)$/;
+export const targetAttributePattern = /^([\w-]+)(?:\.([\w-]+))?:([\w-]+)$/;
 
-export const targetAttributePrefixPattern = /^:[\w-]+\./;
+export const targetAttributePrefixPattern = /^[\w-]+(?:\.[\w-]+)?:/;
 
 //
 
@@ -80,3 +86,31 @@ export const parseableInputTypes = new Set([
 	'range',
 	'week',
 ]);
+
+//
+
+let count = 0;
+
+try {
+	// This selector works with Happy DOM, but not in a real browser environment
+	document.body.querySelector('[:test]');
+} catch (error) {
+	try {
+		// This selectors works in a real browser environment, but not with Happy DOM
+		// biome-ignore lint/style/noUnusedTemplateLiteral: A non-templated string would be normalized into '[:test]', and wouldn't be a valid selector
+		document.body.querySelector(`[\\:test]`);
+
+		count = 1;
+	} catch (error) {
+		count = -1;
+	}
+}
+
+let slashes = '';
+
+if (count > 0) {
+	// biome-ignore lint/style/noUnusedTemplateLiteral: A non-templated string would be normalized into '\', and wouldn't work as part of a selector
+	slashes = `\\`;
+}
+
+export {slashes};

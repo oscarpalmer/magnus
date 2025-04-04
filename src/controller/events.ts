@@ -78,10 +78,8 @@ export class Events {
 			(firstIsOptions ? second : first) as ExtendedEventTarget,
 		);
 
-		const options = firstIsOptions ? (first as CustomEventInit) : undefined;
-
 		if (target != null) {
-			dispatch(target, type, options);
+			dispatch(target, type, firstIsOptions ? (first as CustomEventInit) : undefined);
 		}
 	}
 

@@ -3,7 +3,11 @@ import {camelCase} from '@oscarpalmer/atoms/string';
 import type {Context} from '../../controller/context';
 import {getEventParameters} from '../../helpers/event';
 import {findTarget} from '../../helpers/index';
-import type {AttributeHandleCallbackCustomParameters} from '../../models';
+import type {
+	AttributeHandleCallbackCustomParameters,
+	EventExternal,
+	EventParameters,
+} from '../../models';
 
 export function handleActionAttribute(
 	context: Context,
@@ -30,42 +34,57 @@ export function handleActionAttribute(
 		return;
 	}
 
-	const callback =
-		custom?.callback ??
-		((context.controller as unknown as PlainObject)[parameters.callback] as (
-			event: Event,
-		) => void);
+	let count = 0;
 
-	const target =
-		typeof callback === 'function'
-			? parameters.external == null
-				? element
-				: findTarget(
-						element,
-						parameters.external.name,
-						parameters.external.identifier,
-					)
-			: null;
+	function step() {
+		if (count >= 10) {
+			return;
+		}
 
-	if (target == null) {
-		return;
+		count += 1;
+
+		const callback =
+			custom?.callback ??
+			((context.controller as unknown as PlainObject)[
+				(parameters as EventParameters).callback
+			] as (event: Event) => void);
+
+		const target =
+			typeof callback === 'function'
+				? (parameters as EventParameters).external == null
+					? element
+					: findTarget(
+							element,
+							((parameters as EventParameters).external as EventExternal).name,
+							((parameters as EventParameters).external as EventExternal)
+								.identifier,
+						)
+				: null;
+
+		if (target == null) {
+			setTimeout(step);
+
+			return;
+		}
+
+		const action = `${name}${value.length === 0 ? '' : `/${value}`}`;
+
+		if (added && !context.actions.has(action)) {
+			context.actions.create(
+				{
+					callback: callback.bind(context.controller),
+					name: action,
+					options: (parameters as EventParameters).options,
+					type: (parameters as EventParameters).type,
+				},
+				target,
+			);
+		} else if (added) {
+			context.actions.add(action, target);
+		} else {
+			context.actions.remove(action, target);
+		}
 	}
 
-	const action = `${name}${value.length === 0 ? '' : `/${value}`}`;
-
-	if (added && !context.actions.has(action)) {
-		context.actions.create(
-			{
-				callback: callback.bind(context.controller),
-				name: action,
-				options: parameters.options,
-				type: parameters.type,
-			},
-			target,
-		);
-	} else if (added) {
-		context.actions.add(action, target);
-	} else {
-		context.actions.remove(action, target);
-	}
+	step();
 }

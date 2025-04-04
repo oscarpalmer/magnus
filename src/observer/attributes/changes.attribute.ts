@@ -1,6 +1,12 @@
 import type {AttributeType} from '../../models';
 import {handleContextualAttribute, handleControllerAttribute} from './index';
 
+const attributes = new WeakMap<Element, Map<string, string>>();
+
+function getAttribute(element: Element, name: string): string | undefined {
+	return attributes.get(element)?.get(name);
+}
+
 function getChanges(from: string, to: string): string[][] {
 	const fromValues = getParts(from);
 	const toValues = getParts(to);
@@ -37,10 +43,19 @@ export function handleAttributeChanges(
 		name: string,
 		value: string | null,
 	): void {
-		const to = element.attributes.getNamedItem(name)?.value;
+		const to = element.getAttribute(name);
 
-		if (type === 'action' && value != null && value.length > 0) {
-			handleChanges(type, element, name, value ?? '', to ?? '');
+		if (
+			type === 'action' &&
+			((value?.length ?? 0) > 0 || hasAttribute(element, name))
+		) {
+			handleChanges(
+				type,
+				element,
+				name,
+				value ?? getAttribute(element, name) ?? '',
+				to ?? '',
+			);
 		} else if (type === 'controller') {
 			handleControllerAttribute(element, name, to != null);
 		} else {
@@ -60,8 +75,8 @@ function handleChanges(
 
 	for (let changesIndex = 0; changesIndex < changesLength; changesIndex += 1) {
 		const changed = changes[changesIndex];
-		const added = changes.indexOf(changed) === 1;
 		const changedLength = changed.length;
+		const added = changesIndex === 1;
 
 		for (
 			let changedIndex = 0;
@@ -76,5 +91,26 @@ function handleChanges(
 				added,
 			);
 		}
+	}
+
+	updateAttributes(element, name, to);
+}
+
+function hasAttribute(element: Element, name: string): boolean {
+	return attributes.get(element)?.has(name) ?? false;
+}
+
+function updateAttributes(element: Element, name: string, value: string): void {
+	let elementAttributes = attributes.get(element);
+
+	if (elementAttributes == null) {
+		elementAttributes = new Map();
+		attributes.set(element, elementAttributes);
+	}
+
+	if (value.length === 0) {
+		elementAttributes.delete(name);
+	} else {
+		elementAttributes.set(name, value);
 	}
 }

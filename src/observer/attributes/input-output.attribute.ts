@@ -97,7 +97,14 @@ function handleInputAttribute(
 		},
 	);
 
-	handleTargetAttribute(context, element, `input:${unprefixed}`, value, added);
+	handleTargetAttribute(
+		context,
+		element,
+		`input:${unprefixed}`,
+		value,
+		added,
+		false,
+	);
 }
 
 export function handleInputOutputAttribute(
@@ -113,9 +120,10 @@ export function handleInputOutputAttribute(
 		handleTargetAttribute(
 			context,
 			element,
-			`output:${name.replace(inputOutputAttributePrefixPattern, '')}`,
+			`output.${name.replace(inputOutputAttributePrefixPattern, '')}`,
 			'',
 			added,
+			false,
 		);
 	} else {
 		handleInputAttribute(context, element, type, name, value, added);

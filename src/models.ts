@@ -40,7 +40,7 @@ export type AttributeHandleParameters = {
 	value: string;
 };
 
-export type AttributeType = 'action' | 'controller' | 'input-output' | 'target';
+export type AttributeType = 'action' | 'controller' | 'io' | 'target';
 
 //
 

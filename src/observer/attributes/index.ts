@@ -1,5 +1,6 @@
 import {
 	attributeCallbacks,
+	controllerAttributePrefixPattern,
 	targetAttributePrefixPattern,
 } from '../../constants';
 import type {Context} from '../../controller/context';
@@ -25,12 +26,12 @@ export function handleContextualAttribute(
 			return;
 		}
 
+		count += 1;
+
 		const context = controllers.find(element, parsed.name, parsed.identifier);
 
 		if (context == null) {
-			count += 1;
-
-			requestAnimationFrame(step);
+			setTimeout(step);
 		} else {
 			callback?.(context, element, name, value, added);
 		}
@@ -44,16 +45,16 @@ export function handleControllerAttribute(
 	name: string,
 	added: boolean,
 ): void {
-	const unprefixed = name.slice(1);
+	const normalized = name.replace(controllerAttributePrefixPattern, '');
 
-	if (controllers.has(unprefixed)) {
+	if (controllers.has(normalized)) {
 		if (added) {
-			controllers.add(unprefixed, element);
+			controllers.add(normalized, element);
 		} else {
-			controllers.remove(unprefixed, element);
+			controllers.remove(normalized, element);
 		}
 	} else {
-		handlePossibleDataAttribute(element, unprefixed);
+		handlePossibleDataAttribute(element, normalized);
 	}
 }
 
@@ -68,7 +69,7 @@ function handleDataAttribute(
 		setValueFromAttribute(
 			context,
 			property,
-			element.getAttribute(`\:${controller}-${property}`) ?? '',
+			element.getAttribute(`${controller}-${property}`) ?? '',
 		);
 	}
 }
@@ -77,7 +78,7 @@ function handlePossibleDataAttribute(element: Element, name: string): void {
 	const parts = name.split('-');
 	const {length} = parts;
 
-	if (parts[0] === name) {
+	if (length < 2) {
 		return;
 	}
 
@@ -86,7 +87,7 @@ function handlePossibleDataAttribute(element: Element, name: string): void {
 	let controller: string | undefined;
 	let property: string | undefined;
 
-	while (true) {
+	while (index < length) {
 		controller = parts.slice(index, index + 1).join('-');
 		property = parts.slice(index + 1).join('-');
 
@@ -96,10 +97,6 @@ function handlePossibleDataAttribute(element: Element, name: string): void {
 		}
 
 		index += 1;
-
-		if (index >= length) {
-			break;
-		}
 	}
 }
 
@@ -109,12 +106,31 @@ export function handleTargetAttribute(
 	name: string,
 	_: string,
 	added: boolean,
+): void;
+
+export function handleTargetAttribute(
+	context: Context,
+	element: Element,
+	name: string,
+	_: string,
+	added: boolean,
+	removePrefix: boolean,
+): void;
+
+export function handleTargetAttribute(
+	context: Context,
+	element: Element,
+	name: string,
+	_: string,
+	added: boolean,
+	unprefix?: boolean,
 ): void {
-	const unprefixed = name.replace(targetAttributePrefixPattern, '');
+	const normalized =
+		(unprefix ?? true) ? name.replace(targetAttributePrefixPattern, '') : name;
 
 	if (added) {
-		context.targets.add(unprefixed, element);
+		context.targets.add(normalized, element);
 	} else {
-		context.targets.remove(unprefixed, element);
+		context.targets.remove(normalized, element);
 	}
 }

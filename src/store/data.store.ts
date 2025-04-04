@@ -24,7 +24,7 @@ export class Data {
 
 	constructor(context: Context) {
 		const frames: Record<string, number> = {};
-		const prefix = `\:${context.name}-`;
+		const prefix = `${context.name}-`;
 
 		this.value = new Proxy(
 			{},
@@ -48,7 +48,7 @@ export class Data {
 					const previous = Reflect.get(target, name);
 					const nextAsString = getString(next);
 
-					if (getString(previous) === nextAsString) {
+					if (typeof previous === typeof next && getString(previous) === nextAsString) {
 						return true;
 					}
 
@@ -68,13 +68,8 @@ export class Data {
 }
 
 export function replaceData(context: Context, value: unknown): void {
-	const previous = Object.keys(context.data.value).filter(
-		key => key.length > 0,
-	);
-
-	const next = isArrayOrPlainObject(value)
-		? Object.keys(value).filter(key => key.length > 0)
-		: [];
+	const previous = Object.keys(context.data.value);
+	const next = isArrayOrPlainObject(value) ? Object.keys(value) : [];
 
 	for (const key of previous) {
 		if (value == null || !next.includes(key)) {
@@ -89,8 +84,8 @@ export function replaceData(context: Context, value: unknown): void {
 	for (const key of next) {
 		const val = (value as PlainObject)[key];
 
-		if (!previous.includes(key) && val != null) {
-			context.data.value[key] = (value as PlainObject)[key];
+		if (val != null) {
+			context.data.value[key] = val;
 		}
 	}
 }
@@ -161,19 +156,31 @@ function setValue(
 	setAttribute(context.element, `${prefix}${kebabCase(name)}`, value);
 	setElementValues(context.targets.getAll(`input:${name}`), value.stringified);
 
-	const json = JSON.stringify(
-		value.original,
-		null,
-		+(getComputedStyle(context.element)?.tabSize ?? '4'),
-	);
-
 	setElementContents(
 		context.targets.getAll(`output:${name}`),
 		value.stringified,
 	);
 
-	setElementContents(context.targets.getAll(`output:${name}:json`), json);
-	setElementValues(context.targets.getAll(`input:${name}:json`), json);
+	const namedInputs = context.targets.getAll(`input.${name}:json`);
+	const namedOutputs = context.targets.getAll(`output.${name}:json`);
+
+	if (namedInputs.length > 0 || namedOutputs.length > 0) {
+		const json = JSON.stringify(
+			value.original,
+			null,
+			+(getComputedStyle(context.element)?.tabSize ?? '4'),
+		);
+
+		setElementContents(namedOutputs, json);
+		setElementValues(namedInputs, json);
+	}
+
+	const inputs = context.targets.getAll('input.:json');
+	const outputs = context.targets.getAll('output.:json');
+
+	if (inputs.length === 0 && outputs.length === 0) {
+		return;
+	}
 
 	frames.set(
 		context,
@@ -184,8 +191,8 @@ function setValue(
 				+(getComputedStyle(context.element)?.tabSize ?? '4'),
 			);
 
-			setElementContents(context.targets.getAll('output::json'), json);
-			setElementValues(context.targets.getAll('input::json'), json);
+			setElementContents(outputs, json);
+			setElementValues(inputs, json);
 		}),
 	);
 }

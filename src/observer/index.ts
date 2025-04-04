@@ -1,57 +1,53 @@
 import {debounce} from '@oscarpalmer/atoms/function';
 import {getAttributeType} from '../helpers/attribute';
-import type {ObserverCallback} from '../models';
 import {handleAttributeChanges} from './attributes/changes.attribute';
-
-const debouncer = debounce(() => {
-	handleNodes([document.body], handleChanges);
-}, 250);
 
 export class Observer {
 	private readonly observer: MutationObserver;
 
-	private readonly options: MutationObserverInit = {
-		attributeOldValue: true,
-		attributes: true,
-		childList: true,
-		subtree: true,
-	};
-
-	private running = false;
-
 	constructor() {
 		this.observer = new MutationObserver(entries => {
+			if (!active) {
+				return;
+			}
+
 			const {length} = entries;
 
 			for (let index = 0; index < length; index += 1) {
 				const entry = entries[index];
 
 				if (entry.type === 'childList') {
-					handleNodes(entry.addedNodes, handleChanges);
-					handleNodes(entry.removedNodes, handleChanges);
+					handleNodes(entry.addedNodes);
+					handleNodes(entry.removedNodes);
 				} else if (
 					entry.type === 'attributes' &&
 					entry.target instanceof Element
 				) {
-					handleChanges(entry.target, entry.attributeName ?? '', entry.oldValue);
+					handleChanges(
+						entry.target,
+						entry.attributeName as string,
+						entry.oldValue,
+					);
 				}
 			}
 		});
+
+		this.start();
 	}
 
 	start() {
-		if (!this.running) {
-			this.running = true;
+		if (!active) {
+			active = true;
 
-			this.observer.observe(document.body, this.options);
+			this.observer.observe(document.body, options);
 
 			this.update();
 		}
 	}
 
 	stop() {
-		if (this.running) {
-			this.running = false;
+		if (active) {
+			active = false;
 
 			debouncer.cancel();
 
@@ -60,24 +56,14 @@ export class Observer {
 	}
 
 	update() {
-		if (this.running) {
+		if (active) {
 			debouncer();
 		}
 	}
 }
 
 function createObserver(): Observer {
-	const instance = new Observer();
-
-	if (document.readyState === 'complete') {
-		instance.start();
-	} else {
-		document.addEventListener('DOMContentLoaded', () => {
-			instance.start();
-		});
-	}
-
-	return instance;
+	return new Observer();
 }
 
 function handleChanges(
@@ -92,32 +78,43 @@ function handleChanges(
 	}
 }
 
-function handleElement(element: Element, callback: ObserverCallback): void {
-	const attributes = [...element.attributes];
-	const {length} = attributes;
+function handleElement(element: Element): void {
+	const names = element.getAttributeNames();
+	const {length} = names;
 
 	for (let index = 0; index < length; index += 1) {
-		callback(element, attributes[index].name, '');
+		handleChanges(element, names[index], '');
 	}
 }
 
-function handleNodes(
-	nodes: NodeList | Node[],
-	callback: ObserverCallback,
-): void {
+function handleNodes(nodes: NodeList | Node[]): void {
 	const {length} = nodes;
 
 	for (let index = 0; index < length; index += 1) {
 		const node = nodes[index];
 
 		if (node instanceof Element) {
-			handleElement(node, callback);
-			handleNodes(node.childNodes, callback);
+			handleElement(node);
+			handleNodes(node.childNodes);
 		}
 	}
 }
 
+const debouncer = debounce(() => {
+	if (active && document?.body != null) {
+		handleNodes([document.body]);
+	}
+}, 25);
+
+const options: MutationObserverInit = {
+	attributeOldValue: true,
+	attributes: true,
+	childList: true,
+	subtree: true,
+};
+
+let active = false;
+
 const observer = createObserver();
 
-export {observer};
-
+export default observer;

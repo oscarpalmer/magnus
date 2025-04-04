@@ -1,4 +1,5 @@
 import {findRelatives} from '@oscarpalmer/toretto/find';
+import {slashes} from '../constants';
 import {Context} from '../controller/context';
 import type {ControllerConstructor} from '../models';
 
@@ -26,14 +27,14 @@ class Controllers {
 		let found: Element | null;
 
 		if (id == null) {
-			found = findRelatives(origin, `[\:${name}]`)[0];
+			found = findRelatives(origin, `[${slashes}:${name}]`)[0];
 		} else {
-			found = document.querySelector(`#${id}`);
+			found = origin.ownerDocument.querySelector(`#${id}`);
 		}
 
-		return found == null
-			? undefined
-			: this.stored.get(name)?.instances.get(found);
+		if (found != null) {
+			return this.stored.get(name)?.instances.get(found);
+		}
 	}
 
 	has(name: string): boolean {

@@ -1,3 +1,4 @@
+import {noop} from '@oscarpalmer/atoms/function';
 import {afterAll, expect, test} from 'vitest';
 import {Controller, magnus} from '../src';
 
@@ -21,12 +22,30 @@ class EventsController extends Controller {
 						detail: 'Hello, world!',
 					});
 
+					this.events.dispatch(
+						'global',
+						{
+							detail: true,
+						},
+						'invalid',
+					);
+
+					this.events.dispatch('global', 'invalid');
+
 					once += 1;
 				},
 				{
 					once: true,
 				},
 				'button',
+			);
+
+			listener = this.events.on(
+				'click',
+				() => {
+					invalidOn = true;
+				},
+				'invalid',
 			);
 		}, 25);
 	}
@@ -38,14 +57,17 @@ class EventsController extends Controller {
 
 document.body.innerHTML = `<div
 	:events-test
-	::global="events-test.onGlobal"
+	::global="events-test@onGlobal"
 >
-	<button :events-test.button></button>
+	<button events-test:button></button>
 </div>`;
 
 magnus.add('events-test', EventsController);
 
 let global: string | undefined;
+let listener: unknown;
+
+let invalidOn = false;
 let multiple = 0;
 let once = 0;
 
@@ -61,13 +83,15 @@ test('events', () =>
 			for (let index = 0; index < 100; index += 1) {
 				button?.click();
 			}
-
-			setTimeout(() => {
-				expect(global).toBe('Hello, world!');
-				expect(multiple).toBe(10);
-				expect(once).toBe(1);
-
-				done();
-			}, 25);
 		}, 50);
+
+		setTimeout(() => {
+			expect(global).toBe('Hello, world!');
+			expect(invalidOn).toBe(false);
+			expect(listener).toBe(noop);
+			expect(multiple).toBe(10);
+			expect(once).toBe(1);
+
+			done();
+		}, 100);
 	}));

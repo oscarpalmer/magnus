@@ -160,38 +160,39 @@ const output: Data<string> = {
 
 document.body.innerHTML = `<div
 	:io-test
-	:io-test-boolean="true"
-	:io-test-number="42"
-	:io-test-select="2"
-	:io-test-text="Hello, world!"
-	:io-test-textarea="Hello, universe!"
+	io-test-boolean="true"
+	io-test-number="42"
+	io-test-select="2"
+	io-test-text="Hello, world!"
+	io-test-textarea="Hello, universe!"
 >
-	<input type="checkbox" :io-test:boolean />
-	<input type="number" :io-test:number />
-	<input type="text" :io-test:text />
+	<input type="checkbox" io-test.boolean />
+	<input type="number" io-test.number />
+	<input type="text" io-test.text />
 
-	<select :io-test:select>
+	<select io-test.select>
 		<option value="1">A</option>
 		<option value="2">B</option>
 		<option value="3">C</option>
 	</select>
 
-	<textarea :io-test:textarea"></textarea>
+	<textarea io-test.textarea"></textarea>
 
-	<div :io-test.ignored"></div>
+	<div io-test.ignored"></div>
+	<div io-test.invalid!></div>
 
 	<ul>
-		<li :io-test:boolean></li>
-		<li :io-test:number></li>
-		<li :io-test:select></li>
-		<li :io-test:text></li>
-		<li :io-test:textarea></li>
+		<li io-test.boolean></li>
+		<li io-test.number></li>
+		<li io-test.select></li>
+		<li io-test.text></li>
+		<li io-test.textarea></li>
 	</ul>
 
-	<textarea :io-test::json></textarea>
-	<textarea :io-test></textarea>
+	<textarea io-test.:json></textarea>
+	<textarea io-test></textarea>
 
-	<pre io-test::json></pre>
+	<pre io-test.:json></pre>
 </div>`;
 
 magnus.add('io-test', InputOutputController);

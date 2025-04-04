@@ -2,6 +2,7 @@ import {
 	actionAttributeNamePattern,
 	actionAttributeValuePattern,
 	controllerAttributePattern,
+	dataAttributePattern,
 	inputOutputAttributePattern,
 	targetAttributePattern,
 } from '../constants';
@@ -9,14 +10,15 @@ import type {AttributeType, ParsedAttribute} from '../models';
 
 export function getAttributeType(name: string): AttributeType | undefined {
 	switch (true) {
-		case actionAttributeNamePattern.test(name):
+		case name === '_' || actionAttributeNamePattern.test(name):
 			return 'action';
 
-		case controllerAttributePattern.test(name):
+		case controllerAttributePattern.test(name) ||
+			dataAttributePattern.test(name):
 			return 'controller';
 
 		case inputOutputAttributePattern.test(name):
-			return 'input-output';
+			return 'io';
 
 		case targetAttributePattern.test(name):
 			return 'target';
@@ -36,11 +38,12 @@ export function parseAttribute(
 	switch (type) {
 		case 'action':
 			matches =
-				actionAttributeValuePattern.exec(value) ??
-				actionAttributeNamePattern.exec(name);
+				value.length > 0
+					? actionAttributeValuePattern.exec(value)
+					: actionAttributeNamePattern.exec(name);
 			break;
 
-		case 'input-output':
+		case 'io':
 			matches = inputOutputAttributePattern.exec(name);
 			break;
 

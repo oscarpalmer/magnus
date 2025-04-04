@@ -9,10 +9,10 @@ export function findTarget(
 
 	switch (true) {
 		case noId && /^document$/i.test(name):
-			return origin.ownerDocument ?? document;
+			return origin.ownerDocument;
 
 		case noId && /^window$/i.test(name):
-			return origin.ownerDocument?.defaultView ?? window;
+			return origin.ownerDocument.defaultView as EventTarget;
 
 		default:
 			return (
