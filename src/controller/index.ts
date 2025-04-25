@@ -28,7 +28,7 @@ export abstract class Controller<Data extends PlainObject = PlainObject> {
 	 * The controller's primary element
 	 */
 	get element(): Element {
-		return this.context.element;
+		return this.context.state.element;
 	}
 
 	/**
@@ -42,7 +42,7 @@ export abstract class Controller<Data extends PlainObject = PlainObject> {
 	 * Controller name
 	 */
 	get name(): string {
-		return this.context.name;
+		return this.context.state.name;
 	}
 
 	/**

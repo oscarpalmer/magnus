@@ -14,55 +14,59 @@ export class Action {
 }
 
 export class Actions {
-	private readonly store = new Map<string, Action>();
+		private readonly store = new Map<string, Action>();
 
-	add(name: string, target: EventTarget): void {
-		const action = this.store.get(name);
+		add(name: string, target: EventTarget): void {
+			const action = this.store.get(name);
 
-		if (action != null) {
-			addActionTarget(action, target);
-		}
-	}
-
-	clear(): void {
-		const actions = [...this.store.entries()];
-		const actionsLength = actions.length;
-
-		for (let actionIndex = 0; actionIndex < actionsLength; actionIndex += 1) {
-			const [name, action] = actions[actionIndex];
-			const targets = [...action.targets];
-			const targetsLength = targets.length;
-
-			for (let targetIndex = 0; targetIndex < targetsLength; targetIndex += 1) {
-				removeActionTarget(this.store, name, action, targets[targetIndex]);
+			if (action != null) {
+				addActionTarget(action, target);
 			}
 		}
 
-		this.store.clear();
-	}
+		clear(): void {
+			const actions = [...this.store.entries()];
+			const actionsLength = actions.length;
 
-	create(parameters: ActionParameters, target: EventTarget): void {
-		if (!this.store.has(parameters.name)) {
-			const action = new Action(parameters);
+			for (let actionIndex = 0; actionIndex < actionsLength; actionIndex += 1) {
+				const [name, action] = actions[actionIndex];
+				const targets = [...action.targets];
+				const targetsLength = targets.length;
 
-			addActionTarget(action, target);
+				for (
+					let targetIndex = 0;
+					targetIndex < targetsLength;
+					targetIndex += 1
+				) {
+					removeActionTarget(this.store, name, action, targets[targetIndex]);
+				}
+			}
 
-			this.store.set(parameters.name, action);
+			this.store.clear();
+		}
+
+		create(parameters: ActionParameters, target: EventTarget): void {
+			if (!this.store.has(parameters.name)) {
+				const action = new Action(parameters);
+
+				addActionTarget(action, target);
+
+				this.store.set(parameters.name, action);
+			}
+		}
+
+		has(name: string): boolean {
+			return this.store.has(name);
+		}
+
+		remove(name: string, target: EventTarget): void {
+			const action = this.store.get(name);
+
+			if (action != null) {
+				removeActionTarget(this.store, name, action, target);
+			}
 		}
 	}
-
-	has(name: string): boolean {
-		return this.store.has(name);
-	}
-
-	remove(name: string, target: EventTarget): void {
-		const action = this.store.get(name);
-
-		if (action != null) {
-			removeActionTarget(this.store, name, action, target);
-		}
-	}
-}
 
 function addActionTarget(action: Action, target: EventTarget): void {
 	if (!action.targets.has(target)) {

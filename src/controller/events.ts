@@ -1,6 +1,7 @@
 import {noop} from '@oscarpalmer/atoms/function';
 import {isPlainObject} from '@oscarpalmer/atoms/is';
 import {dispatch, off, on} from '@oscarpalmer/toretto/event';
+import {isEventTarget} from '@oscarpalmer/toretto/is';
 import type {RemovableEventListener} from '@oscarpalmer/toretto/models';
 import type {ExtendedEventTarget} from '../models';
 import type {Context} from './context';
@@ -79,7 +80,11 @@ export class Events {
 		);
 
 		if (target != null) {
-			dispatch(target, type, firstIsOptions ? (first as CustomEventInit) : undefined);
+			dispatch(
+				target,
+				type,
+				firstIsOptions ? (first as CustomEventInit) : undefined,
+			);
 		}
 	}
 
@@ -232,11 +237,7 @@ function getTarget(
 		return context.targets.get(target);
 	}
 
-	return target instanceof EventTarget ||
-		(target as unknown as Document)?.documentElement instanceof Element ||
-		(target != null && (target as Window).window === (target as Window))
-		? target
-		: context.element;
+	return isEventTarget(target) ? target : context.state.element;
 }
 
 function handleEvent(

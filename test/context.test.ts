@@ -15,8 +15,8 @@ test('context', () => {
 	expect(context.actions).toBeInstanceOf(Actions);
 	expect(context.controller).toBeInstanceOf(TestController);
 	expect(context.data).toBeInstanceOf(Data);
-	expect(context.element).toBe(element);
+	expect(context.state.element).toBe(element);
 	expect(context.events).toBeInstanceOf(Events);
-	expect(context.name).toBe('test');
+	expect(context.state.name).toBe('test');
 	expect(context.targets).toBeInstanceOf(Targets);
 });

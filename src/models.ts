@@ -86,24 +86,32 @@ export type ParsedAttribute = {
 //
 
 export type ReadonlyTargets = {
-		/**
-		 * Find an element within the controller
-		 */
-		find<Found extends Element = Element>(selector: string): Found | null;
-		/**
-		 * Find all elements within the controller
-		 */
-		findAll<Found extends Element = Element>(selector: string): Found[];
-		/**
-		 * Get the first element with the given target name
-		 */
-		get<Target extends Element = Element>(name: string): Target | undefined;
-		/**
-		 * Get all elements with the given target name
-		 */
-		getAll<Target extends Element = Element>(name: string): Target[];
-		/**
-		 * Does the controller have any elements with the given target name?
-		 */
-		has(name: string): boolean;
-	};
+	/**
+	 * Find an element within the controller
+	 */
+	find<Found extends HTMLOrSVGElement = HTMLOrSVGElement>(
+		selector: string,
+	): Found | null;
+	/**
+	 * Find all elements within the controller
+	 */
+	findAll<Found extends HTMLOrSVGElement = HTMLOrSVGElement>(
+		selector: string,
+	): Found[];
+	/**
+	 * Get the first element with the given target name
+	 */
+	get<Target extends HTMLOrSVGElement = HTMLOrSVGElement>(
+		name: string,
+	): Target | undefined;
+	/**
+	 * Get all elements with the given target name
+	 */
+	getAll<Target extends HTMLOrSVGElement = HTMLOrSVGElement>(
+		name: string,
+	): Target[];
+	/**
+	 * Does the controller have any elements with the given target name?
+	 */
+	has(name: string): boolean;
+};

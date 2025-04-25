@@ -1,13 +1,15 @@
 import {
-	attributeCallbacks,
 	controllerAttributePrefixPattern,
+	dataAttributePattern,
 	targetAttributePrefixPattern,
 } from '../../constants';
 import type {Context} from '../../controller/context';
 import {parseAttribute} from '../../helpers/attribute';
-import type {AttributeType} from '../../models';
+import type {AttributeHandleCallback, AttributeType} from '../../models';
 import {controllers} from '../../store/controller.store';
 import {setValueFromAttribute} from '../../store/data.store';
+import {handleActionAttribute} from './action.attribute';
+import {handleInputOutputAttribute} from './input-output.attribute';
 
 export function handleContextualAttribute(
 	type: AttributeType,
@@ -16,7 +18,7 @@ export function handleContextualAttribute(
 	value: string,
 	added: boolean,
 ): void {
-	const callback = attributeCallbacks[type];
+	const callback = callbacks[type];
 	const parsed = parseAttribute(type, name, value);
 
 	let count = 0;
@@ -53,50 +55,42 @@ export function handleControllerAttribute(
 		} else {
 			controllers.remove(normalized, element);
 		}
-	} else {
-		handlePossibleDataAttribute(element, normalized);
 	}
 }
 
 function handleDataAttribute(
+	context: Context,
 	element: Element,
-	controller: string,
 	property: string,
+	value: string,
 ): void {
-	const context = controllers.find(element, controller);
+	setValueFromAttribute(context, property, value);
 
-	if (context != null) {
-		setValueFromAttribute(
-			context,
-			property,
-			element.getAttribute(`${controller}-${property}`) ?? '',
-		);
-	}
+	element.removeAttribute(`${context.state.name}-${property}`);
 }
 
-function handlePossibleDataAttribute(element: Element, name: string): void {
-	const parts = name.split('-');
-	const {length} = parts;
+export function handlaDataAttributes(context: Context): void {
+	const {element, name} = context.state;
 
-	if (length < 2) {
-		return;
-	}
+	const pattern = new RegExp(`^${name}-`);
 
-	let index = 0;
+	const attributes = [...element.attributes];
+	const {length} = attributes;
 
-	let controller: string | undefined;
-	let property: string | undefined;
+	for (let index = 0; index < length; index += 1) {
+		const attribute = attributes[index];
 
-	while (index < length) {
-		controller = parts.slice(index, index + 1).join('-');
-		property = parts.slice(index + 1).join('-');
-
-		if (controllers.has(controller)) {
-			handleDataAttribute(element, controller, property);
-			break;
+		if (
+			pattern.test(attribute.name) &&
+			dataAttributePattern.test(attribute.name)
+		) {
+			handleDataAttribute(
+				context,
+				element,
+				attribute.name.replace(pattern, ''),
+				attribute.value,
+			);
 		}
-
-		index += 1;
 	}
 }
 
@@ -134,3 +128,9 @@ export function handleTargetAttribute(
 		context.targets.remove(normalized, element);
 	}
 }
+
+const callbacks: Partial<Record<AttributeType, AttributeHandleCallback>> = {
+	action: handleActionAttribute,
+	io: handleInputOutputAttribute,
+	target: handleTargetAttribute,
+};

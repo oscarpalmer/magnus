@@ -7,6 +7,7 @@ type Key = 'first' | 'fourth' | 'second' | 'third';
 
 type Values = {
 	boolean: boolean;
+	nested: {value: string};
 	number: number;
 	select: number;
 	text: string;
@@ -38,6 +39,7 @@ class InputOutputController extends Controller<Values> {
 				setValues('first', this, outputs, pre, select);
 
 				this.data.boolean = false;
+				this.data.nested = {value: 'foo'};
 				this.data.number = 99;
 				this.data.select = 1;
 				this.data.text = 'foo bar';
@@ -62,30 +64,37 @@ class InputOutputController extends Controller<Values> {
 						text.value = 'Magnus!';
 					}
 
+					textareas[0].focus();
+
 					textareas[0].value = '!sungaM';
+					textareas[3].value = '{"value": "bar"}';
 
 					checkbox?.dispatchEvent(new Event('change'));
 					number?.dispatchEvent(new Event('input'));
 					select?.dispatchEvent(new Event('change'));
 					text?.dispatchEvent(new Event('input'));
 					textareas[0].dispatchEvent(new Event('input'));
+					textareas[3].dispatchEvent(new Event('input'));
 
 					setTimeout(() => {
 						setValues('third', this, outputs, pre, select);
 
-						textareas[1].value = `{
+						textareas[2].value = `{
 	"boolean": false,
+	"nested": {
+		"value": "foo bar"
+	},
 	"number": 99,
 	"select": 1,
 	"text": "Hello, world!",
 	"textarea": "Hello, universe!"
 }`;
 
-						textareas[1].dispatchEvent(new Event('input'));
+						textareas[2].dispatchEvent(new Event('input'));
 
 						setTimeout(() => {
 							setValues('fourth', this, outputs, pre, select);
-						}, 25);
+						}, 125);
 					}, 125);
 				}, 125);
 			}, 125);
@@ -102,39 +111,15 @@ function setValues(
 ) {
 	input[key] = {...controller.data};
 	json[key] = pre?.textContent ?? '';
-	option[key] = select?.selectedOptions[0].textContent ?? '';
+	option[key] = select?.options[select.selectedIndex]?.textContent ?? '';
 	output[key] = outputs.map(output => output.textContent).join('; ');
 }
 
 const input: Data<Values> = {
-	first: {
-		boolean: false,
-		number: -1,
-		select: -1,
-		text: '',
-		textarea: '',
-	},
-	second: {
-		boolean: true,
-		number: -1,
-		select: -1,
-		text: '',
-		textarea: '',
-	},
-	third: {
-		boolean: false,
-		number: -1,
-		select: -1,
-		text: '',
-		textarea: '',
-	},
-	fourth: {
-		boolean: true,
-		number: -1,
-		select: -1,
-		text: '',
-		textarea: '',
-	},
+	first: null as never,
+	second: null as never,
+	third: null as never,
+	fourth: null as never,
 };
 
 const json: Data<string> = {
@@ -161,6 +146,7 @@ const output: Data<string> = {
 document.body.innerHTML = `<div
 	:io-test
 	io-test-boolean="true"
+	io-test-nested='{"value": ""}'
 	io-test-number="42"
 	io-test-select="2"
 	io-test-text="Hello, world!"
@@ -176,7 +162,8 @@ document.body.innerHTML = `<div
 		<option value="3">C</option>
 	</select>
 
-	<textarea io-test.textarea"></textarea>
+	<textarea io-test.textarea></textarea>
+	<textarea io-test.textarea></textarea>
 
 	<div io-test.ignored"></div>
 	<div io-test.invalid!></div>
@@ -190,7 +177,7 @@ document.body.innerHTML = `<div
 	</ul>
 
 	<textarea io-test.:json></textarea>
-	<textarea io-test></textarea>
+	<textarea io-test.nested:json></textarea>
 
 	<pre io-test.:json></pre>
 </div>`;
@@ -204,8 +191,9 @@ afterAll(() => {
 test('input/output attribute', () =>
 	new Promise<void>(done => {
 		setTimeout(() => {
-			/* expect(input.first).toEqual({
+			expect(input.first).toEqual({
 				boolean: true,
+				nested: {value: ''},
 				number: 42,
 				select: 2,
 				text: 'Hello, world!',
@@ -214,6 +202,7 @@ test('input/output attribute', () =>
 
 			expect(input.second).toEqual({
 				boolean: false,
+				nested: {value: 'foo'},
 				number: 99,
 				select: 1,
 				text: 'foo bar',
@@ -222,32 +211,51 @@ test('input/output attribute', () =>
 
 			expect(input.third).toEqual({
 				boolean: true,
+				nested: {value: 'bar'},
 				number: 123,
 				select: 3,
 				text: 'Magnus!',
 				textarea: '!sungaM',
 			});
 
+			expect(input.fourth).toEqual({
+				boolean: false,
+				nested: {value: 'foo bar'},
+				number: 99,
+				select: 1,
+				text: 'Hello, world!',
+				textarea: 'Hello, universe!',
+			});
+
 			expect(json.first).toBe(
-				'{"boolean":true,"number":42,"select":2,"text":"Hello, world!","textarea":"Hello, universe!"}',
+				'{"boolean":true,"nested":{"value":""},"number":42,"select":2,"text":"Hello, world!","textarea":"Hello, universe!"}',
 			);
 
 			expect(json.second).toBe(
-				'{"boolean":false,"number":99,"select":1,"text":"foo bar","textarea":"foo baz"}',
+				'{"boolean":false,"nested":{"value":"foo"},"number":99,"select":1,"text":"foo bar","textarea":"foo baz"}',
 			);
 
 			expect(json.third).toBe(
-				'{"boolean":true,"number":123,"select":3,"text":"Magnus!","textarea":"!sungaM"}',
+				'{"boolean":true,"nested":{"value":"bar"},"number":123,"select":3,"text":"Magnus!","textarea":"!sungaM"}',
+			);
+
+			expect(json.fourth).toBe(
+				'{"boolean":false,"nested":{"value":"foo bar"},"number":99,"select":1,"text":"Hello, world!","textarea":"Hello, universe!"}',
 			);
 
 			expect(option.first).toBe('B');
 			expect(option.second).toBe('A');
 			expect(option.third).toBe('C');
+			expect(option.fourth).toBe('A');
 
 			expect(output.first).toBe('true; 42; 2; Hello, world!; Hello, universe!');
 			expect(output.second).toBe('false; 99; 1; foo bar; foo baz');
-			expect(output.third).toBe('true; 123; 3; Magnus!; !sungaM'); */
+			expect(output.third).toBe('true; 123; 3; Magnus!; !sungaM');
+
+			expect(output.fourth).toBe(
+				'false; 99; 1; Hello, world!; Hello, universe!',
+			);
 
 			done();
-		}, 250);
+		}, 1000);
 	}));

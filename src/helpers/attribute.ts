@@ -2,7 +2,6 @@ import {
 	actionAttributeNamePattern,
 	actionAttributeValuePattern,
 	controllerAttributePattern,
-	dataAttributePattern,
 	inputOutputAttributePattern,
 	targetAttributePattern,
 } from '../constants';
@@ -10,11 +9,10 @@ import type {AttributeType, ParsedAttribute} from '../models';
 
 export function getAttributeType(name: string): AttributeType | undefined {
 	switch (true) {
-		case name === '_' || actionAttributeNamePattern.test(name):
+		case actionAttributeNamePattern.test(name):
 			return 'action';
 
-		case controllerAttributePattern.test(name) ||
-			dataAttributePattern.test(name):
+		case controllerAttributePattern.test(name):
 			return 'controller';
 
 		case inputOutputAttributePattern.test(name):
@@ -33,29 +31,28 @@ export function parseAttribute(
 	name: string,
 	value: string,
 ): ParsedAttribute | undefined {
-	let matches: RegExpExecArray | null = null;
+	let matches: RegExpExecArray;
 
 	switch (type) {
 		case 'action':
-			matches =
+			matches = (
 				value.length > 0
 					? actionAttributeValuePattern.exec(value)
-					: actionAttributeNamePattern.exec(name);
+					: actionAttributeNamePattern.exec(name)
+			) as RegExpExecArray;
 			break;
 
 		case 'io':
-			matches = inputOutputAttributePattern.exec(name);
+			matches = inputOutputAttributePattern.exec(name) as RegExpExecArray;
 			break;
 
-		case 'target':
-			matches = targetAttributePattern.exec(name);
+		default:
+			matches = targetAttributePattern.exec(name) as RegExpExecArray;
 			break;
 	}
 
-	if (matches != null) {
-		return {
-			identifier: matches[2],
-			name: matches[1],
-		};
-	}
+	return {
+		identifier: matches[2],
+		name: matches[1],
+	};
 }

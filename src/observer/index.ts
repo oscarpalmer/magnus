@@ -23,11 +23,7 @@ export class Observer {
 					entry.type === 'attributes' &&
 					entry.target instanceof Element
 				) {
-					handleChanges(
-						entry.target,
-						entry.attributeName as string,
-						entry.oldValue,
-					);
+					handleAttribute(entry.target, entry.attributeName as string, entry.oldValue);
 				}
 			}
 		});
@@ -66,7 +62,7 @@ function createObserver(): Observer {
 	return new Observer();
 }
 
-function handleChanges(
+function handleAttribute(
 	element: Element,
 	name: string,
 	value: string | null,
@@ -79,11 +75,14 @@ function handleChanges(
 }
 
 function handleElement(element: Element): void {
-	const names = element.getAttributeNames();
+	const names = element
+		.getAttributeNames()
+		.filter((name, index, array) => array.indexOf(name) === index);
+
 	const {length} = names;
 
 	for (let index = 0; index < length; index += 1) {
-		handleChanges(element, names[index], '');
+		handleAttribute(element, names[index], '');
 	}
 }
 

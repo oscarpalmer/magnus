@@ -4,8 +4,8 @@
 		"url": "https://oscarpalmer.se"
 	},
 	"dependencies": {
-		"@oscarpalmer/atoms": "^0.90",
-		"@oscarpalmer/toretto": "^0.18"
+		"@oscarpalmer/atoms": "^0.97",
+		"@oscarpalmer/toretto": "^0.20"
 	},
 	"description": "A JavaScript framework for developers who like HTML.",
 	"devDependencies": {
@@ -13,14 +13,14 @@
 		"@oscarpalmer/oui": "0.9.0",
 		"@rollup/plugin-node-resolve": "^16",
 		"@rollup/plugin-typescript": "^12.1",
-		"@types/node": "^22.14",
+		"@types/node": "^22.15",
 		"@vitest/coverage-istanbul": "^3.1",
 		"dts-bundle-generator": "^9.5",
 		"glob": "^11",
-		"happy-dom": "^17.4",
+		"jsdom": "^26.1",
 		"tslib": "^2.8",
 		"typescript": "^5.8",
-		"vite": "^6.2",
+		"vite": "^6.3",
 		"vitest": "^3.1"
 	},
 	"exports": {
@@ -40,7 +40,6 @@
 		"src",
 		"types"
 	],
-	"jsdelivr": "dist/index.js",
 	"keywords": [
 		"framework",
 		"frontend",
@@ -67,6 +66,5 @@
 	},
 	"type": "module",
 	"types": "types/index.d.ts",
-	"unpkg": "dist/index.js",
 	"version": "0.31.0"
 }

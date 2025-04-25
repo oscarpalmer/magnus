@@ -57,19 +57,6 @@ class ActionTwoController extends Controller {
 	}
 }
 
-function log() {
-	/* console.dir({
-		a,
-		b,
-		fromDocument,
-		fromElement,
-		fromTwo,
-		fromWindow,
-		multiple,
-		once,
-	}); */
-}
-
 let fromDocument: string | undefined;
 let fromElement: string | undefined;
 let fromWindow: string | undefined;
@@ -122,61 +109,75 @@ test('action attribute', () =>
 				button?.click();
 			}
 
-			button?.removeAttribute(`\:\:action-two.on-multiple`);
+			button?.removeAttribute('::action-two.on-multiple');
 		}, 25);
 
 		setTimeout(() => {
-			//expect(fromTwo).toBe(2);
-			//expect(multiple).toBe(10);
-			//expect(once).toBe(1);
+			expect(a).toBe(10);
+			expect(b).toBe(10);
+			expect(fromTwo).toBe(2);
+			expect(multiple).toBe(10);
+			expect(once).toBe(1);
 
-			//expect(fromDocument).toBe('Hello, world! -- fromDocument');
-			//expect(fromElement).toBe('Hello, world! -- fromElement');
-			//expect(fromWindow).toBe('Hello, world! -- fromWindow');
-
-			log();
+			expect(fromDocument).toBe('Hello, world! -- fromDocument');
+			expect(fromElement).toBe('Hello, world! -- fromElement');
+			expect(fromWindow).toBe('Hello, world! -- fromWindow');
 
 			for (let index = 0; index < 10; index += 1) {
 				button?.click();
 			}
 
-			button?.setAttribute(`\:\:click`, 'action-two@onB');
-			button?.setAttribute(`\:\:action-two.on-multiple`, '');
+			button?.setAttribute('::click', 'action-two@onB');
+			button?.setAttribute('::action-two.on-multiple', '');
 		}, 50);
 
 		setTimeout(() => {
-			//expect(fromTwo).toBe(2);
-			//expect(multiple).toBe(10);
-			//expect(once).toBe(1);
+			expect(a).toBe(20);
+			expect(b).toBe(20);
+			expect(fromTwo).toBe(2);
+			expect(multiple).toBe(10);
+			expect(once).toBe(1);
 
-			log();
+			for (let index = 0; index < 10; index += 1) {
+				button?.click();
+			}
+
+			button?.removeAttribute('::click');
+		}, 75);
+
+		setTimeout(() => {
+			expect(a).toBe(20);
+			expect(b).toBe(30);
+			expect(fromTwo).toBe(2);
+			expect(multiple).toBe(10);
+			expect(once).toBe(1);
 
 			for (let index = 0; index < 10; index += 1) {
 				button?.click();
 			}
 
 			magnus.remove('action-two');
-		}, 75);
+		}, 100);
 
 		setTimeout(() => {
-			//expect(fromTwo).toBe(2);
-			//expect(multiple).toBe(20);
-			//expect(once).toBe(1);
-
-			log();
+			expect(a).toBe(20);
+			expect(b).toBe(30);
+			expect(fromTwo).toBe(2);
+			expect(multiple).toBe(10);
+			expect(once).toBe(1);
 
 			for (let index = 0; index < 10; index += 1) {
 				button?.click();
 			}
-		}, 100);
+		}, 125);
 
 		setTimeout(() => {
-			//expect(fromTwo).toBe(2);
-			//expect(multiple).toBe(20);
-			//expect(once).toBe(1);
-
-			log();
+			expect(a).toBe(20);
+			expect(b).toBe(30);
+			expect(fromTwo).toBe(2);
+			expect(multiple).toBe(10);
+			expect(once).toBe(1);
 
 			done();
-		}, 125);
+		}, 150);
 	}));

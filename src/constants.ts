@@ -1,18 +1,3 @@
-import type {AttributeHandleCallback, AttributeType} from './models';
-import {handleTargetAttribute} from './observer/attributes';
-import {handleActionAttribute} from './observer/attributes/action.attribute';
-import {handleInputOutputAttribute} from './observer/attributes/input-output.attribute';
-
-export const attributeCallbacks: Partial<
-	Record<AttributeType, AttributeHandleCallback>
-> = {
-	action: handleActionAttribute,
-	io: handleInputOutputAttribute,
-	target: handleTargetAttribute,
-};
-
-//
-
 /**
  * - `::(controller.)(identifier.)action(:options)`
  * - `[, name, id?, value, options?]`
@@ -38,7 +23,7 @@ export const controllerAttributePrefixPattern = /^:/;
 /**
  * `controller-data-attribute`
  */
-export const dataAttributePattern = /^\w+\-([^.:][\w-])+$/;
+export const dataAttributePattern = /^\w+\-[\w-]+$/;
 
 /**
  * - `controller(.identifier).property(:json)`
@@ -86,31 +71,3 @@ export const parseableInputTypes = new Set([
 	'range',
 	'week',
 ]);
-
-//
-
-let count = 0;
-
-try {
-	// This selector works with Happy DOM, but not in a real browser environment
-	document.body.querySelector('[:test]');
-} catch (error) {
-	try {
-		// This selectors works in a real browser environment, but not with Happy DOM
-		// biome-ignore lint/style/noUnusedTemplateLiteral: A non-templated string would be normalized into '[:test]', and wouldn't be a valid selector
-		document.body.querySelector(`[\\:test]`);
-
-		count = 1;
-	} catch (error) {
-		count = -1;
-	}
-}
-
-let slashes = '';
-
-if (count > 0) {
-	// biome-ignore lint/style/noUnusedTemplateLiteral: A non-templated string would be normalized into '\', and wouldn't work as part of a selector
-	slashes = `\\`;
-}
-
-export {slashes};

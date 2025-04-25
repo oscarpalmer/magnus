@@ -1,22 +1,26 @@
 import type {ControllerConstructor} from '../models';
-import observer from '../observer/index';
+import {handlaDataAttributes} from '../observer/attributes';
 import {Actions} from '../store/action.store';
 import {Data} from '../store/data.store';
 import {Targets} from '../store/target.store';
 import {Events} from './events';
+
+type State = {
+	name: string;
+	element: Element;
+};
 
 export class Context {
 	readonly actions: Actions;
 	readonly controller: InstanceType<ControllerConstructor>;
 	readonly data: Data;
 	readonly events: Events;
+	readonly state: State;
 	readonly targets: Targets;
 
-	constructor(
-		readonly name: string,
-		readonly element: Element,
-		creator: ControllerConstructor,
-	) {
+	constructor(name: string, element: Element, creator: ControllerConstructor) {
+		this.state = {element, name};
+
 		this.actions = new Actions();
 		this.data = new Data(this);
 		this.events = new Events(this);
@@ -24,7 +28,7 @@ export class Context {
 
 		this.controller = new creator(this);
 
-		observer.update();
+		handlaDataAttributes(this);
 
 		this.controller.connect?.();
 	}

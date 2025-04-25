@@ -1,7 +1,4 @@
-import {
-	isArrayOrPlainObject,
-	isNullableOrWhitespace,
-} from '@oscarpalmer/atoms/is';
+import {isArrayOrPlainObject} from '@oscarpalmer/atoms/is';
 import type {PlainObject} from '@oscarpalmer/atoms/models';
 import {
 	camelCase,
@@ -9,6 +6,7 @@ import {
 	kebabCase,
 	parse,
 } from '@oscarpalmer/atoms/string';
+import {dispatch} from '@oscarpalmer/toretto/event';
 import {changeEventTypes} from '../constants';
 import type {Context} from '../controller/context';
 
@@ -24,7 +22,7 @@ export class Data {
 
 	constructor(context: Context) {
 		const frames: Record<string, number> = {};
-		const prefix = `${context.name}-`;
+		const prefix = `${context.state.name}-`;
 
 		this.value = new Proxy(
 			{},
@@ -75,26 +73,18 @@ export function replaceData(context: Context, value: unknown): void {
 		if (value == null || !next.includes(key)) {
 			delete context.data.value[key];
 		} else {
-			context.data.value[key] = next.includes(key)
-				? (value as PlainObject)[key]
-				: undefined;
+			context.data.value[key] = (value as PlainObject)[key];
 		}
 	}
 
 	for (const key of next) {
-		const val = (value as PlainObject)[key];
+		if (!previous.includes(key)) {
+			const val = (value as PlainObject)[key];
 
-		if (val != null) {
-			context.data.value[key] = val;
+			if (val != null) {
+				context.data.value[key] = val;
+			}
 		}
-	}
-}
-
-function setAttribute(element: Element, name: string, value: Value): void {
-	if (isNullableOrWhitespace(value.original)) {
-		element.removeAttribute(name);
-	} else {
-		element.setAttribute(name, value.stringified);
 	}
 }
 
@@ -111,29 +101,52 @@ function setElementContents(elements: Element[], value: string): void {
 }
 
 function setElementValue(element: Element, value: string): void {
+	let event: string | undefined;
+
 	switch (true) {
 		case element === document.activeElement:
 			return;
 
 		case element instanceof HTMLInputElement &&
-			changeEventTypes.has(element.type):
+			changeEventTypes.has(element.type): {
 			element.checked =
 				element.value === value ||
 				(element.type === 'checkbox' && value === 'true');
-			return;
+
+			event = 'change';
+
+			break;
+		}
 
 		case (element instanceof HTMLInputElement ||
 			element instanceof HTMLTextAreaElement) &&
-			element.value !== value:
+			element.value !== value: {
 			element.value = value;
-			return;
+			event = 'input';
 
-		case element instanceof HTMLSelectElement && element.value !== value:
-			element.value =
-				[...element.options].findIndex(option => option.value === value) > -1
-					? value
-					: '';
-			return;
+			break;
+		}
+
+		case element instanceof HTMLSelectElement && element.value !== value: {
+			const index = [...element.options].findIndex(
+				option => option.value === value,
+			);
+
+			if (index > -1) {
+				element.selectedIndex = index;
+			}
+
+			event = 'change';
+
+			break;
+		}
+	}
+
+	if (event != null) {
+		dispatch(element, event, {
+			bubbles: true,
+			cancelable: true,
+		});
 	}
 }
 
@@ -153,13 +166,12 @@ function setValue(
 ): void {
 	cancelAnimationFrame(frames.get(context) as never);
 
-	setAttribute(context.element, `${prefix}${kebabCase(name)}`, value);
-	setElementValues(context.targets.getAll(`input:${name}`), value.stringified);
-
 	setElementContents(
-		context.targets.getAll(`output:${name}`),
+		context.targets.getAll(`output.${name}`),
 		value.stringified,
 	);
+
+	setElementValues(context.targets.getAll(`input.${name}`), value.stringified);
 
 	const namedInputs = context.targets.getAll(`input.${name}:json`);
 	const namedOutputs = context.targets.getAll(`output.${name}:json`);
@@ -168,7 +180,7 @@ function setValue(
 		const json = JSON.stringify(
 			value.original,
 			null,
-			+(getComputedStyle(context.element)?.tabSize ?? '4'),
+			+(getComputedStyle(context.state.element)?.tabSize ?? '4'),
 		);
 
 		setElementContents(namedOutputs, json);
@@ -178,23 +190,21 @@ function setValue(
 	const inputs = context.targets.getAll('input.:json');
 	const outputs = context.targets.getAll('output.:json');
 
-	if (inputs.length === 0 && outputs.length === 0) {
-		return;
+	if (inputs.length > 0 || outputs.length > 0) {
+		frames.set(
+			context,
+			requestAnimationFrame(() => {
+				const json = JSON.stringify(
+					context.data.value,
+					null,
+					+(getComputedStyle(context.state.element)?.tabSize ?? '4'),
+				);
+
+				setElementContents(outputs, json);
+				setElementValues(inputs, json);
+			}),
+		);
 	}
-
-	frames.set(
-		context,
-		requestAnimationFrame(() => {
-			const json = JSON.stringify(
-				context.data.value,
-				null,
-				+(getComputedStyle(context.element)?.tabSize ?? '4'),
-			);
-
-			setElementContents(outputs, json);
-			setElementValues(inputs, json);
-		}),
-	);
 }
 
 export function setValueFromAttribute(
@@ -203,7 +213,7 @@ export function setValueFromAttribute(
 	value: string,
 ): void {
 	if (getString(context.data.value[name]) !== value) {
-		context.data.value[name] = value == null ? value : parse(value) ?? value;
+		context.data.value[name] = value == null ? value : (parse(value) ?? value);
 	}
 }
 
@@ -218,21 +228,20 @@ function updateProperty(
 ): boolean {
 	const name = camelCase(String(property));
 
-	const result =
-		original == null
-			? Reflect.deleteProperty(target, name)
-			: Reflect.set(target, name, original);
-
-	if (result) {
-		cancelAnimationFrame(frames[name]);
-
-		frames[name] = requestAnimationFrame(() => {
-			setValue(context, prefix, name, {
-				original,
-				stringified,
-			});
-		});
+	if (original == null) {
+		Reflect.deleteProperty(target, name);
+	} else {
+		Reflect.set(target, name, original);
 	}
 
-	return result;
+	cancelAnimationFrame(frames[name]);
+
+	frames[name] = requestAnimationFrame(() => {
+		setValue(context, prefix, name, {
+			original,
+			stringified,
+		});
+	});
+
+	return true;
 }

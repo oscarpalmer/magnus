@@ -61,11 +61,9 @@ function handleDataValue(
 
 	const value = parse(element.value);
 
-	if (name === '$' && element.value.trim().length > 0 && value != null) {
+	if (name.length === 0 && element.value.trim().length > 0) {
 		replaceData(context, value);
-	}
-
-	if (value != null) {
+	} else {
 		setDataValue(type, context, element, name, value);
 	}
 }
@@ -86,7 +84,7 @@ function handleInputAttribute(
 	handleActionAttribute(
 		context,
 		element,
-		`${event}:${unprefixed}`,
+		`input:${event}.${unprefixed}`,
 		value,
 		added,
 		{
@@ -100,7 +98,7 @@ function handleInputAttribute(
 	handleTargetAttribute(
 		context,
 		element,
-		`input:${unprefixed}`,
+		`input.${unprefixed}`,
 		value,
 		added,
 		false,
@@ -137,11 +135,17 @@ function setDataValue(
 	name: string,
 	value?: unknown,
 ): void {
-	context.data.value[name] =
-		value ??
-		(type === 'boolean'
-			? (element as HTMLInputElement).checked
-			: type === 'parseable'
-				? parse(element.value) ?? element.value
-				: element.value);
+	let actual: unknown;
+
+	if (value != null) {
+		actual = value;
+	} else if (type === 'boolean') {
+		actual = (element as HTMLInputElement).checked;
+	} else if (type === 'parseable') {
+		actual = parse(element.value);
+	} else {
+		actual = element.value;
+	}
+
+	context.data.value[name] = actual;
 }

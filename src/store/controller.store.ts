@@ -1,13 +1,12 @@
 import {findRelatives} from '@oscarpalmer/toretto/find';
-import {slashes} from '../constants';
 import {Context} from '../controller/context';
 import type {ControllerConstructor} from '../models';
 
-class Controllers {
-	private readonly stored = new Map<string, StoredController>();
+const stored = new Map<string, StoredController>();
 
+class Controllers {
 	add(name: string, element: Element): void {
-		const controller = this.stored.get(name);
+		const controller = stored.get(name);
 
 		if (controller != null && !controller.instances.has(element)) {
 			controller.instances.set(
@@ -18,47 +17,43 @@ class Controllers {
 	}
 
 	create(name: string, ctor: ControllerConstructor): void {
-		if (!this.stored.has(name)) {
-			this.stored.set(name, new StoredController(ctor));
-		}
+		stored.set(name, new StoredController(ctor));
 	}
 
 	find(origin: Element, name: string, id?: string): Context | undefined {
 		let found: Element | null;
 
 		if (id == null) {
-			found = findRelatives(origin, `[${slashes}:${name}]`)[0];
+			found = findRelatives(origin, `[\\:${name}]`)[0];
 		} else {
 			found = origin.ownerDocument.querySelector(`#${id}`);
 		}
 
 		if (found != null) {
-			return this.stored.get(name)?.instances.get(found);
+			return stored.get(name)?.instances.get(found);
 		}
 	}
 
 	has(name: string): boolean {
-		return this.stored.has(name);
+		return stored.has(name);
 	}
 
 	remove(name: string, element?: Element): void {
-		const stored = this.stored.get(name);
+		const controller = stored.get(name) as StoredController;
 
-		if (stored != null) {
-			if (element == null) {
-				const instances = [...stored.instances.values()];
-				const {length} = instances;
+		if (element == null) {
+			const instances = [...controller.instances.values()];
+			const {length} = instances;
 
-				for (let index = 0; index < length; index += 1) {
-					this.removeInstance(stored, instances[index]);
-				}
-
-				stored.instances.clear();
-
-				this.stored.delete(name);
-			} else {
-				this.removeInstance(stored, stored.instances.get(element));
+			for (let index = 0; index < length; index += 1) {
+				this.removeInstance(controller, instances[index]);
 			}
+
+			controller.instances.clear();
+
+			stored.delete(name);
+		} else {
+			this.removeInstance(controller, controller.instances.get(element));
 		}
 	}
 
@@ -71,7 +66,11 @@ class Controllers {
 
 		context?.controller.disconnect?.();
 
-		controller?.instances.delete(context?.element as never);
+		controller?.instances.delete(context?.state.element as never);
+
+		if (context != null) {
+			context.state.element = undefined as never;
+		}
 	}
 }
 

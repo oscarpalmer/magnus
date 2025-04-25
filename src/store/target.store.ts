@@ -43,11 +43,11 @@ export class Targets {
 	}
 
 	find(selector: string): Element | null {
-		return this.context.element.querySelector(selector);
+		return this.context.state.element.querySelector(selector);
 	}
 
 	findAll(selector: string): Element[] {
-		return [...this.context.element.querySelectorAll(selector)];
+		return [...this.context.state.element.querySelectorAll(selector)];
 	}
 
 	get(name: string): Element | undefined {
