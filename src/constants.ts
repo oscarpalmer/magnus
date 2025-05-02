@@ -26,6 +26,11 @@ export const controllerAttributePrefixPattern = /^:/;
 export const dataAttributePattern = /^\w+\-[\w-]+$/;
 
 /**
+ * Pattern to match global event origin
+ */
+export const documentPattern = /^document$/i;
+
+/**
  * - `controller(.identifier).property(:json)`
  * - `[, name, id?, value]`
  */
@@ -42,10 +47,21 @@ export const targetAttributePattern = /^([\w-]+)(?:\.([\w-]+))?:([\w-]+)$/;
 
 export const targetAttributePrefixPattern = /^[\w-]+(?:\.[\w-]+)?:/;
 
+/**
+ * Pattern to match global event origin
+ */
+export const windowPattern = /^window$/i;
+
 //
 
+/**
+ * Input types that should trigger `change`, not `input`
+ */
 export const changeEventTypes = new Set(['checkbox', 'radio']);
 
+/**
+ * Default events for element types
+ */
 export const defaultEvents: Record<string, string> = {
 	A: 'click',
 	BUTTON: 'click',
@@ -57,17 +73,22 @@ export const defaultEvents: Record<string, string> = {
 
 //
 
+/**
+ * Input types that should be ignored
+ */
 export const ignoredInputTypes = new Set([
 	'button',
 	'image',
-	'submit',
 	'reset',
+	'submit',
 ]);
 
-export const parseableInputTypes = new Set([
-	'hidden',
-	'number',
-	'radio',
-	'range',
-	'week',
-]);
+/**
+ * Input types that should be handled as `number`
+ */
+export const numberInputTypes = new Set(['number', 'range']);
+
+/**
+ * Input types that should be parsed
+ */
+export const parseableInputTypes = new Set(['checkbox', 'hidden', 'radio']);

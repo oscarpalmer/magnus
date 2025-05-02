@@ -155,6 +155,7 @@ document.body.innerHTML = `<div
 	<input type="checkbox" io-test.boolean />
 	<input type="number" io-test.number />
 	<input type="text" io-test.text />
+	<input type="submit" io-test.text />
 
 	<select io-test.select>
 		<option value="1">A</option>

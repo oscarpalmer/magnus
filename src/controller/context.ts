@@ -1,5 +1,4 @@
 import type {ControllerConstructor} from '../models';
-import {handlaDataAttributes} from '../observer/attributes';
 import {Actions} from '../store/action.store';
 import {Data} from '../store/data.store';
 import {Targets} from '../store/target.store';
@@ -27,8 +26,6 @@ export class Context {
 		this.targets = new Targets(this);
 
 		this.controller = new creator(this);
-
-		handlaDataAttributes(this);
 
 		this.controller.connect?.();
 	}

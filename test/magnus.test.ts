@@ -60,6 +60,7 @@ test('controller', () =>
 			magnus.remove('not-exists');
 
 			magnus.stop();
+			magnus.stop();
 		}, 250);
 
 		setTimeout(() => {
@@ -74,6 +75,7 @@ test('controller', () =>
 		}, 350);
 
 		setTimeout(() => {
+			magnus.start();
 			magnus.start();
 		}, 400);
 

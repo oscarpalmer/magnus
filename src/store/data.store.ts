@@ -1,11 +1,6 @@
 import {isArrayOrPlainObject} from '@oscarpalmer/atoms/is';
 import type {PlainObject} from '@oscarpalmer/atoms/models';
-import {
-	camelCase,
-	getString,
-	kebabCase,
-	parse,
-} from '@oscarpalmer/atoms/string';
+import {camelCase, getString, parse} from '@oscarpalmer/atoms/string';
 import {dispatch} from '@oscarpalmer/toretto/event';
 import {changeEventTypes} from '../constants';
 import type {Context} from '../controller/context';
@@ -15,28 +10,21 @@ type Value = {
 	stringified: string;
 };
 
-const frames: WeakMap<Context, number> = new WeakMap();
+const frames = new WeakMap<Context, number>();
+const focused = new Set<string>();
+const ignored = new Set<string>();
 
 export class Data {
 	readonly value: PlainObject;
 
 	constructor(context: Context) {
 		const frames: Record<string, number> = {};
-		const prefix = `${context.state.name}-`;
 
 		this.value = new Proxy(
 			{},
 			{
 				deleteProperty(target, property) {
-					return updateProperty(
-						context,
-						prefix,
-						target,
-						property,
-						undefined,
-						'',
-						frames,
-					);
+					return updateProperty(context, target, property, undefined, '', frames);
 				},
 				get(target, property) {
 					return Reflect.get(target, camelCase(String(property)));
@@ -50,15 +38,7 @@ export class Data {
 						return true;
 					}
 
-					return updateProperty(
-						context,
-						prefix,
-						target,
-						name,
-						next,
-						nextAsString,
-						frames,
-					);
+					return updateProperty(context, target, name, next, nextAsString, frames);
 				},
 			},
 		);
@@ -100,11 +80,15 @@ function setElementContents(elements: Element[], value: string): void {
 	}
 }
 
-function setElementValue(element: Element, value: string): void {
+function setElementValue(
+	element: Element,
+	value: string,
+	focused: boolean,
+): void {
 	let event: string | undefined;
 
 	switch (true) {
-		case element === document.activeElement:
+		case element === document.activeElement && !focused:
 			return;
 
 		case element instanceof HTMLInputElement &&
@@ -150,41 +134,59 @@ function setElementValue(element: Element, value: string): void {
 	}
 }
 
-function setElementValues(elements: Element[], value: string): void {
+function setElementValues(
+	elements: Element[],
+	attribute: string,
+	value: string,
+): void {
+	const updatedFocused = focused.delete(attribute);
+
 	const {length} = elements;
 
 	for (let index = 0; index < length; index += 1) {
-		setElementValue(elements[index], value);
+		setElementValue(elements[index], value, updatedFocused);
 	}
 }
 
-function setValue(
-	context: Context,
-	prefix: string,
-	name: string,
-	value: Value,
-): void {
+function setValue(context: Context, property: string, value: Value): void {
 	cancelAnimationFrame(frames.get(context) as never);
 
+	const {element, name} = context.state;
+
+	const attribute = `${name}-${property}`;
+
+	if (element.hasAttribute(attribute)) {
+		ignored.add(attribute);
+
+		element.removeAttribute(attribute);
+	}
+
 	setElementContents(
-		context.targets.getAll(`output.${name}`),
+		context.targets.getAll(`output.${property}`),
 		value.stringified,
 	);
 
-	setElementValues(context.targets.getAll(`input.${name}`), value.stringified);
+	setElementValues(
+		context.targets.getAll(`input.${property}`),
+		attribute,
+		value.stringified,
+	);
 
-	const namedInputs = context.targets.getAll(`input.${name}:json`);
-	const namedOutputs = context.targets.getAll(`output.${name}:json`);
+	const namedInputs = context.targets.getAll(`input.${property}:json`);
+	const namedOutputs = context.targets.getAll(`output.${property}:json`);
 
 	if (namedInputs.length > 0 || namedOutputs.length > 0) {
-		const json = JSON.stringify(
-			value.original,
-			null,
-			+(getComputedStyle(context.state.element)?.tabSize ?? '4'),
-		);
+		const json =
+			value.original == null
+				? ''
+				: JSON.stringify(
+						value.original,
+						null,
+						+(getComputedStyle(element)?.tabSize ?? '4'),
+					);
 
 		setElementContents(namedOutputs, json);
-		setElementValues(namedInputs, json);
+		setElementValues(namedInputs, attribute, json);
 	}
 
 	const inputs = context.targets.getAll('input.:json');
@@ -197,11 +199,11 @@ function setValue(
 				const json = JSON.stringify(
 					context.data.value,
 					null,
-					+(getComputedStyle(context.state.element)?.tabSize ?? '4'),
+					+(getComputedStyle(element)?.tabSize ?? '4'),
 				);
 
 				setElementContents(outputs, json);
-				setElementValues(inputs, json);
+				setElementValues(inputs, attribute, json);
 			}),
 		);
 	}
@@ -212,14 +214,23 @@ export function setValueFromAttribute(
 	name: string,
 	value: string,
 ): void {
-	if (getString(context.data.value[name]) !== value) {
-		context.data.value[name] = value == null ? value : (parse(value) ?? value);
+	const attribute = `${context.state.name}-${name}`;
+
+	if (ignored.has(attribute)) {
+		ignored.delete(attribute);
+
+		return;
+	}
+
+	focused.add(attribute);
+
+	if (getString(context.data.value[name]) !== getString(value)) {
+		context.data.value[name] = parse(value) ?? value;
 	}
 }
 
 function updateProperty(
 	context: Context,
-	prefix: string,
 	target: PlainObject,
 	property: PropertyKey,
 	original: unknown,
@@ -237,7 +248,7 @@ function updateProperty(
 	cancelAnimationFrame(frames[name]);
 
 	frames[name] = requestAnimationFrame(() => {
-		setValue(context, prefix, name, {
+		setValue(context, name, {
 			original,
 			stringified,
 		});

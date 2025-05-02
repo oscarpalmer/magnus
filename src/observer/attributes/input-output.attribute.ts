@@ -1,35 +1,46 @@
-import {parse} from '@oscarpalmer/atoms/string';
+import {isNumerical} from '@oscarpalmer/atoms/is';
+import {camelCase, parse} from '@oscarpalmer/atoms/string';
 import {
 	changeEventTypes,
 	ignoredInputTypes,
 	inputOutputAttributePrefixPattern,
+	numberInputTypes,
 	parseableInputTypes,
 } from '../../constants';
 import type {Context} from '../../controller/context';
 import type {DataType} from '../../models';
 import {replaceData} from '../../store/data.store';
 import {handleActionAttribute} from './action.attribute';
-import {handleTargetAttribute} from './index';
+import {handleTargetAttribute} from './target.attribute';
 
 function getDataType(element: Element): DataType | undefined {
-	switch (true) {
-		case element instanceof HTMLInputElement &&
-			!ignoredInputTypes.has(element.type):
-			return element.type === 'checkbox'
-				? 'boolean'
-				: parseableInputTypes.has(element.type)
-					? 'parseable'
-					: 'string';
-
-		case element instanceof HTMLSelectElement:
-			return 'parseable';
-
-		case element instanceof HTMLTextAreaElement:
-			return 'string';
-
-		default:
-			return undefined;
+	if (element instanceof HTMLSelectElement) {
+		return 'parseable';
 	}
+
+	if (element instanceof HTMLTextAreaElement) {
+		return 'string';
+	}
+
+	if (!(element instanceof HTMLInputElement)) {
+		return;
+	}
+
+	switch (true) {
+		case element.type === 'checkbox' && !element.hasAttribute('value'):
+			return 'boolean';
+
+		case ignoredInputTypes.has(element.type):
+			return;
+
+		case numberInputTypes.has(element.type):
+			return 'number';
+
+		case parseableInputTypes.has(element.type):
+			return 'parseable';
+	}
+
+	return 'string';
 }
 
 function getEventType(
@@ -46,6 +57,21 @@ function getEventType(
 	return 'input';
 }
 
+function getInputValue(
+	type: DataType,
+	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
+): unknown {
+	if (type === 'boolean') {
+		return (element as HTMLInputElement).checked;
+	}
+
+	if (type === 'number') {
+		return isNumerical(element.value) ? Number(element.value) : undefined;
+	}
+
+	return parse(element.value) ?? element.value;
+}
+
 function handleDataValue(
 	type: DataType,
 	context: Context,
@@ -59,12 +85,10 @@ function handleDataValue(
 		return;
 	}
 
-	const value = parse(element.value);
-
 	if (name.length === 0 && element.value.trim().length > 0) {
-		replaceData(context, value);
+		replaceData(context, parse(element.value));
 	} else {
-		setDataValue(type, context, element, name, value);
+		setDataValue(type, context, element, name);
 	}
 }
 
@@ -79,7 +103,7 @@ function handleInputAttribute(
 	const event = getEventType(element as never);
 	const unprefixed = name.replace(inputOutputAttributePrefixPattern, '');
 	const isJson = unprefixed.endsWith(':json');
-	const property = unprefixed.replace(/:json$/, '');
+	const property = camelCase(unprefixed.replace(/:json$/, ''));
 
 	handleActionAttribute(
 		context,
@@ -135,17 +159,13 @@ function setDataValue(
 	name: string,
 	value?: unknown,
 ): void {
-	let actual: unknown;
-
-	if (value != null) {
-		actual = value;
-	} else if (type === 'boolean') {
-		actual = (element as HTMLInputElement).checked;
-	} else if (type === 'parseable') {
-		actual = parse(element.value);
-	} else {
-		actual = element.value;
+	if (
+		!(
+			element instanceof HTMLInputElement &&
+			element.type === 'radio' &&
+			!element.checked
+		)
+	) {
+		context.data.value[name] = value ?? getInputValue(type, element);
 	}
-
-	context.data.value[name] = actual;
 }

@@ -2,6 +2,7 @@ import {
 	actionAttributeNamePattern,
 	actionAttributeValuePattern,
 	controllerAttributePattern,
+	dataAttributePattern,
 	inputOutputAttributePattern,
 	targetAttributePattern,
 } from '../constants';
@@ -14,6 +15,9 @@ export function getAttributeType(name: string): AttributeType | undefined {
 
 		case controllerAttributePattern.test(name):
 			return 'controller';
+
+		case dataAttributePattern.test(name):
+			return 'data';
 
 		case inputOutputAttributePattern.test(name):
 			return 'io';

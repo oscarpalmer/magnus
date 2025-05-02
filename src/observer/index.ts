@@ -1,29 +1,27 @@
 import {debounce} from '@oscarpalmer/atoms/function';
 import {getAttributeType} from '../helpers/attribute';
 import {handleAttributeChanges} from './attributes/changes.attribute';
+import {handleDataAttribute} from './attributes';
 
 export class Observer {
 	private readonly observer: MutationObserver;
 
 	constructor() {
 		this.observer = new MutationObserver(entries => {
-			if (!active) {
-				return;
-			}
-
 			const {length} = entries;
 
 			for (let index = 0; index < length; index += 1) {
 				const entry = entries[index];
 
-				if (entry.type === 'childList') {
+				if (entry.type === 'attributes') {
+					handleAttribute(
+						entry.target as Element,
+						entry.attributeName as string,
+						entry.oldValue,
+					);
+				} else {
 					handleNodes(entry.addedNodes);
 					handleNodes(entry.removedNodes);
-				} else if (
-					entry.type === 'attributes' &&
-					entry.target instanceof Element
-				) {
-					handleAttribute(entry.target, entry.attributeName as string, entry.oldValue);
 				}
 			}
 		});
@@ -69,7 +67,9 @@ function handleAttribute(
 ): void {
 	const type = getAttributeType(name);
 
-	if (type != null) {
+	if (type === 'data') {
+		handleDataAttribute(element, name);
+	} else if (type != null) {
 		handleAttributeChanges(type, element, name, value);
 	}
 }
@@ -100,9 +100,7 @@ function handleNodes(nodes: NodeList | Node[]): void {
 }
 
 const debouncer = debounce(() => {
-	if (active && document?.body != null) {
-		handleNodes([document.body]);
-	}
+	handleNodes([document.body]);
 }, 25);
 
 const options: MutationObserverInit = {

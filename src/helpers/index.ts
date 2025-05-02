@@ -1,3 +1,4 @@
+import {documentPattern, windowPattern} from '../constants';
 import {controllers} from '../store/controller.store';
 
 export function findTarget(
@@ -8,10 +9,10 @@ export function findTarget(
 	const noId = id == null;
 
 	switch (true) {
-		case noId && /^document$/i.test(name):
+		case noId && documentPattern.test(name):
 			return document;
 
-		case noId && /^window$/i.test(name):
+		case noId && windowPattern.test(name):
 			return window;
 
 		default:

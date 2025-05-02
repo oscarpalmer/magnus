@@ -29,6 +29,7 @@ export default defineConfig({
 						'@oscarpalmer/atoms/string',
 						'@oscarpalmer/toretto/event',
 						'@oscarpalmer/toretto/find',
+						'@oscarpalmer/toretto/is',
 					],
 			input: Object.fromEntries(files),
 			output: {

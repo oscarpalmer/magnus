@@ -1,15 +1,12 @@
-import {
-	controllerAttributePrefixPattern,
-	dataAttributePattern,
-	targetAttributePrefixPattern,
-} from '../../constants';
-import type {Context} from '../../controller/context';
+import {camelCase} from '@oscarpalmer/atoms/string';
+import {controllerAttributePrefixPattern} from '../../constants';
 import {parseAttribute} from '../../helpers/attribute';
 import type {AttributeHandleCallback, AttributeType} from '../../models';
 import {controllers} from '../../store/controller.store';
 import {setValueFromAttribute} from '../../store/data.store';
 import {handleActionAttribute} from './action.attribute';
 import {handleInputOutputAttribute} from './input-output.attribute';
+import {handleTargetAttribute} from './target.attribute';
 
 export function handleContextualAttribute(
 	type: AttributeType,
@@ -58,74 +55,23 @@ export function handleControllerAttribute(
 	}
 }
 
-function handleDataAttribute(
-	context: Context,
-	element: Element,
-	property: string,
-	value: string,
-): void {
-	setValueFromAttribute(context, property, value);
-
-	element.removeAttribute(`${context.state.name}-${property}`);
-}
-
-export function handlaDataAttributes(context: Context): void {
-	const {element, name} = context.state;
-
-	const pattern = new RegExp(`^${name}-`);
-
-	const attributes = [...element.attributes];
-	const {length} = attributes;
+export function handleDataAttribute(element: Element, name: string): void {
+	const parts = name.split('-');
+	const length = parts.length - 1;
 
 	for (let index = 0; index < length; index += 1) {
-		const attribute = attributes[index];
+		const controller = parts.slice(0, index + 1).join('-');
+		const context = controllers.find(element, controller);
 
-		if (
-			pattern.test(attribute.name) &&
-			dataAttributePattern.test(attribute.name)
-		) {
-			handleDataAttribute(
+		if (context != null) {
+			setValueFromAttribute(
 				context,
-				element,
-				attribute.name.replace(pattern, ''),
-				attribute.value,
+				camelCase(parts.slice(index + 1).join('-')),
+				element.getAttribute(name) ?? '',
 			);
+
+			return;
 		}
-	}
-}
-
-export function handleTargetAttribute(
-	context: Context,
-	element: Element,
-	name: string,
-	_: string,
-	added: boolean,
-): void;
-
-export function handleTargetAttribute(
-	context: Context,
-	element: Element,
-	name: string,
-	_: string,
-	added: boolean,
-	removePrefix: boolean,
-): void;
-
-export function handleTargetAttribute(
-	context: Context,
-	element: Element,
-	name: string,
-	_: string,
-	added: boolean,
-	unprefix?: boolean,
-): void {
-	const normalized =
-		(unprefix ?? true) ? name.replace(targetAttributePrefixPattern, '') : name;
-
-	if (added) {
-		context.targets.add(normalized, element);
-	} else {
-		context.targets.remove(normalized, element);
 	}
 }
 

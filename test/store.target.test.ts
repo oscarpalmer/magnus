@@ -5,28 +5,31 @@ import {Targets} from '../src/store/target.store';
 
 class TargetsController extends Controller {}
 
-test('target store', () => {
-	const context = new Context('targets', document.body, TargetsController);
-	const store = new Targets(context);
+test('target store', () =>
+	new Promise<void>(done => {
+		const context = new Context('targets', document.body, TargetsController);
+		const store = new Targets(context);
 
-	const one = document.createElement('div');
-	const two = document.createElement('div');
+		const one = document.createElement('div');
+		const two = document.createElement('div');
 
-	expect(store.has('items')).toBe(false);
+		expect(store.has('items')).toBe(false);
 
-	store.add('item', one);
+		store.add('item', one);
 
-	expect(store.has('item')).toBe(true);
+		expect(store.has('item')).toBe(true);
 
-	store.add('item', two);
+		store.add('item', two);
 
-	expect(store.has('item')).toBe(true);
+		expect(store.has('item')).toBe(true);
 
-	store.remove('item', one);
+		store.remove('item', one);
 
-	expect(store.has('item')).toBe(true);
+		expect(store.has('item')).toBe(true);
 
-	store.remove('item', two);
+		store.remove('item', two);
 
-	expect(store.has('item')).toBe(false);
-});
+		expect(store.has('item')).toBe(false);
+
+		done();
+	}));

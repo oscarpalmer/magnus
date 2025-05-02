@@ -2,77 +2,72 @@ import type {ActionParameters} from '../models';
 
 export class Action {
 	readonly callback: (event: Event) => void;
+	readonly controller: AbortController;
 	readonly options: AddEventListenerOptions;
 	readonly targets = new Set<EventTarget>();
 	readonly type: string;
 
 	constructor(parameters: ActionParameters) {
 		this.callback = parameters.callback;
+		this.controller = new AbortController();
 		this.options = parameters.options;
 		this.type = parameters.type;
 	}
 }
 
 export class Actions {
-		private readonly store = new Map<string, Action>();
+	private readonly store = new Map<string, Action>();
 
-		add(name: string, target: EventTarget): void {
-			const action = this.store.get(name);
+	add(name: string, target: EventTarget): void {
+		const action = this.store.get(name);
 
-			if (action != null) {
-				addActionTarget(action, target);
-			}
-		}
-
-		clear(): void {
-			const actions = [...this.store.entries()];
-			const actionsLength = actions.length;
-
-			for (let actionIndex = 0; actionIndex < actionsLength; actionIndex += 1) {
-				const [name, action] = actions[actionIndex];
-				const targets = [...action.targets];
-				const targetsLength = targets.length;
-
-				for (
-					let targetIndex = 0;
-					targetIndex < targetsLength;
-					targetIndex += 1
-				) {
-					removeActionTarget(this.store, name, action, targets[targetIndex]);
-				}
-			}
-
-			this.store.clear();
-		}
-
-		create(parameters: ActionParameters, target: EventTarget): void {
-			if (!this.store.has(parameters.name)) {
-				const action = new Action(parameters);
-
-				addActionTarget(action, target);
-
-				this.store.set(parameters.name, action);
-			}
-		}
-
-		has(name: string): boolean {
-			return this.store.has(name);
-		}
-
-		remove(name: string, target: EventTarget): void {
-			const action = this.store.get(name);
-
-			if (action != null) {
-				removeActionTarget(this.store, name, action, target);
-			}
+		if (action != null) {
+			addActionTarget(action, target);
 		}
 	}
+
+	clear(): void {
+		const actions = [...this.store.values()];
+		const {length} = actions;
+
+		for (let index = 0; index < length; index += 1) {
+			actions[index].controller.abort();
+		}
+
+		this.store.clear();
+	}
+
+	create(parameters: ActionParameters, target: EventTarget): void {
+		if (!this.store.has(parameters.name)) {
+			const action = new Action(parameters);
+
+			addActionTarget(action, target);
+
+			this.store.set(parameters.name, action);
+		}
+	}
+
+	has(name: string): boolean {
+		return this.store.has(name);
+	}
+
+	remove(name: string, target: EventTarget): void {
+		const action = this.store.get(name);
+
+		if (action != null) {
+			removeActionTarget(this.store, name, action, target);
+		}
+	}
+}
 
 function addActionTarget(action: Action, target: EventTarget): void {
 	if (!action.targets.has(target)) {
 		action.targets.add(target);
 
-		target.addEventListener(action.type, action.callback, action.options);
+		target.addEventListener(action.type, action.callback, {
+			...action.options,
+			signal: action.controller.signal,
+		});
 	}
 }
 

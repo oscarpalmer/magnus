@@ -7,43 +7,43 @@ import {
 import type {EventParameters} from '../models';
 
 export function getEventParameters(
-		element: Element,
-		name: string,
-		value: string,
-	): EventParameters | undefined {
-		const nameMatches = actionAttributeNamePattern.exec(name) as RegExpExecArray;
-		const valueMatches = actionAttributeValuePattern.exec(value);
+	element: Element,
+	name: string,
+	value: string,
+): EventParameters | undefined {
+	const nameMatches = actionAttributeNamePattern.exec(name) as RegExpExecArray;
+	const valueMatches = actionAttributeValuePattern.exec(value);
 
-		let external: string | undefined;
-		let identifier: string | undefined;
-		let method: string | undefined;
-		let options: string | undefined;
-		let type: string | undefined;
+	let external: string | undefined;
+	let identifier: string | undefined;
+	let method: string | undefined;
+	let options: string | undefined;
+	let type: string | undefined;
 
-		if (valueMatches == null) {
-			[, , , method, options] = nameMatches;
-		} else {
-			[, external, identifier, type] = nameMatches;
-			[, , , method, options] = valueMatches;
-		}
-
-		type = type ?? getType(element);
-
-		if (type != null) {
-			return {
-				callback: camelCase(method),
-				external:
-					external == null
-						? undefined
-						: {
-								identifier,
-								name: external,
-							},
-				options: getOptions(options ?? ''),
-				type: camelCase(type),
-			};
-		}
+	if (valueMatches == null) {
+		[, , , method, options] = nameMatches;
+	} else {
+		[, external, identifier, type] = nameMatches;
+		[, , , method, options] = valueMatches;
 	}
+
+	type = type ?? getType(element);
+
+	if (type != null) {
+		return {
+			callback: camelCase(method),
+			external:
+				external == null
+					? undefined
+					: {
+							identifier,
+							name: external,
+						},
+			options: getOptions(options ?? ''),
+			type: camelCase(type),
+		};
+	}
+}
 
 function getOptions(options: string): AddEventListenerOptions {
 	const items = options.toLowerCase().split(':');

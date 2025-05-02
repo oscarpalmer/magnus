@@ -59,7 +59,7 @@ test('data attribute', () =>
 			expect(controller.data).toEqual({
 				check: true,
 				number: 123,
-				// radio: 'alpha',
+				radio: 'alpha',
 				select: 1,
 				text: 'Hello, world!',
 			});
@@ -67,21 +67,19 @@ test('data attribute', () =>
 			expect(numberJsonOutput.textContent).toBe('123');
 			expect(numberRawOutput.textContent).toBe('123');
 			expect(allOutput.textContent).toBe(JSON.stringify(controller.data));
-		}, 125);
 
-		setTimeout(() => {
 			controller.data.check = false;
 			controller.data.number = 123;
 			controller.data.radio = 'omega';
 			controller.data.select = 2;
 			controller.data.text = 'Goodbye, world!';
-		}, 250);
+		}, 125);
 
 		setTimeout(() => {
 			expect(controller.data).toEqual({
 				check: false,
 				number: 123,
-				// radio: 'omega',
+				radio: 'omega',
 				select: 2,
 				text: 'Goodbye, world!',
 			});
@@ -89,9 +87,7 @@ test('data attribute', () =>
 			expect(numberJsonOutput.textContent).toBe('123');
 			expect(numberRawOutput.textContent).toBe('123');
 			expect(allOutput.textContent).toBe(JSON.stringify(controller.data));
-		}, 375);
 
-		setTimeout(() => {
 			controller.data = {
 				check: true,
 				number: 456,
@@ -99,13 +95,13 @@ test('data attribute', () =>
 				select: 0,
 				text: 'Hello, world!',
 			};
-		}, 500);
+		}, 250);
 
 		setTimeout(() => {
 			expect(controller.data).toEqual({
 				check: true,
 				number: 456,
-				// radio: 'alpha',
+				radio: 'alpha',
 				select: 0,
 				text: 'Hello, world!',
 			});
@@ -113,22 +109,19 @@ test('data attribute', () =>
 			expect(numberJsonOutput.textContent).toBe('456');
 			expect(numberRawOutput.textContent).toBe('456');
 			expect(allOutput.textContent).toBe(JSON.stringify(controller.data));
-		}, 625);
 
-		setTimeout(() => {
 			controller.data = {
 				ignored: null,
 				number: 789,
 				state: 0,
 				text: 'Spring cleaning :)',
 			};
-		}, 750);
+		}, 375);
 
 		setTimeout(() => {
 			expect(controller.data).toEqual({
 				check: false,
 				number: 789,
-				// radio: 'alpha',
 				select: 0,
 				state: 0,
 				text: 'Spring cleaning :)',
@@ -137,16 +130,13 @@ test('data attribute', () =>
 			expect(numberJsonOutput.textContent).toBe('789');
 			expect(numberRawOutput.textContent).toBe('789');
 			expect(allOutput.textContent).toBe(JSON.stringify(controller.data));
-		}, 875);
 
-		setTimeout(() => {
 			controller.data.number = undefined;
-		}, 1000);
+		}, 500);
 
 		setTimeout(() => {
 			expect(controller.data).toEqual({
 				check: false,
-				// radio: 'alpha',
 				select: 0,
 				state: 0,
 				text: 'Spring cleaning :)',
@@ -156,13 +146,44 @@ test('data attribute', () =>
 			expect(numberRawOutput.textContent).toBe('');
 			expect(allOutput.textContent).toBe(JSON.stringify(controller.data));
 
-			controller.data = null;
+			controller.element.setAttribute('d-check', 'true');
+			controller.element.setAttribute('d-text', 'Hello, again!');
 		}, 1125);
 
 		setTimeout(() => {
 			expect(controller.data).toEqual({
+				check: true,
+				select: 0,
+				state: 0,
+				text: 'Hello, again!',
+			});
+
+			expect(numberJsonOutput.textContent).toBe('');
+			expect(numberRawOutput.textContent).toBe('');
+			expect(allOutput.textContent).toBe(JSON.stringify(controller.data));
+
+			controller.element.setAttribute('d-check', '');
+			controller.element.setAttribute('d-text', 'Hello, again!');
+		}, 1250);
+
+		setTimeout(() => {
+			expect(controller.data).toEqual({
 				check: false,
-				// radio: 'alpha',
+				select: 0,
+				state: 0,
+				text: 'Hello, again!',
+			});
+
+			expect(numberJsonOutput.textContent).toBe('');
+			expect(numberRawOutput.textContent).toBe('');
+			expect(allOutput.textContent).toBe(JSON.stringify(controller.data));
+
+			controller.data = null;
+		}, 1375);
+
+		setTimeout(() => {
+			expect(controller.data).toEqual({
+				check: false,
 				select: 0,
 				text: '',
 			});
@@ -172,5 +193,5 @@ test('data attribute', () =>
 			expect(allOutput.textContent).toBe(JSON.stringify(controller.data));
 
 			done();
-		}, 1250);
+		}, 1500);
 	}));

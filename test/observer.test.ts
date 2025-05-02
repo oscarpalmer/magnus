@@ -22,10 +22,8 @@ test('observer', () =>
 		magnus.add('observer-test', ObserverController);
 
 		setTimeout(() => {
-			setTimeout(() => {
-				expect(controller).toBeInstanceOf(ObserverController);
+			expect(controller).toBeInstanceOf(ObserverController);
 
-				done();
-			}, 25);
-		}, 25);
+			done();
+		}, 1000);
 	}));

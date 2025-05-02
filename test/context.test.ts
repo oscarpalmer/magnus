@@ -8,15 +8,18 @@ import {Targets} from '../src/store/target.store';
 
 class TestController extends Controller {}
 
-test('context', () => {
-	const element = document.createElement('div');
-	const context = new Context('test', element, TestController);
+test('context', () =>
+	new Promise<void>(done => {
+		const element = document.createElement('div');
+		const context = new Context('test', element, TestController);
 
-	expect(context.actions).toBeInstanceOf(Actions);
-	expect(context.controller).toBeInstanceOf(TestController);
-	expect(context.data).toBeInstanceOf(Data);
-	expect(context.state.element).toBe(element);
-	expect(context.events).toBeInstanceOf(Events);
-	expect(context.state.name).toBe('test');
-	expect(context.targets).toBeInstanceOf(Targets);
-});
+		expect(context.actions).toBeInstanceOf(Actions);
+		expect(context.controller).toBeInstanceOf(TestController);
+		expect(context.data).toBeInstanceOf(Data);
+		expect(context.state.element).toBe(element);
+		expect(context.events).toBeInstanceOf(Events);
+		expect(context.state.name).toBe('test');
+		expect(context.targets).toBeInstanceOf(Targets);
+
+		done();
+	}));
