@@ -46,6 +46,15 @@ export type AttributeType = 'action' | 'controller' | 'data' | 'io' | 'target';
 
 export type ControllerConstructor = new (context: Context) => Controller;
 
+export type ControllerDataTypes = Record<string, ControllerDataType>;
+
+export type ControllerDataType =
+	| 'array'
+	| 'boolean'
+	| 'number'
+	| 'object'
+	| 'string';
+
 //
 
 export type DataType = 'boolean' | 'number' | 'parseable' | 'string';

@@ -1,9 +1,10 @@
-import {isArrayOrPlainObject} from '@oscarpalmer/atoms/is';
-import type {PlainObject} from '@oscarpalmer/atoms/models';
-import {camelCase, getString, parse} from '@oscarpalmer/atoms/string';
-import {dispatch} from '@oscarpalmer/toretto/event';
-import {changeEventTypes} from '../constants';
-import type {Context} from '../controller/context';
+import { isArrayOrPlainObject } from '@oscarpalmer/atoms/is';
+import type { PlainObject } from '@oscarpalmer/atoms/models';
+import { camelCase, getString, parse } from '@oscarpalmer/atoms/string';
+import { dispatch } from '@oscarpalmer/toretto/event';
+import { changeEventTypes } from '../constants';
+import type { Context } from '../controller/context';
+import { ControllerDataType, ControllerDataTypes } from '../models';
 
 type Value = {
 	original: unknown;
@@ -17,7 +18,7 @@ const ignored = new Set<string>();
 export class Data {
 	readonly value: PlainObject;
 
-	constructor(context: Context) {
+	constructor(context: Context, readonly types: ControllerDataTypes) {
 		const frames: Record<string, number> = {};
 
 		this.value = new Proxy(
@@ -42,6 +43,26 @@ export class Data {
 				},
 			},
 		);
+	}
+}
+
+export function getDataValue(type: ControllerDataType, original: string): unknown {
+	switch (type) {
+		case 'array':
+			return [];
+
+		case 'boolean':
+			return /^true$/i.test(original);
+
+		case 'number':
+			const asNumber = Number.parseFloat(original);
+			return Number.isNaN(asNumber) ? undefined : asNumber;
+
+			case 'object':
+				return {};
+
+				default:
+					return original;
 	}
 }
 
@@ -225,7 +246,7 @@ export function setValueFromAttribute(
 	focused.add(attribute);
 
 	if (getString(context.data.value[name]) !== getString(value)) {
-		context.data.value[name] = parse(value) ?? value;
+		context.data.value[name] = getDataValue(context.data.types[name], value);
 	}
 }
 

@@ -1,5 +1,5 @@
 import type {PlainObject} from '@oscarpalmer/atoms/models';
-import type {ReadonlyTargets} from '../models';
+import type {ControllerDataTypes, ReadonlyTargets} from '../models';
 import {replaceData} from '../store/data.store';
 import type {Context} from './context';
 import type {Events} from './events';
@@ -8,6 +8,8 @@ import type {Events} from './events';
  * Base controller class
  */
 export abstract class Controller<Data extends PlainObject = PlainObject> {
+	static readonly types: ControllerDataTypes;
+
 	protected readonly context: Context;
 
 	/**

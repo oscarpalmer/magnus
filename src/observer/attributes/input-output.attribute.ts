@@ -1,46 +1,26 @@
-import {isNumerical} from '@oscarpalmer/atoms/is';
 import {camelCase, parse} from '@oscarpalmer/atoms/string';
 import {
 	changeEventTypes,
 	ignoredInputTypes,
 	inputOutputAttributePrefixPattern,
-	numberInputTypes,
-	parseableInputTypes,
 } from '../../constants';
 import type {Context} from '../../controller/context';
-import type {DataType} from '../../models';
-import {replaceData} from '../../store/data.store';
+import {getDataValue, replaceData} from '../../store/data.store';
 import {handleActionAttribute} from './action.attribute';
 import {handleTargetAttribute} from './target.attribute';
+import { ControllerDataType } from '../../models';
 
-function getDataType(element: Element): DataType | undefined {
-	if (element instanceof HTMLSelectElement) {
-		return 'parseable';
-	}
-
-	if (element instanceof HTMLTextAreaElement) {
+function getDataType(element: Element): string | undefined {
+	if (element instanceof HTMLSelectElement || element instanceof HTMLTextAreaElement) {
 		return 'string';
 	}
 
-	if (!(element instanceof HTMLInputElement)) {
-		return;
-	}
-
-	switch (true) {
-		case element.type === 'checkbox' && !element.hasAttribute('value'):
-			return 'boolean';
-
-		case ignoredInputTypes.has(element.type):
-			return;
-
-		case numberInputTypes.has(element.type):
-			return 'number';
-
-		case parseableInputTypes.has(element.type):
-			return 'parseable';
-	}
-
-	return 'string';
+	return element instanceof HTMLInputElement &&
+		!ignoredInputTypes.has(element.type)
+		? element.type === 'checkbox'
+			? 'boolean'
+			: 'string'
+		: undefined;
 }
 
 function getEventType(
@@ -57,23 +37,8 @@ function getEventType(
 	return 'input';
 }
 
-function getInputValue(
-	type: DataType,
-	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
-): unknown {
-	if (type === 'boolean') {
-		return (element as HTMLInputElement).checked;
-	}
-
-	if (type === 'number') {
-		return isNumerical(element.value) ? Number(element.value) : undefined;
-	}
-
-	return parse(element.value) ?? element.value;
-}
-
 function handleDataValue(
-	type: DataType,
+	type: string,
 	context: Context,
 	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
 	name: string,
@@ -95,7 +60,7 @@ function handleDataValue(
 function handleInputAttribute(
 	context: Context,
 	element: Element,
-	type: DataType,
+	type: string,
 	name: string,
 	value: string,
 	added: boolean,
@@ -153,11 +118,11 @@ export function handleInputOutputAttribute(
 }
 
 function setDataValue(
-	type: DataType,
+	type: string,
 	context: Context,
 	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
 	name: string,
-	value?: unknown,
+	value?: string,
 ): void {
 	if (
 		!(
@@ -166,6 +131,9 @@ function setDataValue(
 			!element.checked
 		)
 	) {
-		context.data.value[name] = value ?? getInputValue(type, element);
+		context.data.value[name] =
+			type === 'boolean'
+				? (element as HTMLInputElement).checked
+				: getDataValue(context.data.types[name], value ?? element.value);
 	}
 }
