@@ -1,6 +1,3 @@
+import magnus_default from "./magnus.js";
 import { Controller } from "./controller/index.js";
-import { default as default2 } from "./magnus.js";
-export {
-  Controller,
-  default2 as magnus
-};
+export { Controller, magnus_default as magnus };

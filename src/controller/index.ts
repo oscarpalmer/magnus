@@ -67,4 +67,9 @@ export abstract class Controller<Data extends PlainObject = PlainObject> {
 	 * Called when the controller is disconnected
 	 */
 	disconnect(): void {}
+
+	/**
+	 * Called when a data value has changed
+	 */
+	valueChanged(name: string, value: unknown): void {}
 }

@@ -1,6 +1,10 @@
 import type { ControllerConstructor } from './models';
 export declare class Magnus {
     /**
+     * Is Magnus active?
+     */
+    get active(): boolean;
+    /**
      * Adds a named controller to observe
      */
     add(name: string, ctor: ControllerConstructor): void;

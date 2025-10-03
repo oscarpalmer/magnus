@@ -16,7 +16,7 @@ export default defineConfig({
 	build: {
 		lib: {
 			entry: [],
-			formats: watch ? ['es'] : ['cjs', 'es'],
+			formats: ['es'],
 		},
 		minify: false,
 		outDir: './dist',

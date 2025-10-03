@@ -228,6 +228,8 @@ function setValue(context: Context, property: string, value: Value): void {
 			}),
 		);
 	}
+
+	context.controller.valueChanged(property, value.original);
 }
 
 export function setValueFromAttribute(
@@ -245,7 +247,7 @@ export function setValueFromAttribute(
 
 	focused.add(attribute);
 
-	if (getString(context.data.value[name]) !== getString(value)) {
+	if (context.data.value[name] == null || (getString(context.data.value[name]) !== getString(value))) {
 		context.data.value[name] = getDataValue(context.data.types[name], value);
 	}
 }

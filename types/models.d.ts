@@ -21,9 +21,11 @@ export type AttributeHandleParameters = {
     element: Element;
     value: string;
 };
-export type AttributeType = 'action' | 'controller' | 'input-output' | 'target';
+export type AttributeType = 'action' | 'controller' | 'data' | 'io' | 'target';
 export type ControllerConstructor = new (context: Context) => Controller;
-export type DataType = 'boolean' | 'parseable' | 'string';
+export type ControllerDataTypes = Record<string, ControllerDataType>;
+export type ControllerDataType = 'array' | 'boolean' | 'number' | 'object' | 'string';
+export type DataType = 'boolean' | 'number' | 'parseable' | 'string';
 export type EventParameters = {
     callback: string;
     external?: EventExternal;

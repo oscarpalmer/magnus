@@ -4,36 +4,29 @@
 		"url": "https://oscarpalmer.se"
 	},
 	"dependencies": {
-		"@oscarpalmer/atoms": "^0.107",
-		"@oscarpalmer/toretto": "^0.20"
+		"@oscarpalmer/atoms": "^0.112",
+		"@oscarpalmer/toretto": "^0.23"
 	},
 	"description": "A JavaScript framework for developers who like HTML.",
 	"devDependencies": {
 		"@biomejs/biome": "^2.2",
-		"@oscarpalmer/oui": "0.17.0",
+		"@oscarpalmer/oui": "^0.17",
 		"@rollup/plugin-node-resolve": "^16",
 		"@rollup/plugin-typescript": "^12.1",
-		"@types/node": "^24.3",
+		"@types/node": "^24.6",
 		"@vitest/coverage-istanbul": "^3.2",
-		"dts-bundle-generator": "^9.5",
-		"glob": "^11",
-		"jsdom": "^26.1",
-		"rollup": "^4.50.0",
+		"jsdom": "^27",
+		"rollup": "^4.52",
 		"tslib": "^2.8",
 		"typescript": "^5.9",
 		"vite": "npm:rolldown-vite@latest",
 		"vitest": "^3.2"
 	},
 	"exports": {
+		"./package.json": "./package.json",
 		".": {
-			"import": {
-				"types": "./types/index.d.ts",
-				"default": "./dist/index.js"
-			},
-			"require": {
-				"types": "./types/index.d.cts",
-				"default": "./dist/index.cjs"
-			}
+			"types": "./types/index.d.ts",
+			"default": "./dist/index.js"
 		}
 	},
 	"files": [
@@ -49,7 +42,6 @@
 		"stimulusjs"
 	],
 	"license": "MIT",
-	"main": "dist/index.cjs",
 	"module": "dist/index.js",
 	"name": "@oscarpalmer/magnus",
 	"repository": {
@@ -58,12 +50,11 @@
 	},
 	"scripts": {
 		"build": "npm run clean && npm run compile",
-		"compile": "npx vite build && npm run rollup:build && npm run types",
+		"compile": "npx vite build && npm run rollup:build && npx tsc",
 		"clean": "rm -rf ./dist && rm -rf ./types && rm -f ./tsconfig.tsbuildinfo",
 		"rollup:build": "npx rollup -c",
 		"rollup:watch": "npx rollup -c --watch",
 		"test": "npx vitest --coverage",
-		"types": "npx tsc && npx dts-bundle-generator --config ./dts.config.cts --silent",
 		"watch": "npx vite build --watch"
 	},
 	"type": "module",

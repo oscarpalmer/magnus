@@ -1,7 +1,6 @@
 import { Context } from '../controller/context';
 import type { ControllerConstructor } from '../models';
 declare class Controllers {
-    private readonly stored;
     add(name: string, element: Element): void;
     create(name: string, ctor: ControllerConstructor): void;
     find(origin: Element, name: string, id?: string): Context | undefined;

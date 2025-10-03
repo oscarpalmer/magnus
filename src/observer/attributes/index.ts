@@ -75,6 +75,8 @@ export function handleDataAttribute(element: Element, name: string): void {
 	}
 }
 
+//
+
 const callbacks: Partial<Record<AttributeType, AttributeHandleCallback>> = {
 	action: handleActionAttribute,
 	io: handleInputOutputAttribute,

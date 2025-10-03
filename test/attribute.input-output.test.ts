@@ -15,6 +15,15 @@ type Values = {
 };
 
 class InputOutputController extends Controller<Values> {
+	static readonly types = {
+		boolean: 'boolean',
+		nested: 'object',
+		number: 'number',
+		select: 'number',
+		text: 'string',
+		textarea: 'string',
+	} as never;
+
 	connect() {
 		setTimeout(() => {
 			const checkbox = this.targets.find<HTMLInputElement>(

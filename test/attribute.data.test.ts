@@ -1,7 +1,23 @@
 import {afterAll, expect, test} from 'vitest';
 import {Controller, magnus} from '../src';
 
-class DataController extends Controller {
+type Data = {
+	check: boolean;
+	number: number;
+	radio: string;
+	select: number;
+	text: string;
+};
+
+class DataController extends Controller<Data> {
+	static readonly types = {
+		check: 'boolean',
+		number: 'number',
+		radio: 'string',
+		select: 'number',
+		text: 'string',
+	} as never;
+
 	connect(): void {
 		controller = this;
 
@@ -115,7 +131,7 @@ test('data attribute', () =>
 				number: 789,
 				state: 0,
 				text: 'Spring cleaning :)',
-			};
+			} as never;
 		}, 375);
 
 		setTimeout(() => {
@@ -131,7 +147,7 @@ test('data attribute', () =>
 			expect(numberRawOutput.textContent).toBe('789');
 			expect(allOutput.textContent).toBe(JSON.stringify(controller.data));
 
-			controller.data.number = undefined;
+			controller.data.number = undefined as never;
 		}, 500);
 
 		setTimeout(() => {

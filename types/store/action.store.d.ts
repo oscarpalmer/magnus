@@ -1,6 +1,7 @@
 import type { ActionParameters } from '../models';
 export declare class Action {
     readonly callback: (event: Event) => void;
+    readonly controller: AbortController;
     readonly options: AddEventListenerOptions;
     readonly targets: Set<EventTarget>;
     readonly type: string;

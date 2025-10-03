@@ -1,11 +1,12 @@
 import type { PlainObject } from '@oscarpalmer/atoms/models';
-import type { ReadonlyTargets } from '../models';
+import type { ControllerDataTypes, ReadonlyTargets } from '../models';
 import type { Context } from './context';
 import type { Events } from './events';
 /**
  * Base controller class
  */
 export declare abstract class Controller<Data extends PlainObject = PlainObject> {
+    static readonly types: ControllerDataTypes;
     protected readonly context: Context;
     /**
      * Get the controller's data
@@ -40,4 +41,8 @@ export declare abstract class Controller<Data extends PlainObject = PlainObject>
      * Called when the controller is disconnected
      */
     disconnect(): void;
+    /**
+     * Called when a data value has changed
+     */
+    valueChanged(name: string, value: unknown): void;
 }
