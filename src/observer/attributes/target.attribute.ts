@@ -1,33 +1,25 @@
-import {targetAttributePrefixPattern} from '../../constants';
-import type {Context} from '../../controller/context';
+import {EXPRESSION_TARGET_ATTRIBUTE_PREFIX} from '../../constants';
+import type {AttributeHandleCallbackParameters} from '../../models';
 
 export function handleTargetAttribute(
-	context: Context,
-	element: Element,
-	name: string,
-	_: string,
-	added: boolean,
+	parameters: AttributeHandleCallbackParameters,
 ): void;
 
 export function handleTargetAttribute(
-	context: Context,
-	element: Element,
-	name: string,
-	_: string,
-	added: boolean,
+	parameters: AttributeHandleCallbackParameters,
 	removePrefix: boolean,
 ): void;
 
 export function handleTargetAttribute(
-	context: Context,
-	element: Element,
-	name: string,
-	_: string,
-	added: boolean,
+	parameters: AttributeHandleCallbackParameters,
 	unprefix?: boolean,
 ): void {
+	const {added, context, element, name} = parameters;
+
 	const normalized =
-		(unprefix ?? true) ? name.replace(targetAttributePrefixPattern, '') : name;
+		(unprefix ?? true)
+			? name.replace(EXPRESSION_TARGET_ATTRIBUTE_PREFIX, '')
+			: name;
 
 	if (added) {
 		context.targets.add(normalized, element);

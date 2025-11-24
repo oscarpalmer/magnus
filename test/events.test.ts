@@ -1,11 +1,12 @@
+/** biome-ignore-all lint/style/noMagicNumbers: Testing */
 import {noop} from '@oscarpalmer/atoms/function';
 import {afterAll, expect, test} from 'vitest';
 import {Controller, magnus} from '../src';
 
 class EventsController extends Controller {
-	connect() {
+	connect(): void {
 		setTimeout(() => {
-			const onMultiple = () => {
+			const onMultiple = (): void => {
 				multiple += 1;
 
 				if (multiple === 10) {

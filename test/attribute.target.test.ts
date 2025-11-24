@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/style/noMagicNumbers: Testing */
 import {afterAll, expect, test} from 'vitest';
 import {Controller, magnus} from '../src';
 
@@ -48,15 +49,27 @@ test('target attribute', () =>
 			expect(controller.targets.get('item')).not.toBeUndefined();
 			expect(controller.targets.getAll('item')).toHaveLength(2);
 			expect(controller.targets.has('item')).toBe(true);
+		}, 50);
+
+		setTimeout(() => {
+			controller.targets.get('item')?.remove();
+		}, 75);
+
+		setTimeout(() => {
+			expect(controller.targets.find('li')).not.toBeNull();
+			expect(controller.targets.findAll('li')).toHaveLength(2);
+			expect(controller.targets.get('item')).not.toBeUndefined();
+			expect(controller.targets.getAll('item')).toHaveLength(1);
+			expect(controller.targets.has('item')).toBe(true);
 
 			magnus.remove('target-test');
-		}, 50);
+		}, 100);
 
 		setTimeout(() => {
 			expect(controller.targets.get('item')).toBeUndefined();
 			expect(controller.targets.getAll('item')).toHaveLength(0);
 			expect(controller.targets.has('item')).toBe(false);
+		}, 125);
 
-			done();
-		}, 75);
+		setTimeout(done, 150);
 	}));

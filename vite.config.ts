@@ -1,7 +1,7 @@
 /// <reference types="vitest" />
 import {extname, relative} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {globSync} from 'glob';
+import {globSync} from 'tinyglobby';
 import {defineConfig} from 'vite';
 
 const watch = process.argv.includes('--watch');
@@ -33,7 +33,6 @@ export default defineConfig({
 					],
 			input: Object.fromEntries(files),
 			output: {
-				generatedCode: 'es2015',
 				preserveModules: !watch,
 			},
 		},

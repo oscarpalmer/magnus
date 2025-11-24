@@ -1,28 +1,28 @@
 import {
-	actionAttributeNamePattern,
-	actionAttributeValuePattern,
-	controllerAttributePattern,
-	dataAttributePattern,
-	inputOutputAttributePattern,
-	targetAttributePattern,
+	EXPRESSION_ACTION_ATTRIBUTE_NAME,
+	EXPRESSION_ACTION_ATTRIBUTE_VALUE,
+	EXPRESSION_CONTROLLER_ATTRIBUTE_FULL,
+	EXPRESSION_DATA_ATTRIBUTE,
+	EXPRESSION_IO_ATTRIBUTE_FULL,
+	EXPRESSION_TARGET_ATTRIBUTE_FULL,
 } from '../constants';
 import type {AttributeType, ParsedAttribute} from '../models';
 
 export function getAttributeType(name: string): AttributeType | undefined {
 	switch (true) {
-		case actionAttributeNamePattern.test(name):
+		case EXPRESSION_ACTION_ATTRIBUTE_NAME.test(name):
 			return 'action';
 
-		case controllerAttributePattern.test(name):
+		case EXPRESSION_CONTROLLER_ATTRIBUTE_FULL.test(name):
 			return 'controller';
 
-		case dataAttributePattern.test(name):
+		case EXPRESSION_DATA_ATTRIBUTE.test(name):
 			return 'data';
 
-		case inputOutputAttributePattern.test(name):
+		case EXPRESSION_IO_ATTRIBUTE_FULL.test(name):
 			return 'io';
 
-		case targetAttributePattern.test(name):
+		case EXPRESSION_TARGET_ATTRIBUTE_FULL.test(name):
 			return 'target';
 
 		default:
@@ -41,17 +41,17 @@ export function parseAttribute(
 		case 'action':
 			matches = (
 				value.length > 0
-					? actionAttributeValuePattern.exec(value)
-					: actionAttributeNamePattern.exec(name)
+					? EXPRESSION_ACTION_ATTRIBUTE_VALUE.exec(value)
+					: EXPRESSION_ACTION_ATTRIBUTE_NAME.exec(name)
 			) as RegExpExecArray;
 			break;
 
 		case 'io':
-			matches = inputOutputAttributePattern.exec(name) as RegExpExecArray;
+			matches = EXPRESSION_IO_ATTRIBUTE_FULL.exec(name) as RegExpExecArray;
 			break;
 
 		default:
-			matches = targetAttributePattern.exec(name) as RegExpExecArray;
+			matches = EXPRESSION_TARGET_ATTRIBUTE_FULL.exec(name) as RegExpExecArray;
 			break;
 	}
 

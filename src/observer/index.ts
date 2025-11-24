@@ -1,7 +1,13 @@
-import {debounce} from '@oscarpalmer/atoms/function';
+import {
+	type CancellableCallback,
+	debounce,
+	type noop,
+} from '@oscarpalmer/atoms/function';
+import {DEBOUNCE_DELAY} from '../constants';
 import {getAttributeType} from '../helpers/attribute';
-import {handleAttributeChanges} from './attributes/changes.attribute';
+import {contexts} from '../store/context.store';
 import {handleDataAttribute} from './attributes';
+import {handleAttributeChanges} from './attributes/changes.attribute';
 
 export class Observer {
 	private readonly observer: MutationObserver;
@@ -18,10 +24,11 @@ export class Observer {
 						entry.target as Element,
 						entry.attributeName as string,
 						entry.oldValue,
+						false,
 					);
 				} else {
-					handleNodes(entry.addedNodes);
-					handleNodes(entry.removedNodes);
+					handleNodes(entry.addedNodes, false);
+					handleNodes(entry.removedNodes, true);
 				}
 			}
 		});
@@ -29,7 +36,7 @@ export class Observer {
 		this.start();
 	}
 
-	start() {
+	start(): void {
 		if (!active) {
 			active = true;
 
@@ -39,7 +46,7 @@ export class Observer {
 		}
 	}
 
-	stop() {
+	stop(): void {
 		if (active) {
 			active = false;
 
@@ -49,7 +56,7 @@ export class Observer {
 		}
 	}
 
-	update() {
+	update(): void {
 		if (active) {
 			debouncer();
 		}
@@ -64,17 +71,18 @@ function handleAttribute(
 	element: Element,
 	name: string,
 	value: string | null,
+	removed: boolean,
 ): void {
 	const type = getAttributeType(name);
 
 	if (type === 'data') {
 		handleDataAttribute(element, name);
 	} else if (type != null) {
-		handleAttributeChanges(type, element, name, value);
+		handleAttributeChanges(type, element, name, value, removed);
 	}
 }
 
-function handleElement(element: Element): void {
+function handleElement(element: Element, removed: boolean): void {
 	const names = element
 		.getAttributeNames()
 		.filter((name, index, array) => array.indexOf(name) === index);
@@ -82,26 +90,30 @@ function handleElement(element: Element): void {
 	const {length} = names;
 
 	for (let index = 0; index < length; index += 1) {
-		handleAttribute(element, names[index], '');
+		handleAttribute(element, names[index], '', removed);
+	}
+
+	if (removed) {
+		contexts.disconnect(element);
 	}
 }
 
-function handleNodes(nodes: NodeList | Node[]): void {
+function handleNodes(nodes: NodeList | Node[], removed: boolean): void {
 	const {length} = nodes;
 
 	for (let index = 0; index < length; index += 1) {
 		const node = nodes[index];
 
 		if (node instanceof Element) {
-			handleElement(node);
-			handleNodes(node.childNodes);
+			handleElement(node, removed);
+			handleNodes(node.childNodes, removed);
 		}
 	}
 }
 
-const debouncer = debounce(() => {
-	handleNodes([document.body]);
-}, 25);
+const debouncer: CancellableCallback<typeof noop> = debounce(() => {
+	handleNodes([document.body], false);
+}, DEBOUNCE_DELAY);
 
 const options: MutationObserverInit = {
 	attributeOldValue: true,
@@ -112,6 +124,6 @@ const options: MutationObserverInit = {
 
 let active = false;
 
-const observer = createObserver();
+const observer: Observer = createObserver();
 
 export default observer;

@@ -1,5 +1,6 @@
+/** biome-ignore-all lint/style/noMagicNumbers: Testing */
 import {afterAll, expect, test} from 'vitest';
-import {magnus, Controller} from '../src';
+import {Controller, magnus} from '../src';
 
 type Data<Value> = Record<Key, Value>;
 
@@ -24,7 +25,7 @@ class InputOutputController extends Controller<Values> {
 		textarea: 'string',
 	} as never;
 
-	connect() {
+	connect(): void {
 		setTimeout(() => {
 			const checkbox = this.targets.find<HTMLInputElement>(
 				'input[type="checkbox"]',
@@ -35,13 +36,9 @@ class InputOutputController extends Controller<Values> {
 			);
 
 			const outputs = this.targets.findAll<HTMLLIElement>('li');
-
 			const pre = this.targets.find<HTMLPreElement>('pre');
-
 			const select = this.targets.find<HTMLSelectElement>('select');
-
 			const text = this.targets.find<HTMLInputElement>('input[type="text"]');
-
 			const textareas = this.targets.findAll<HTMLTextAreaElement>('textarea');
 
 			setTimeout(() => {
@@ -78,12 +75,12 @@ class InputOutputController extends Controller<Values> {
 					textareas[0].value = '!sungaM';
 					textareas[3].value = '{"value": "bar"}';
 
-					checkbox?.dispatchEvent(new Event('change'));
-					number?.dispatchEvent(new Event('input'));
-					select?.dispatchEvent(new Event('change'));
-					text?.dispatchEvent(new Event('input'));
-					textareas[0].dispatchEvent(new Event('input'));
-					textareas[3].dispatchEvent(new Event('input'));
+					checkbox?.dispatchEvent(new Event('change', {bubbles: true}));
+					number?.dispatchEvent(new Event('input', {bubbles: true}));
+					select?.dispatchEvent(new Event('change', {bubbles: true}));
+					text?.dispatchEvent(new Event('input', {bubbles: true}));
+					textareas[0].dispatchEvent(new Event('input', {bubbles: true}));
+					textareas[3].dispatchEvent(new Event('input', {bubbles: true}));
 
 					setTimeout(() => {
 						setValues('third', this, outputs, pre, select);
@@ -99,7 +96,7 @@ class InputOutputController extends Controller<Values> {
 	"textarea": "Hello, universe!"
 }`;
 
-						textareas[2].dispatchEvent(new Event('input'));
+						textareas[2].dispatchEvent(new Event('input', {bubbles: true}));
 
 						setTimeout(() => {
 							setValues('fourth', this, outputs, pre, select);
@@ -117,7 +114,7 @@ function setValues(
 	outputs: HTMLLIElement[],
 	pre: HTMLPreElement | null,
 	select: HTMLSelectElement | null,
-) {
+): void {
 	input[key] = {...controller.data};
 	json[key] = pre?.textContent ?? '';
 	option[key] = select?.options[select.selectedIndex]?.textContent ?? '';

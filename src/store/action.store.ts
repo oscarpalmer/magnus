@@ -1,15 +1,14 @@
+import {off, on} from '@oscarpalmer/toretto/event';
 import type {ActionParameters} from '../models';
 
 export class Action {
 	readonly callback: (event: Event) => void;
-	readonly controller: AbortController;
 	readonly options: AddEventListenerOptions;
 	readonly targets = new Set<EventTarget>();
 	readonly type: string;
 
 	constructor(parameters: ActionParameters) {
 		this.callback = parameters.callback;
-		this.controller = new AbortController();
 		this.options = parameters.options;
 		this.type = parameters.type;
 	}
@@ -31,7 +30,11 @@ export class Actions {
 		const {length} = actions;
 
 		for (let index = 0; index < length; index += 1) {
-			actions[index].controller.abort();
+			const action = actions[index];
+
+			for (const target of action.targets) {
+				off(target, action.type, action.callback, action.options);
+			}
 		}
 
 		this.store.clear();
@@ -64,10 +67,7 @@ function addActionTarget(action: Action, target: EventTarget): void {
 	if (!action.targets.has(target)) {
 		action.targets.add(target);
 
-		target.addEventListener(action.type, action.callback, {
-			...action.options,
-			signal: action.controller.signal,
-		});
+		on(target, action.type, action.callback, action.options);
 	}
 }
 
@@ -77,7 +77,7 @@ function removeActionTarget(
 	action: Action,
 	target: EventTarget,
 ): void {
-	target.removeEventListener(action.type, action.callback, action.options);
+	off(target, action.type, action.callback, action.options);
 
 	action.targets.delete(target);
 

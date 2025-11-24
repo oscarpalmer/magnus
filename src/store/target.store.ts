@@ -2,15 +2,15 @@ import type {Context} from '../controller/context';
 import type {ReadonlyTargets} from '../models';
 
 export class Targets {
-	private readonly callbacks: ReadonlyTargets;
+	private readonly callbacks: ReadonlyTargets | undefined;
 	private readonly store = new Map<string, Set<Element>>();
 
 	get readonly(): ReadonlyTargets {
-		return this.callbacks;
+		return this.callbacks as ReadonlyTargets;
 	}
 
 	constructor(private readonly context: Context) {
-		this.callbacks = Object.create({
+		this.callbacks = Object.freeze({
 			find: this.find.bind(this) as never,
 			findAll: this.findAll.bind(this) as never,
 			get: this.get.bind(this) as never,

@@ -1,8 +1,7 @@
 import {findRelatives} from '@oscarpalmer/toretto/find';
 import {Context} from '../controller/context';
 import type {ControllerConstructor} from '../models';
-
-const stored = new Map<string, StoredController>();
+import {contexts} from './context.store';
 
 class Controllers {
 	add(name: string, element: Element): void {
@@ -46,30 +45,14 @@ class Controllers {
 			const {length} = instances;
 
 			for (let index = 0; index < length; index += 1) {
-				this.removeInstance(controller, instances[index]);
+				removeInstance(controller, instances[index]);
 			}
 
 			controller.instances.clear();
 
 			stored.delete(name);
 		} else {
-			this.removeInstance(controller, controller.instances.get(element));
-		}
-	}
-
-	private removeInstance(
-		controller: StoredController,
-		context?: Context,
-	): void {
-		context?.actions.clear();
-		context?.targets.clear();
-
-		context?.controller.disconnect?.();
-
-		controller?.instances.delete(context?.state.element as never);
-
-		if (context != null) {
-			context.state.element = undefined as never;
+			removeInstance(controller, controller.instances.get(element));
 		}
 	}
 }
@@ -83,4 +66,33 @@ export class StoredController {
 	}
 }
 
-export const controllers = new Controllers();
+//
+
+function removeInstance(controller: StoredController, context?: Context): void {
+	context?.actions.clear();
+	context?.targets.clear();
+
+	context?.controller.disconnect?.();
+
+	controller?.instances.delete(context?.state.element as never);
+
+	if (context != null) {
+		const elements = [
+			context.state.element,
+			...context.state.element.querySelectorAll('*'),
+		];
+		const {length} = elements;
+
+		for (let index = 0; index < length; index += 1) {
+			contexts.disconnect(elements[index], context.state.name);
+		}
+
+		context.state.element = undefined as never;
+	}
+}
+
+//
+
+export const controllers: Controllers = new Controllers();
+
+const stored: Map<string, StoredController> = new Map();

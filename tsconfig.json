@@ -16,6 +16,7 @@
 		"module": "esnext",
 		"moduleDetection": "force",
 		"moduleResolution": "bundler",
+		"outDir": "./dist",
 		"skipLibCheck": true,
 		"strict": true,
 		"target": "esnext",

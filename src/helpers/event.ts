@@ -1,8 +1,8 @@
 import {camelCase} from '@oscarpalmer/atoms/string';
 import {
-	actionAttributeNamePattern,
-	actionAttributeValuePattern,
-	defaultEvents,
+	EVENT_DEFAULTS,
+	EXPRESSION_ACTION_ATTRIBUTE_NAME,
+	EXPRESSION_ACTION_ATTRIBUTE_VALUE,
 } from '../constants';
 import type {EventParameters} from '../models';
 
@@ -11,8 +11,11 @@ export function getEventParameters(
 	name: string,
 	value: string,
 ): EventParameters | undefined {
-	const nameMatches = actionAttributeNamePattern.exec(name) as RegExpExecArray;
-	const valueMatches = actionAttributeValuePattern.exec(value);
+	const nameMatches = EXPRESSION_ACTION_ATTRIBUTE_NAME.exec(
+		name,
+	) as RegExpExecArray;
+
+	const valueMatches = EXPRESSION_ACTION_ATTRIBUTE_VALUE.exec(value);
 
 	let external: string | undefined;
 	let identifier: string | undefined;
@@ -51,14 +54,14 @@ function getOptions(options: string): AddEventListenerOptions {
 	return {
 		capture: items.includes('capture') || items.includes('c'),
 		once: items.includes('once') || items.includes('o'),
-		passive: !items.includes('active') && !items.includes('a'),
+		passive: !(items.includes('active') || items.includes('a')),
 	};
 }
 
 function getType(element: Element): string | undefined {
-	return element instanceof HTMLInputElement
-		? element.type === 'submit'
-			? 'submit'
-			: 'input'
-		: defaultEvents[element.tagName];
+	if (element instanceof HTMLInputElement) {
+		return element.type === 'submit' ? 'submit' : 'input';
+	}
+
+	return EVENT_DEFAULTS[element.tagName];
 }

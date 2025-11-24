@@ -1,7 +1,6 @@
+import {EXPRESSION_WHITESPACE} from '../../constants';
 import type {AttributeType} from '../../models';
 import {handleContextualAttribute, handleControllerAttribute} from './index';
-
-const attributes = new WeakMap<Element, Map<string, string>>();
 
 function getAttribute(element: Element, name: string): string | undefined {
 	return attributes.get(element)?.get(name);
@@ -32,7 +31,7 @@ function getChanges(from: string, to: string): string[][] {
 
 function getParts(value: string): string[] {
 	return value
-		.split(/\s+/)
+		.split(EXPRESSION_WHITESPACE)
 		.map(part => part.trim())
 		.filter(part => part.length > 0);
 }
@@ -42,13 +41,18 @@ function handleActionAttributes(
 	name: string,
 	from: string,
 	to: string,
+	removed: boolean,
 ): void {
-	if (from === to) {
+	if (from === to && !removed) {
 		return;
 	}
 
 	const changes = getChanges(from, to);
 	const changesLength = changes.length;
+
+	if (removed) {
+		changes[0].push(to);
+	}
 
 	for (let changesIndex = 0; changesIndex < changesLength; changesIndex += 1) {
 		const changed = changes[changesIndex];
@@ -78,6 +82,7 @@ export function handleAttributeChanges(
 	element: Element,
 	name: string,
 	value: string | null,
+	removed: boolean,
 ): void {
 	const previous = getAttribute(element, name);
 	const current = element.getAttribute(name);
@@ -91,12 +96,17 @@ export function handleAttributeChanges(
 			name,
 			previous ?? value ?? '',
 			current ?? '',
+			removed,
 		);
+
+		if (removed) {
+			attributes.delete(element);
+		}
 
 		return;
 	}
 
-	const added = current != null && value != null;
+	const added = !removed && current != null && value != null;
 
 	if (type === 'controller') {
 		handleControllerAttribute(element, name, added);
@@ -119,3 +129,7 @@ function updateAttributes(element: Element, name: string, value: string): void {
 		elementAttributes.set(name, value);
 	}
 }
+
+//
+
+const attributes: WeakMap<Element, Map<string, string>> = new WeakMap();

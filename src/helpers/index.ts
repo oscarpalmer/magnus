@@ -1,4 +1,4 @@
-import {documentPattern, windowPattern} from '../constants';
+import {EXPRESSION_DOCUMENT, EXPRESSION_WINDOW} from '../constants';
 import {controllers} from '../store/controller.store';
 
 export function findTarget(
@@ -9,10 +9,10 @@ export function findTarget(
 	const noId = id == null;
 
 	switch (true) {
-		case noId && documentPattern.test(name):
+		case noId && EXPRESSION_DOCUMENT.test(name):
 			return document;
 
-		case noId && windowPattern.test(name):
+		case noId && EXPRESSION_WINDOW.test(name):
 			return window;
 
 		default:

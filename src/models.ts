@@ -18,20 +18,22 @@ export type AttributeChangeCallback = (
 ) => void;
 
 export type AttributeHandleCallback = (
-	context: Context,
-	element: Element,
-	name: string,
-	value: string,
-	added: boolean,
-	custom?: {
-		event: string;
-		callback: GenericCallback;
-	},
+	parameters: AttributeHandleCallbackParameters,
 ) => void;
 
 export type AttributeHandleCallbackCustomParameters = {
 	callback: GenericCallback;
 	event: string;
+};
+
+export type AttributeHandleCallbackParameters = {
+	added: boolean;
+	context: Context;
+	custom?: AttributeHandleCallbackCustomParameters;
+	element: Element;
+	name: string;
+	type: string;
+	value: string;
 };
 
 export type AttributeHandleParameters = {
@@ -95,24 +97,24 @@ export type ParsedAttribute = {
 //
 
 export type ReadonlyTargets = {
-		/**
-		 * Find an element within the controller
-		 */
-		find<Found extends Element = Element>(selector: string): Found | null;
-		/**
-		 * Find all elements within the controller
-		 */
-		findAll<Found extends Element = Element>(selector: string): Found[];
-		/**
-		 * Get the first element with the given target name
-		 */
-		get<Target extends Element = Element>(name: string): Target | undefined;
-		/**
-		 * Get all elements with the given target name
-		 */
-		getAll<Target extends Element = Element>(name: string): Target[];
-		/**
-		 * Does the controller have any elements with the given target name?
-		 */
-		has(name: string): boolean;
-	};
+	/**
+	 * Find an element within the controller
+	 */
+	find<Found extends Element = Element>(selector: string): Found | null;
+	/**
+	 * Find all elements within the controller
+	 */
+	findAll<Found extends Element = Element>(selector: string): Found[];
+	/**
+	 * Get the first element with the given target name
+	 */
+	get<Target extends Element = Element>(name: string): Target | undefined;
+	/**
+	 * Get all elements with the given target name
+	 */
+	getAll<Target extends Element = Element>(name: string): Target[];
+	/**
+	 * Does the controller have any elements with the given target name?
+	 */
+	has(name: string): boolean;
+};

@@ -1,4 +1,4 @@
-import {noop} from '@oscarpalmer/atoms/function';
+import {type GenericCallback, noop} from '@oscarpalmer/atoms/function';
 import {isPlainObject} from '@oscarpalmer/atoms/is';
 import {dispatch, off, on} from '@oscarpalmer/toretto/event';
 import {isEventTarget} from '@oscarpalmer/toretto/is';
@@ -28,8 +28,8 @@ export class Events {
 
 	/**
 	 * - Dispatch an event for a target element
-	 * ---
-	 * - If target is a `string`, the controller will use the first matching target element
+	 *
+	 * If target is a `string`, the controller will use the first matching target element
 	 */
 	dispatch<Type extends keyof HTMLElementEventMap>(
 		type: Type,
@@ -38,14 +38,14 @@ export class Events {
 
 	/**
 	 * - Dispatch an event for a target element
-	 * ---
-	 * - If target is a `string`, the controller will use the first matching target element
+	 *
+	 * If target is a `string`, the controller will use the first matching target element
 	 */
 	dispatch(type: string, target: ExtendedEventTarget): void;
 
 	/**
 	 * - Dispatch an event with specific options
-	 * ---
+	 *
 	 * - If target is a `string`, the controller will use the first matching target element
 	 * - It target is not provided, the controller's element will be used
 	 */
@@ -57,7 +57,7 @@ export class Events {
 
 	/**
 	 * - Dispatch an event with specific options
-	 * ---
+	 *
 	 * - If target is a `string`, the controller will use the first matching target element
 	 * - It target is not provided, the controller's element will be used
 	 */
@@ -102,9 +102,9 @@ export class Events {
 	off(type: string, listener: EventListener): void;
 
 	/**
-	 * - Remove an event listener from a target element
-	 * ---
-	 * - If target is a `string`, the controller will use the first matching target element
+	 * Remove an event listener from a target element
+	 *
+	 * If target is a `string`, the controller will use the first matching target element
 	 */
 	off<Type extends keyof HTMLElementEventMap>(
 		type: Type,
@@ -113,16 +113,16 @@ export class Events {
 	): void;
 
 	/**
-	 * - Remove an event listener from a target element
-	 * ---
-	 * - If target is a `string`, the controller will use the first matching target element
+	 * Remove an event listener from a target element
+	 *
+	 * If target is a `string`, the controller will use the first matching target element
 	 */
 	off(type: string, listener: EventListener, target: ExtendedEventTarget): void;
 
 	/**
-	 * - Remove an event listener from a target element
-	 * ---
-	 * - If target is a `string`, the controller will use the first matching target element
+	 * Remove an event listener from a target element
+	 *
+	 * If target is a `string`, the controller will use the first matching target element
 	 */
 	off<Type extends keyof HTMLElementEventMap>(
 		type: Type,
@@ -132,9 +132,9 @@ export class Events {
 	): void;
 
 	/**
-	 * - Remove an event listener from a target element
-	 * ---
-	 * - If target is a `string`, the controller will use the first matching target element
+	 * Remove an event listener from a target element
+	 *
+	 * If target is a `string`, the controller will use the first matching target element
 	 */
 	off(
 		type: string,
@@ -154,8 +154,8 @@ export class Events {
 
 	/**
 	 * - Add an event listener to the controller's element
-	 * ---
-	 * - Returns a function that removes the event listener
+	 *
+	 * Returns a function that removes the event listener
 	 */
 	on<Type extends keyof HTMLElementEventMap>(
 		type: Type,
@@ -164,14 +164,14 @@ export class Events {
 
 	/**
 	 * - Add an event listener to the controller's element
-	 * ---
-	 * - Returns a function that removes the event listener
+	 *
+	 * Returns a function that removes the event listener
 	 */
 	on(type: string, listener: EventListener): RemovableEventListener;
 
 	/**
 	 * - Add an event listener to a target element
-	 * ---
+	 *
 	 * - If target is a `string`, the controller will use the first matching target element
 	 * - Returns a function that removes the event listener
 	 */
@@ -183,7 +183,7 @@ export class Events {
 
 	/**
 	 * - Add an event listener to a target element
-	 * ---
+	 *
 	 * - If target is a `string`, the controller will use the first matching target element
 	 * - Returns a function that removes the event listener
 	 */
@@ -195,7 +195,7 @@ export class Events {
 
 	/**
 	 * - Add an event listener to a target element
-	 * ---
+	 *
 	 * - If target is a `string`, the controller will use the first matching target element
 	 * - Returns a function that removes the event listener
 	 */
@@ -208,7 +208,7 @@ export class Events {
 
 	/**
 	 * - Add an event listener to a target element
-	 * ---
+	 *
 	 * - If target is a `string`, the controller will use the first matching target element
 	 * - Returns a function that removes the event listener
 	 */
@@ -244,7 +244,7 @@ function handleEvent(
 	context: Context,
 	parameters: HandleEventParameters,
 	add: boolean,
-) {
+): GenericCallback {
 	const firstIsOptions =
 		typeof parameters.first === 'boolean' || isPlainObject(parameters.first);
 

@@ -1,38 +1,39 @@
+/** biome-ignore-all lint/style/noMagicNumbers: Testing */
 import {afterAll, expect, test} from 'vitest';
 import {Controller, magnus} from '../src';
 
 class ActionOneController extends Controller {
-	fromDocument(event: CustomEventInit) {
+	fromDocument(event: CustomEventInit): void {
 		fromDocument = event.detail;
 	}
 
-	fromElement() {
+	fromElement(): void {
 		fromElement = 'Hello, world! -- fromElement';
 	}
 
-	fromTwo() {
+	fromTwo(): void {
 		fromTwo += 1;
 	}
 
-	fromWindow(event: CustomEventInit) {
+	fromWindow(event: CustomEventInit): void {
 		fromWindow = event.detail;
 	}
 }
 
 class ActionTwoController extends Controller {
-	onA() {
+	onA(): void {
 		a += 1;
 	}
 
-	onB() {
+	onB(): void {
 		b += 1;
 	}
 
-	onMultiple() {
+	onMultiple(): void {
 		multiple += 1;
 	}
 
-	onOnce() {
+	onOnce(): void {
 		for (const type of ['fromDocument', 'fromWindow']) {
 			this.events.dispatch(
 				type,
@@ -48,11 +49,11 @@ class ActionTwoController extends Controller {
 		once += 1;
 	}
 
-	onSubmit() {
+	onSubmit(): void {
 		// ?
 	}
 
-	onText() {
+	onText(): void {
 		// ?
 	}
 }

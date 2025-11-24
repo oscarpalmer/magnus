@@ -1,69 +1,117 @@
-import { isArrayOrPlainObject } from '@oscarpalmer/atoms/is';
-import type { PlainObject } from '@oscarpalmer/atoms/models';
-import { camelCase, getString, parse } from '@oscarpalmer/atoms/string';
-import { dispatch } from '@oscarpalmer/toretto/event';
-import { changeEventTypes } from '../constants';
-import type { Context } from '../controller/context';
-import { ControllerDataType, ControllerDataTypes } from '../models';
-
-type Value = {
-	original: unknown;
-	stringified: string;
-};
-
-const frames = new WeakMap<Context, number>();
-const focused = new Set<string>();
-const ignored = new Set<string>();
+import {isArrayOrPlainObject, isPlainObject} from '@oscarpalmer/atoms/is';
+import type {ArrayOrPlainObject, PlainObject} from '@oscarpalmer/atoms/models';
+import {camelCase, getString, parse} from '@oscarpalmer/atoms/string';
+import {dispatch} from '@oscarpalmer/toretto/event';
+import {EVENT_CHANGE, EXPRESSION_TRUE} from '../constants';
+import type {Context} from '../controller/context';
+import type {ControllerDataType, ControllerDataTypes} from '../models';
 
 export class Data {
+	readonly frames: Record<string, number | undefined> = {};
 	readonly value: PlainObject;
 
-	constructor(context: Context, readonly types: ControllerDataTypes) {
-		const frames: Record<string, number> = {};
-
+	constructor(
+		context: Context,
+		readonly types: ControllerDataTypes,
+	) {
 		this.value = new Proxy(
 			{},
 			{
-				deleteProperty(target, property) {
-					return updateProperty(context, target, property, undefined, '', frames);
+				deleteProperty(target: PlainObject, property: PropertyKey): boolean {
+					const name = camelCase(String(property));
+
+					return updateProperty({
+						context,
+						name,
+						target,
+						stringified: '',
+					});
 				},
-				get(target, property) {
+				get(target: PlainObject, property: PropertyKey): unknown {
 					return Reflect.get(target, camelCase(String(property)));
 				},
-				set(target, property, next) {
+				set(
+					target: PlainObject,
+					property: PropertyKey,
+					next: unknown,
+				): boolean {
 					const name = camelCase(String(property));
 					const previous = Reflect.get(target, name);
 					const nextAsString = getString(next);
 
-					if (typeof previous === typeof next && getString(previous) === nextAsString) {
+					if (
+						typeof previous === typeof next &&
+						getString(previous) === nextAsString
+					) {
 						return true;
 					}
 
-					return updateProperty(context, target, name, next, nextAsString, frames);
+					return updateProperty({
+						context,
+						name,
+						target,
+						original: next,
+						stringified: nextAsString,
+					});
 				},
 			},
 		);
 	}
 }
 
-export function getDataValue(type: ControllerDataType, original: string): unknown {
+type UpdatePropertyParameters = {
+	context: Context;
+	name: string;
+	original?: unknown;
+	stringified: string;
+	target: PlainObject;
+};
+
+type Value = {
+	original?: unknown;
+	stringified: string;
+};
+
+//
+
+export function getDataValue(
+	type: ControllerDataType,
+	original: string,
+): unknown {
 	switch (type) {
 		case 'array':
-			return [];
+		case 'object':
+			return getObjectValue(original, type === 'array');
 
 		case 'boolean':
-			return /^true$/i.test(original);
+			return EXPRESSION_TRUE.test(original);
 
 		case 'number':
-			const asNumber = Number.parseFloat(original);
-			return Number.isNaN(asNumber) ? undefined : asNumber;
+			return getNumberValue(original);
 
-			case 'object':
-				return {};
-
-				default:
-					return original;
+		default:
+			return original;
 	}
+}
+
+function getNumberValue(original: string): number | undefined {
+	const asNumber = Number.parseFloat(original);
+
+	return Number.isNaN(asNumber) ? undefined : asNumber;
+}
+
+function getObjectValue(original: string, array: boolean): ArrayOrPlainObject {
+	const parsed = parse(original);
+
+	if (parsed == null) {
+		return array ? [] : {};
+	}
+
+	if (array) {
+		return Array.isArray(parsed) ? parsed : [];
+	}
+
+	return isPlainObject(parsed) ? parsed : {};
 }
 
 export function replaceData(context: Context, value: unknown): void {
@@ -113,7 +161,7 @@ function setElementValue(
 			return;
 
 		case element instanceof HTMLInputElement &&
-			changeEventTypes.has(element.type): {
+			EVENT_CHANGE.has(element.type): {
 			element.checked =
 				element.value === value ||
 				(element.type === 'checkbox' && value === 'true');
@@ -145,13 +193,13 @@ function setElementValue(
 
 			break;
 		}
+
+		default:
+			break;
 	}
 
 	if (event != null) {
-		dispatch(element, event, {
-			bubbles: true,
-			cancelable: true,
-		});
+		dispatch(element, event);
 	}
 }
 
@@ -170,8 +218,6 @@ function setElementValues(
 }
 
 function setValue(context: Context, property: string, value: Value): void {
-	cancelAnimationFrame(frames.get(context) as never);
-
 	const {element, name} = context.state;
 
 	const attribute = `${name}-${property}`;
@@ -203,7 +249,7 @@ function setValue(context: Context, property: string, value: Value): void {
 				: JSON.stringify(
 						value.original,
 						null,
-						+(getComputedStyle(element)?.tabSize ?? '4'),
+						+getComputedStyle(element).tabSize,
 					);
 
 		setElementContents(namedOutputs, json);
@@ -214,19 +260,14 @@ function setValue(context: Context, property: string, value: Value): void {
 	const outputs = context.targets.getAll('output.:json');
 
 	if (inputs.length > 0 || outputs.length > 0) {
-		frames.set(
-			context,
-			requestAnimationFrame(() => {
-				const json = JSON.stringify(
-					context.data.value,
-					null,
-					+(getComputedStyle(element)?.tabSize ?? '4'),
-				);
-
-				setElementContents(outputs, json);
-				setElementValues(inputs, attribute, json);
-			}),
+		const json = JSON.stringify(
+			context.data.value,
+			null,
+			+getComputedStyle(element).tabSize,
 		);
+
+		setElementContents(outputs, json);
+		setElementValues(inputs, attribute, json);
 	}
 
 	context.controller.valueChanged(property, value.original);
@@ -247,20 +288,16 @@ export function setValueFromAttribute(
 
 	focused.add(attribute);
 
-	if (context.data.value[name] == null || (getString(context.data.value[name]) !== getString(value))) {
+	if (
+		context.data.value[name] == null ||
+		getString(context.data.value[name]) !== value
+	) {
 		context.data.value[name] = getDataValue(context.data.types[name], value);
 	}
 }
 
-function updateProperty(
-	context: Context,
-	target: PlainObject,
-	property: PropertyKey,
-	original: unknown,
-	stringified: string,
-	frames: Record<string, number>,
-): boolean {
-	const name = camelCase(String(property));
+function updateProperty(parameters: UpdatePropertyParameters): boolean {
+	const {context, name, original, stringified, target} = parameters;
 
 	if (original == null) {
 		Reflect.deleteProperty(target, name);
@@ -268,9 +305,15 @@ function updateProperty(
 		Reflect.set(target, name, original);
 	}
 
-	cancelAnimationFrame(frames[name]);
+	const frame = context.data.frames[name];
 
-	frames[name] = requestAnimationFrame(() => {
+	if (frame != null) {
+		cancelAnimationFrame(frame);
+	}
+
+	context.data.frames[name] = requestAnimationFrame(() => {
+		context.data.frames[name] = undefined;
+
 		setValue(context, name, {
 			original,
 			stringified,
@@ -279,3 +322,9 @@ function updateProperty(
 
 	return true;
 }
+
+//
+
+const focused: Set<string> = new Set();
+
+const ignored: Set<string> = new Set();

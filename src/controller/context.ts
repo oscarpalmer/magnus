@@ -4,11 +4,6 @@ import {Data} from '../store/data.store';
 import {Targets} from '../store/target.store';
 import {Events} from './events';
 
-type State = {
-	name: string;
-	element: Element;
-};
-
 export class Context {
 	readonly actions: Actions;
 	readonly controller: InstanceType<ControllerConstructor>;
@@ -30,3 +25,8 @@ export class Context {
 		this.controller.connect?.();
 	}
 }
+
+type State = {
+	name: string;
+	element: Element;
+};

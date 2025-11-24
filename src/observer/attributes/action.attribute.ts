@@ -1,23 +1,64 @@
-import type {PlainObject} from '@oscarpalmer/atoms/models';
+import type {GenericCallback, PlainObject} from '@oscarpalmer/atoms/models';
 import {camelCase} from '@oscarpalmer/atoms/string';
 import type {Context} from '../../controller/context';
 import {getEventParameters} from '../../helpers/event';
 import {findTarget} from '../../helpers/index';
 import type {
-	AttributeHandleCallbackCustomParameters,
-	EventExternal,
+	AttributeHandleCallbackParameters,
 	EventParameters,
 } from '../../models';
 
+type HandleParameters = {
+	added: boolean;
+	callback: GenericCallback;
+	context: Context;
+	event: EventParameters;
+	name: string;
+	target: EventTarget;
+	value: string;
+};
+
+type StepperParameters = {
+	count: number;
+	event: EventParameters;
+} & AttributeHandleCallbackParameters;
+
+//
+
+function handle(parameters: HandleParameters): void {
+	const {added, callback, context, event, name, target, value} = parameters;
+
+	const action = `${name}${value.length === 0 ? '' : `/${value}`}`;
+
+	if (!added) {
+		context.actions.remove(action, target);
+
+		return;
+	}
+
+	if (context.actions.has(action)) {
+		context.actions.add(action, target);
+
+		return;
+	}
+
+	context.actions.create(
+		{
+			callback: callback.bind(context.controller),
+			name: action,
+			options: event.options,
+			type: event.type,
+		},
+		target,
+	);
+}
+
 export function handleActionAttribute(
-	context: Context,
-	element: Element,
-	name: string,
-	value: string,
-	added: boolean,
-	custom?: AttributeHandleCallbackCustomParameters,
+	parameters: AttributeHandleCallbackParameters,
 ): void {
-	const parameters =
+	const {custom, element, name, value} = parameters;
+
+	const eventParameters =
 		custom?.callback == null
 			? getEventParameters(element, name, value)
 			: {
@@ -30,61 +71,52 @@ export function handleActionAttribute(
 					type: camelCase(custom.event),
 				};
 
-	if (parameters == null) {
+	if (eventParameters != null) {
+		stepper({
+			...parameters,
+			count: 0,
+			event: eventParameters,
+		});
+	}
+}
+
+function stepper(parameters: StepperParameters): void {
+	if (parameters.count >= 10) {
 		return;
 	}
 
-	let count = 0;
+	parameters.count += 1;
 
-	function step() {
-		if (count >= 10) {
-			return;
-		}
+	const {added, context, element, event, name, value, custom} = parameters;
 
-		count += 1;
+	const callback =
+		custom?.callback ??
+		((context.controller as unknown as PlainObject)[event.callback] as (
+			event: Event,
+		) => void);
 
-		const callback =
-			custom?.callback ??
-			((context.controller as unknown as PlainObject)[
-				(parameters as EventParameters).callback
-			] as (event: Event) => void);
+	let target: EventTarget | undefined;
 
-		const target =
-			typeof callback === 'function'
-				? (parameters as EventParameters).external == null
-					? element
-					: findTarget(
-							element,
-							((parameters as EventParameters).external as EventExternal).name,
-							((parameters as EventParameters).external as EventExternal)
-								.identifier,
-						)
-				: null;
-
-		if (target == null) {
-			setTimeout(step);
-
-			return;
-		}
-
-		const action = `${name}${value.length === 0 ? '' : `/${value}`}`;
-
-		if (added && !context.actions.has(action)) {
-			context.actions.create(
-				{
-					callback: callback.bind(context.controller),
-					name: action,
-					options: (parameters as EventParameters).options,
-					type: (parameters as EventParameters).type,
-				},
-				target,
-			);
-		} else if (added) {
-			context.actions.add(action, target);
-		} else {
-			context.actions.remove(action, target);
-		}
+	if (typeof callback === 'function') {
+		target =
+			event.external == null
+				? element
+				: findTarget(element, event.external.name, event.external.identifier);
 	}
 
-	step();
+	if (target == null) {
+		setTimeout(() => {
+			stepper(parameters);
+		});
+	} else {
+		handle({
+			added,
+			callback,
+			context,
+			event,
+			name,
+			target,
+			value,
+		});
+	}
 }

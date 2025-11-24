@@ -1,51 +1,43 @@
 import {camelCase, parse} from '@oscarpalmer/atoms/string';
 import {
-	changeEventTypes,
-	ignoredInputTypes,
-	inputOutputAttributePrefixPattern,
+	EVENT_CHANGE,
+	EVENT_IGNORED,
+	EXPRESSION_IO_ATTRIBUTE_PREFIX,
+	EXPRESSION_JSON_SUFFIX,
 } from '../../constants';
 import type {Context} from '../../controller/context';
+import type {AttributeHandleCallbackParameters} from '../../models';
 import {getDataValue, replaceData} from '../../store/data.store';
 import {handleActionAttribute} from './action.attribute';
 import {handleTargetAttribute} from './target.attribute';
-import { ControllerDataType } from '../../models';
 
-function getDataType(element: Element): string | undefined {
-	if (element instanceof HTMLSelectElement || element instanceof HTMLTextAreaElement) {
-		return 'string';
-	}
+function getEventType(element: Element): string | undefined {
+	const isInput = element instanceof HTMLInputElement;
 
-	return element instanceof HTMLInputElement &&
-		!ignoredInputTypes.has(element.type)
-		? element.type === 'checkbox'
-			? 'boolean'
-			: 'string'
-		: undefined;
-}
-
-function getEventType(
-	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
-): string {
 	if (
-		(element instanceof HTMLInputElement &&
-			changeEventTypes.has(element.type)) ||
+		(isInput && EVENT_CHANGE.has(element.type)) ||
 		element instanceof HTMLSelectElement
 	) {
 		return 'change';
 	}
 
-	return 'input';
+	if (isInput && EVENT_IGNORED.has(element.type)) {
+		return;
+	}
+
+	if (isInput || element instanceof HTMLTextAreaElement) {
+		return 'input';
+	}
 }
 
 function handleDataValue(
-	type: string,
 	context: Context,
 	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
 	name: string,
 	json: boolean,
 ): void {
 	if (!json) {
-		setDataValue(type, context, element, name);
+		setDataValue(context, element, name);
 
 		return;
 	}
@@ -53,87 +45,90 @@ function handleDataValue(
 	if (name.length === 0 && element.value.trim().length > 0) {
 		replaceData(context, parse(element.value));
 	} else {
-		setDataValue(type, context, element, name);
+		setDataValue(context, element, name);
 	}
 }
 
 function handleInputAttribute(
-	context: Context,
-	element: Element,
-	type: string,
-	name: string,
-	value: string,
-	added: boolean,
+	parameters: AttributeHandleCallbackParameters,
 ): void {
-	const event = getEventType(element as never);
-	const unprefixed = name.replace(inputOutputAttributePrefixPattern, '');
-	const isJson = unprefixed.endsWith(':json');
-	const property = camelCase(unprefixed.replace(/:json$/, ''));
+	const {context, element, name, type, value, added} = parameters;
 
-	handleActionAttribute(
+	const unprefixed = name.replace(EXPRESSION_IO_ATTRIBUTE_PREFIX, '');
+	const isJson = unprefixed.endsWith(':json');
+	const property = camelCase(unprefixed.replace(EXPRESSION_JSON_SUFFIX, ''));
+
+	handleActionAttribute({
+		added,
 		context,
 		element,
-		`input:${event}.${unprefixed}`,
+		type,
 		value,
-		added,
-		{
-			event,
-			callback: event => {
-				handleDataValue(type, context, event.target as never, property, isJson);
+		custom: {
+			callback: (event: Event) => {
+				handleDataValue(context, event.target as never, property, isJson);
 			},
+			event: type,
 		},
-	);
+		name: `input:${type}.${unprefixed}`,
+	});
 
 	handleTargetAttribute(
-		context,
-		element,
-		`input.${unprefixed}`,
-		value,
-		added,
+		{
+			added,
+			context,
+			element,
+			type,
+			value,
+			name: `input.${unprefixed}`,
+		},
 		false,
 	);
 }
 
 export function handleInputOutputAttribute(
-	context: Context,
-	element: Element,
-	name: string,
-	value: string,
-	added: boolean,
+	parameters: AttributeHandleCallbackParameters,
 ): void {
-	const type = getDataType(element);
+	const {added, context, element, name} = parameters;
+
+	const type = getEventType(element);
 
 	if (type == null) {
 		handleTargetAttribute(
-			context,
-			element,
-			`output.${name.replace(inputOutputAttributePrefixPattern, '')}`,
-			'',
-			added,
+			{
+				added,
+				context,
+				element,
+				name: `output.${name.replace(EXPRESSION_IO_ATTRIBUTE_PREFIX, '')}`,
+				type: '',
+				value: '',
+			},
 			false,
 		);
 	} else {
-		handleInputAttribute(context, element, type, name, value, added);
+		handleInputAttribute({
+			added,
+			context,
+			element,
+			name,
+			type,
+			value: name,
+		});
 	}
 }
 
 function setDataValue(
-	type: string,
 	context: Context,
 	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
 	name: string,
 	value?: string,
 ): void {
-	if (
-		!(
-			element instanceof HTMLInputElement &&
-			element.type === 'radio' &&
-			!element.checked
-		)
-	) {
-		context.data.value[name] =
-			type === 'boolean'
-				? (element as HTMLInputElement).checked
-				: getDataValue(context.data.types[name], value ?? element.value);
+	if (element.type === 'radio' && !(element as HTMLInputElement).checked) {
+		return;
 	}
+
+	context.data.value[name] =
+		element instanceof HTMLInputElement && element.type === 'checkbox'
+			? element.checked
+			: getDataValue(context.data.types[name], value ?? element.value);
 }

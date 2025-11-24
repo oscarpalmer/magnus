@@ -1,7 +1,8 @@
 import {camelCase} from '@oscarpalmer/atoms/string';
-import {controllerAttributePrefixPattern} from '../../constants';
+import {EXPRESSION_CONTROLLER_ATTRIBUTE_PREFIX} from '../../constants';
 import {parseAttribute} from '../../helpers/attribute';
 import type {AttributeHandleCallback, AttributeType} from '../../models';
+import {contexts} from '../../store/context.store';
 import {controllers} from '../../store/controller.store';
 import {setValueFromAttribute} from '../../store/data.store';
 import {handleActionAttribute} from './action.attribute';
@@ -20,19 +21,23 @@ export function handleContextualAttribute(
 
 	let count = 0;
 
-	function step() {
+	function step(): void {
 		if (parsed == null || count >= 10) {
 			return;
 		}
 
 		count += 1;
 
-		const context = controllers.find(element, parsed.name, parsed.identifier);
+		const context = added
+			? controllers.find(element, parsed.name, parsed.identifier)
+			: contexts.get(element, parsed.name);
 
-		if (context == null) {
+		if (context == null && added) {
 			setTimeout(step);
-		} else {
-			callback?.(context, element, name, value, added);
+		} else if (context != null) {
+			contexts.connect(element, context);
+
+			callback?.({context, element, name, value, added, type});
 		}
 	}
 
@@ -44,7 +49,7 @@ export function handleControllerAttribute(
 	name: string,
 	added: boolean,
 ): void {
-	const normalized = name.replace(controllerAttributePrefixPattern, '');
+	const normalized = name.replace(EXPRESSION_CONTROLLER_ATTRIBUTE_PREFIX, '');
 
 	if (controllers.has(normalized)) {
 		if (added) {
