@@ -26,5 +26,5 @@ test('observer', () =>
 			expect(controller).toBeInstanceOf(ObserverController);
 
 			done();
-		}, 1000);
+		}, 25);
 	}));

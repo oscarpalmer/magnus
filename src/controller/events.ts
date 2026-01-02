@@ -31,10 +31,7 @@ export class Events {
 	 *
 	 * If target is a `string`, the controller will use the first matching target element
 	 */
-	dispatch<Type extends keyof HTMLElementEventMap>(
-		type: Type,
-		target: ExtendedEventTarget,
-	): void;
+	dispatch<Type extends keyof HTMLElementEventMap>(type: Type, target: ExtendedEventTarget): void;
 
 	/**
 	 * - Dispatch an event for a target element
@@ -61,11 +58,7 @@ export class Events {
 	 * - If target is a `string`, the controller will use the first matching target element
 	 * - It target is not provided, the controller's element will be used
 	 */
-	dispatch(
-		type: string,
-		options?: CustomEventInit,
-		target?: ExtendedEventTarget,
-	): void;
+	dispatch(type: string, options?: CustomEventInit, target?: ExtendedEventTarget): void;
 
 	dispatch(
 		type: string,
@@ -80,21 +73,14 @@ export class Events {
 		);
 
 		if (target != null) {
-			dispatch(
-				target,
-				type,
-				firstIsOptions ? (first as CustomEventInit) : undefined,
-			);
+			dispatch(target, type, firstIsOptions ? (first as CustomEventInit) : undefined);
 		}
 	}
 
 	/**
 	 * Remove an event listener from the controller's element
 	 */
-	off<Type extends keyof HTMLElementEventMap>(
-		type: Type,
-		listener: EventListener,
-	): void;
+	off<Type extends keyof HTMLElementEventMap>(type: Type, listener: EventListener): void;
 
 	/**
 	 * Remove an event listener from the controller's element
@@ -187,11 +173,7 @@ export class Events {
 	 * - If target is a `string`, the controller will use the first matching target element
 	 * - Returns a function that removes the event listener
 	 */
-	on(
-		type: string,
-		listener: EventListener,
-		target: ExtendedEventTarget,
-	): RemovableEventListener;
+	on(type: string, listener: EventListener, target: ExtendedEventTarget): RemovableEventListener;
 
 	/**
 	 * - Add an event listener to a target element
@@ -229,10 +211,7 @@ export class Events {
 	}
 }
 
-function getTarget(
-	context: Context,
-	target?: ExtendedEventTarget,
-): EventTarget | undefined {
+function getTarget(context: Context, target?: ExtendedEventTarget): EventTarget | undefined {
 	if (typeof target === 'string') {
 		return context.targets.get(target);
 	}
@@ -245,26 +224,18 @@ function handleEvent(
 	parameters: HandleEventParameters,
 	add: boolean,
 ): GenericCallback {
-	const firstIsOptions =
-		typeof parameters.first === 'boolean' || isPlainObject(parameters.first);
+	const firstIsOptions = typeof parameters.first === 'boolean' || isPlainObject(parameters.first);
 
 	const target = getTarget(
 		context,
-		(firstIsOptions
-			? parameters.second
-			: parameters.first) as ExtendedEventTarget,
+		(firstIsOptions ? parameters.second : parameters.first) as ExtendedEventTarget,
 	);
 
 	if (target == null) {
 		return noop;
 	}
 
-	const options = firstIsOptions
-		? (parameters.first as AddEventListenerOptions)
-		: undefined;
+	const options = firstIsOptions ? (parameters.first as AddEventListenerOptions) : undefined;
 
-	return (
-		(add ? on : off)(target, parameters.type, parameters.listener, options) ??
-		noop
-	);
+	return (add ? on : off)(target, parameters.type, parameters.listener, options) ?? noop;
 }

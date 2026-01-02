@@ -34,7 +34,7 @@ class DataController extends Controller<Data> {
 
 document.body.innerHTML = `<div
 	:d
-	d-array='[1, 2, 3]'
+	d-array="[1, 2, 3]"
 	d-check="true"
 	d-number="123"
 	d-object='{"key": "value"}'

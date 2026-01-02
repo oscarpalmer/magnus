@@ -30,10 +30,11 @@ test('controller', () =>
 			expect(connected).toBe(1);
 
 			magnus.stop();
-			magnus.stop();
-		}, 50);
+		}, 25);
 
 		setTimeout(() => {
+			magnus.stop();
+
 			const second = document.createElement('div');
 
 			second.textContent = '2';
@@ -41,49 +42,52 @@ test('controller', () =>
 			second.setAttribute(':magnus-test', '');
 
 			document.body.append(second);
-		}, 100);
+		}, 50);
 
 		setTimeout(() => {
 			expect(magnus.active).toBe(false);
 			expect(connected).toBe(1);
 
 			magnus.start();
-			magnus.start();
-		}, 150);
+		}, 75);
 
 		setTimeout(() => {
+			magnus.start();
+
 			expect(magnus.active).toBe(true);
 			expect(connected).toBe(2);
-		}, 200);
+		}, 100);
 
 		setTimeout(() => {
 			magnus.remove('magnus-test');
 			magnus.remove('not-exists');
 
 			magnus.stop();
-			magnus.stop();
-		}, 250);
+		}, 125);
 
 		setTimeout(() => {
+			magnus.stop();
+
 			document.body.innerHTML = '<div :magnus-test>3</div>';
-		}, 300);
+		}, 150);
 
 		setTimeout(() => {
 			expect(magnus.active).toBe(false);
 			expect(connected).toBe(2);
 
 			magnus.add('magnus-test', TestController);
-		}, 350);
+		}, 175);
 
 		setTimeout(() => {
 			magnus.start();
-			magnus.start();
-		}, 400);
+		}, 200);
 
 		setTimeout(() => {
+			magnus.start();
+
 			expect(magnus.active).toBe(true);
 			expect(connected).toBe(3);
 
 			done();
-		}, 450);
+		}, 225);
 	}));

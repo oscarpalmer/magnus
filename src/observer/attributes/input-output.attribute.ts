@@ -14,10 +14,7 @@ import {handleTargetAttribute} from './target.attribute';
 function getEventType(element: Element): string | undefined {
 	const isInput = element instanceof HTMLInputElement;
 
-	if (
-		(isInput && EVENT_CHANGE.has(element.type)) ||
-		element instanceof HTMLSelectElement
-	) {
+	if ((isInput && EVENT_CHANGE.has(element.type)) || element instanceof HTMLSelectElement) {
 		return 'change';
 	}
 
@@ -49,9 +46,7 @@ function handleDataValue(
 	}
 }
 
-function handleInputAttribute(
-	parameters: AttributeHandleCallbackParameters,
-): void {
+function handleInputAttribute(parameters: AttributeHandleCallbackParameters): void {
 	const {context, element, name, type, value, added} = parameters;
 
 	const unprefixed = name.replace(EXPRESSION_IO_ATTRIBUTE_PREFIX, '');
@@ -86,9 +81,7 @@ function handleInputAttribute(
 	);
 }
 
-export function handleInputOutputAttribute(
-	parameters: AttributeHandleCallbackParameters,
-): void {
+export function handleInputOutputAttribute(parameters: AttributeHandleCallbackParameters): void {
 	const {added, context, element, name} = parameters;
 
 	const type = getEventType(element);

@@ -59,18 +59,8 @@ function handleActionAttributes(
 		const changedLength = changed.length;
 		const added = changesIndex === 1;
 
-		for (
-			let changedIndex = 0;
-			changedIndex < changedLength;
-			changedIndex += 1
-		) {
-			handleContextualAttribute(
-				'action',
-				element,
-				name,
-				changed[changedIndex],
-				added,
-			);
+		for (let changedIndex = 0; changedIndex < changedLength; changedIndex += 1) {
+			handleContextualAttribute('action', element, name, changed[changedIndex], added);
 		}
 	}
 
@@ -81,7 +71,7 @@ export function handleAttributeChanges(
 	type: AttributeType,
 	element: Element,
 	name: string,
-	value: string | null,
+	value: string,
 	removed: boolean,
 ): void {
 	const previous = getAttribute(element, name);
@@ -91,13 +81,7 @@ export function handleAttributeChanges(
 		type === 'action' &&
 		(value == null ? previous != null : (current ?? value).trim().length > 0)
 	) {
-		handleActionAttributes(
-			element,
-			name,
-			previous ?? value ?? '',
-			current ?? '',
-			removed,
-		);
+		handleActionAttributes(element, name, previous ?? value, current ?? '', removed);
 
 		if (removed) {
 			attributes.delete(element);

@@ -30,19 +30,12 @@ export class Data {
 				get(target: PlainObject, property: PropertyKey): unknown {
 					return Reflect.get(target, camelCase(String(property)));
 				},
-				set(
-					target: PlainObject,
-					property: PropertyKey,
-					next: unknown,
-				): boolean {
+				set(target: PlainObject, property: PropertyKey, next: unknown): boolean {
 					const name = camelCase(String(property));
 					const previous = Reflect.get(target, name);
 					const nextAsString = getString(next);
 
-					if (
-						typeof previous === typeof next &&
-						getString(previous) === nextAsString
-					) {
+					if (typeof previous === typeof next && getString(previous) === nextAsString) {
 						return true;
 					}
 
@@ -74,10 +67,7 @@ type Value = {
 
 //
 
-export function getDataValue(
-	type: ControllerDataType,
-	original: string,
-): unknown {
+export function getDataValue(type: ControllerDataType, original: string): unknown {
 	switch (type) {
 		case 'array':
 		case 'object':
@@ -149,30 +139,23 @@ function setElementContents(elements: Element[], value: string): void {
 	}
 }
 
-function setElementValue(
-	element: Element,
-	value: string,
-	focused: boolean,
-): void {
+function setElementValue(element: Element, value: string, focused: boolean): void {
 	let event: string | undefined;
 
 	switch (true) {
 		case element === document.activeElement && !focused:
 			return;
 
-		case element instanceof HTMLInputElement &&
-			EVENT_CHANGE.has(element.type): {
+		case element instanceof HTMLInputElement && EVENT_CHANGE.has(element.type): {
 			element.checked =
-				element.value === value ||
-				(element.type === 'checkbox' && value === 'true');
+				element.value === value || (element.type === 'checkbox' && value === 'true');
 
 			event = 'change';
 
 			break;
 		}
 
-		case (element instanceof HTMLInputElement ||
-			element instanceof HTMLTextAreaElement) &&
+		case (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) &&
 			element.value !== value: {
 			element.value = value;
 			event = 'input';
@@ -181,9 +164,7 @@ function setElementValue(
 		}
 
 		case element instanceof HTMLSelectElement && element.value !== value: {
-			const index = [...element.options].findIndex(
-				option => option.value === value,
-			);
+			const index = [...element.options].findIndex(option => option.value === value);
 
 			if (index > -1) {
 				element.selectedIndex = index;
@@ -203,17 +184,38 @@ function setElementValue(
 	}
 }
 
-function setElementValues(
-	elements: Element[],
-	attribute: string,
-	value: string,
-): void {
+function setElementValues(elements: Element[], attribute: string, value: string): void {
 	const updatedFocused = focused.delete(attribute);
 
 	const {length} = elements;
 
 	for (let index = 0; index < length; index += 1) {
 		setElementValue(elements[index], value, updatedFocused);
+	}
+}
+
+function setJson(context: Context, property: string, value: Value, attribute: string): void {
+	const {element} = context.state;
+
+	const properties = [property, ''];
+	const values = [value.original, context.data.value];
+
+	for (let index = 0; index < 2; index += 1) {
+		const property = properties[index];
+		const value = values[index];
+
+		const inputs = context.targets.getAll(`input.${property}:json`);
+		const outputs = context.targets.getAll(`output.${property}:json`);
+
+		if (inputs.length === 0 && outputs.length === 0) {
+			continue;
+		}
+
+		const json =
+			value == null ? '' : JSON.stringify(value, null, +getComputedStyle(element).tabSize);
+
+		setElementContents(outputs, json);
+		setElementValues(inputs, attribute, json);
 	}
 }
 
@@ -228,56 +230,15 @@ function setValue(context: Context, property: string, value: Value): void {
 		element.removeAttribute(attribute);
 	}
 
-	setElementContents(
-		context.targets.getAll(`output.${property}`),
-		value.stringified,
-	);
+	setElementContents(context.targets.getAll(`output.${property}`), value.stringified);
+	setElementValues(context.targets.getAll(`input.${property}`), attribute, value.stringified);
 
-	setElementValues(
-		context.targets.getAll(`input.${property}`),
-		attribute,
-		value.stringified,
-	);
-
-	const namedInputs = context.targets.getAll(`input.${property}:json`);
-	const namedOutputs = context.targets.getAll(`output.${property}:json`);
-
-	if (namedInputs.length > 0 || namedOutputs.length > 0) {
-		const json =
-			value.original == null
-				? ''
-				: JSON.stringify(
-						value.original,
-						null,
-						+getComputedStyle(element).tabSize,
-					);
-
-		setElementContents(namedOutputs, json);
-		setElementValues(namedInputs, attribute, json);
-	}
-
-	const inputs = context.targets.getAll('input.:json');
-	const outputs = context.targets.getAll('output.:json');
-
-	if (inputs.length > 0 || outputs.length > 0) {
-		const json = JSON.stringify(
-			context.data.value,
-			null,
-			+getComputedStyle(element).tabSize,
-		);
-
-		setElementContents(outputs, json);
-		setElementValues(inputs, attribute, json);
-	}
+	setJson(context, property, value, attribute);
 
 	context.controller.valueChanged(property, value.original);
 }
 
-export function setValueFromAttribute(
-	context: Context,
-	name: string,
-	value: string,
-): void {
+export function setValueFromAttribute(context: Context, name: string, value: string): void {
 	const attribute = `${context.state.name}-${name}`;
 
 	if (ignored.has(attribute)) {
@@ -288,10 +249,7 @@ export function setValueFromAttribute(
 
 	focused.add(attribute);
 
-	if (
-		context.data.value[name] == null ||
-		getString(context.data.value[name]) !== value
-	) {
+	if (context.data.value[name] == null || getString(context.data.value[name]) !== value) {
 		context.data.value[name] = getDataValue(context.data.types[name], value);
 	}
 }

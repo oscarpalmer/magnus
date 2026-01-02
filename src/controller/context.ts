@@ -1,5 +1,6 @@
 import type {ControllerConstructor, ControllerDataTypes} from '../models';
 import {Actions} from '../store/action.store';
+import {contexts} from '../store/context.store';
 import {Data} from '../store/data.store';
 import {Targets} from '../store/target.store';
 import {Events} from './events';
@@ -19,6 +20,8 @@ export class Context {
 		this.data = new Data(this, ((creator as any).types ?? {}) as ControllerDataTypes);
 		this.events = new Events(this);
 		this.targets = new Targets(this);
+
+		contexts.connect(element, this);
 
 		this.controller = new creator(this);
 

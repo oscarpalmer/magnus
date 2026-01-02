@@ -18,6 +18,7 @@ document.body.innerHTML = `<ul>
 			<li target-test:item></li>
 			<li target-test:item></li>
 			<li target-test:item></li>
+			<li not-real:item></li>
 		</ul>
 	</li>
 	<li></li>
@@ -34,7 +35,7 @@ test('target attribute', () =>
 	new Promise<void>(done => {
 		setTimeout(() => {
 			expect(controller.targets.find('li')).not.toBeNull();
-			expect(controller.targets.findAll('li')).toHaveLength(3);
+			expect(controller.targets.findAll('li')).toHaveLength(4);
 			expect(controller.targets.get('item')).not.toBeUndefined();
 			expect(controller.targets.getAll('item')).toHaveLength(3);
 			expect(controller.targets.has('item')).toBe(true);
@@ -45,7 +46,7 @@ test('target attribute', () =>
 
 		setTimeout(() => {
 			expect(controller.targets.find('li')).not.toBeNull();
-			expect(controller.targets.findAll('li')).toHaveLength(3);
+			expect(controller.targets.findAll('li')).toHaveLength(4);
 			expect(controller.targets.get('item')).not.toBeUndefined();
 			expect(controller.targets.getAll('item')).toHaveLength(2);
 			expect(controller.targets.has('item')).toBe(true);
@@ -57,7 +58,7 @@ test('target attribute', () =>
 
 		setTimeout(() => {
 			expect(controller.targets.find('li')).not.toBeNull();
-			expect(controller.targets.findAll('li')).toHaveLength(2);
+			expect(controller.targets.findAll('li')).toHaveLength(3);
 			expect(controller.targets.get('item')).not.toBeUndefined();
 			expect(controller.targets.getAll('item')).toHaveLength(1);
 			expect(controller.targets.has('item')).toBe(true);

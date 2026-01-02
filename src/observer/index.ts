@@ -1,8 +1,4 @@
-import {
-	type CancellableCallback,
-	debounce,
-	type noop,
-} from '@oscarpalmer/atoms/function';
+import {type CancellableCallback, debounce, type noop} from '@oscarpalmer/atoms/function';
 import {DEBOUNCE_DELAY} from '../constants';
 import {getAttributeType} from '../helpers/attribute';
 import {contexts} from '../store/context.store';
@@ -37,29 +33,19 @@ export class Observer {
 	}
 
 	start(): void {
-		if (!active) {
-			active = true;
+		this.observer.observe(document.body, options);
 
-			this.observer.observe(document.body, options);
-
-			this.update();
-		}
+		this.update();
 	}
 
 	stop(): void {
-		if (active) {
-			active = false;
+		debouncer.cancel();
 
-			debouncer.cancel();
-
-			this.observer.disconnect();
-		}
+		this.observer.disconnect();
 	}
 
 	update(): void {
-		if (active) {
-			debouncer();
-		}
+		debouncer();
 	}
 }
 
@@ -78,7 +64,7 @@ function handleAttribute(
 	if (type === 'data') {
 		handleDataAttribute(element, name);
 	} else if (type != null) {
-		handleAttributeChanges(type, element, name, value, removed);
+		handleAttributeChanges(type, element, name, value!, removed);
 	}
 }
 
@@ -121,8 +107,6 @@ const options: MutationObserverInit = {
 	childList: true,
 	subtree: true,
 };
-
-let active = false;
 
 const observer: Observer = createObserver();
 

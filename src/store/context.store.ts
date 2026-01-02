@@ -14,9 +14,7 @@ export class Contexts {
 			connections.set(element, connection);
 		}
 
-		if (connection[context.state.name] == null) {
-			connection[context.state.name] = context;
-		}
+		connection[context.state.name] = context;
 	}
 
 	disconnect(element: Element, name?: string): void {

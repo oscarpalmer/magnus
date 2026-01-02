@@ -4,22 +4,21 @@
 		"url": "https://oscarpalmer.se"
 	},
 	"dependencies": {
-		"@oscarpalmer/atoms": "^0.114",
-		"@oscarpalmer/toretto": "^0.26.1"
+		"@oscarpalmer/atoms": "^0.124",
+		"@oscarpalmer/toretto": "^0.34"
 	},
 	"description": "A JavaScript framework for developers who like HTML.",
 	"devDependencies": {
-		"@biomejs/biome": "^2.3",
-		"@oscarpalmer/oui": "^0.18",
-		"@rollup/plugin-node-resolve": "^16",
-		"@rollup/plugin-typescript": "^12.3",
-		"@types/node": "^24.10",
+		"@oscarpalmer/oui": "^0.19",
+		"@types/node": "^25",
 		"@vitest/coverage-istanbul": "^4",
-		"jsdom": "^27.2",
-		"rollup": "^4.53",
+		"jsdom": "^27.4",
+		"oxfmt": "^0.21",
+		"oxlint": "^1.36",
+		"rolldown": "1.0.0-beta.57",
 		"tslib": "^2.8",
 		"typescript": "^5.9",
-		"vite": "npm:rolldown-vite@latest",
+		"vite": "8.0.0-beta.5",
 		"vitest": "^4"
 	},
 	"exports": {
@@ -50,10 +49,10 @@
 	},
 	"scripts": {
 		"build": "npm run clean && npm run compile",
-		"compile": "npx vite build && npm run rollup:build && npx tsc",
+		"compile": "npx vite build && npm run rolldown:build && npx tsc",
 		"clean": "rm -rf ./dist && rm -rf ./types && rm -f ./tsconfig.tsbuildinfo",
-		"rollup:build": "npx rollup -c",
-		"rollup:watch": "npx rollup -c --watch",
+		"rolldown:build": "npx rolldown -c",
+		"rolldown:watch": "npx rolldown -c ./rolldown.config.js --watch",
 		"test": "npx vitest --coverage",
 		"watch": "npx vite build --watch"
 	},

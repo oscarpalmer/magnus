@@ -1,11 +1,7 @@
 import {EXPRESSION_DOCUMENT, EXPRESSION_WINDOW} from '../constants';
 import {controllers} from '../store/controller.store';
 
-export function findTarget(
-	origin: Element,
-	name: string,
-	id?: string,
-): EventTarget | undefined {
+export function findTarget(origin: Element, name: string, id?: string): EventTarget | undefined {
 	const noId = id == null;
 
 	switch (true) {

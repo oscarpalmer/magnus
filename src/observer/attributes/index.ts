@@ -33,7 +33,7 @@ export function handleContextualAttribute(
 			: contexts.get(element, parsed.name);
 
 		if (context == null && added) {
-			setTimeout(step);
+			requestAnimationFrame(step);
 		} else if (context != null) {
 			contexts.connect(element, context);
 
@@ -44,11 +44,7 @@ export function handleContextualAttribute(
 	step();
 }
 
-export function handleControllerAttribute(
-	element: Element,
-	name: string,
-	added: boolean,
-): void {
+export function handleControllerAttribute(element: Element, name: string, added: boolean): void {
 	const normalized = name.replace(EXPRESSION_CONTROLLER_ATTRIBUTE_PREFIX, '');
 
 	if (controllers.has(normalized)) {

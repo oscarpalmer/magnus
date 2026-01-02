@@ -9,10 +9,9 @@ test('data store', () =>
 		const element = document.createElement('div');
 		const context = new Context('test', element, DataStoreController);
 
-		expect(
-			typeof context.controller.data === 'object' &&
-				context.controller.data != null,
-		).toBe(true);
+		expect(typeof context.controller.data === 'object' && context.controller.data != null).toBe(
+			true,
+		);
 
 		expect(Object.keys(context.controller.data)).toHaveLength(0);
 

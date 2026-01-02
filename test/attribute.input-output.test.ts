@@ -26,66 +26,73 @@ class InputOutputController extends Controller<Values> {
 	} as never;
 
 	connect(): void {
+		let checkbox: HTMLInputElement;
+		let number: HTMLInputElement;
+		let outputs: HTMLLIElement[];
+		let pre: HTMLPreElement;
+		let select: HTMLSelectElement;
+		let text: HTMLInputElement;
+		let textareas: HTMLTextAreaElement[];
+
 		setTimeout(() => {
-			const checkbox = this.targets.find<HTMLInputElement>(
-				'input[type="checkbox"]',
-			);
+			checkbox = this.targets.find<HTMLInputElement>('input[type="checkbox"]')!;
 
-			const number = this.targets.find<HTMLInputElement>(
-				'input[type="number"]',
-			);
+			number = this.targets.find<HTMLInputElement>('input[type="number"]')!;
 
-			const outputs = this.targets.findAll<HTMLLIElement>('li');
-			const pre = this.targets.find<HTMLPreElement>('pre');
-			const select = this.targets.find<HTMLSelectElement>('select');
-			const text = this.targets.find<HTMLInputElement>('input[type="text"]');
-			const textareas = this.targets.findAll<HTMLTextAreaElement>('textarea');
+			outputs = this.targets.findAll<HTMLLIElement>('li');
+			pre = this.targets.find<HTMLPreElement>('pre')!;
+			select = this.targets.find<HTMLSelectElement>('select')!;
+			text = this.targets.find<HTMLInputElement>('input[type="text"]')!;
+			textareas = this.targets.findAll<HTMLTextAreaElement>('textarea');
+		}, 125);
 
-			setTimeout(() => {
-				setValues('first', this, outputs, pre, select);
+		setTimeout(() => {
+			setValues('first', this, outputs, pre, select);
 
-				this.data.boolean = false;
-				this.data.nested = {value: 'foo'};
-				this.data.number = 99;
-				this.data.select = 1;
-				this.data.text = 'foo bar';
-				this.data.textarea = 'foo baz';
+			this.data.boolean = false;
+			this.data.nested = {value: 'foo'};
+			this.data.number = 99;
+			this.data.select = 1;
+			this.data.text = 'foo bar';
+			this.data.textarea = 'foo baz';
+		}, 250);
 
-				setTimeout(() => {
-					setValues('second', this, outputs, pre, select);
+		setTimeout(() => {
+			setValues('second', this, outputs, pre, select);
 
-					if (checkbox != null) {
-						checkbox.checked = true;
-					}
+			if (checkbox != null) {
+				checkbox.checked = true;
+			}
 
-					if (number != null) {
-						number.value = '123';
-					}
+			if (number != null) {
+				number.value = '123';
+			}
 
-					if (select != null) {
-						select.value = '3';
-					}
+			if (select != null) {
+				select.value = '3';
+			}
 
-					if (text != null) {
-						text.value = 'Magnus!';
-					}
+			if (text != null) {
+				text.value = 'Magnus!';
+			}
 
-					textareas[0].focus();
+			textareas[0].focus();
 
-					textareas[0].value = '!sungaM';
-					textareas[3].value = '{"value": "bar"}';
+			textareas[0].value = '!sungaM';
+			textareas[3].value = '{"value": "bar"}';
 
-					checkbox?.dispatchEvent(new Event('change', {bubbles: true}));
-					number?.dispatchEvent(new Event('input', {bubbles: true}));
-					select?.dispatchEvent(new Event('change', {bubbles: true}));
-					text?.dispatchEvent(new Event('input', {bubbles: true}));
-					textareas[0].dispatchEvent(new Event('input', {bubbles: true}));
-					textareas[3].dispatchEvent(new Event('input', {bubbles: true}));
+			checkbox.dispatchEvent(new Event('change', {bubbles: true}));
+			number.dispatchEvent(new Event('input', {bubbles: true}));
+			select.dispatchEvent(new Event('change', {bubbles: true}));
+			text.dispatchEvent(new Event('input', {bubbles: true}));
+			textareas[0].dispatchEvent(new Event('input', {bubbles: true}));
+			textareas[3].dispatchEvent(new Event('input', {bubbles: true}));
+		}, 375);
 
-					setTimeout(() => {
-						setValues('third', this, outputs, pre, select);
+		setTimeout(() => {
+			setValues('third', this, outputs, pre, select);
 
-						textareas[2].value = `{
+			textareas[2].value = `{
 	"boolean": false,
 	"nested": {
 		"value": "foo bar"
@@ -96,15 +103,12 @@ class InputOutputController extends Controller<Values> {
 	"textarea": "Hello, universe!"
 }`;
 
-						textareas[2].dispatchEvent(new Event('input', {bubbles: true}));
+			textareas[2].dispatchEvent(new Event('input', {bubbles: true}));
+		}, 500);
 
-						setTimeout(() => {
-							setValues('fourth', this, outputs, pre, select);
-						}, 125);
-					}, 125);
-				}, 125);
-			}, 125);
-		}, 125);
+		setTimeout(() => {
+			setValues('fourth', this, outputs, pre, select);
+		}, 625);
 	}
 }
 
@@ -112,12 +116,12 @@ function setValues(
 	key: Key,
 	controller: InputOutputController,
 	outputs: HTMLLIElement[],
-	pre: HTMLPreElement | null,
-	select: HTMLSelectElement | null,
+	pre: HTMLPreElement,
+	select: HTMLSelectElement,
 ): void {
 	input[key] = {...controller.data};
-	json[key] = pre?.textContent ?? '';
-	option[key] = select?.options[select.selectedIndex]?.textContent ?? '';
+	json[key] = pre.textContent;
+	option[key] = select.options[select.selectedIndex].textContent;
 	output[key] = outputs.map(output => output.textContent).join('; ');
 }
 
@@ -259,9 +263,7 @@ test('input/output attribute', () =>
 			expect(output.second).toBe('false; 99; 1; foo bar; foo baz');
 			expect(output.third).toBe('true; 123; 3; Magnus!; !sungaM');
 
-			expect(output.fourth).toBe(
-				'false; 99; 1; Hello, world!; Hello, universe!',
-			);
+			expect(output.fourth).toBe('false; 99; 1; Hello, world!; Hello, universe!');
 
 			done();
 		}, 1000);

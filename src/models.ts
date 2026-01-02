@@ -11,15 +11,9 @@ export type ActionParameters = {
 
 //
 
-export type AttributeChangeCallback = (
-	element: Element,
-	value: string,
-	added: boolean,
-) => void;
+export type AttributeChangeCallback = (element: Element, value: string, added: boolean) => void;
 
-export type AttributeHandleCallback = (
-	parameters: AttributeHandleCallbackParameters,
-) => void;
+export type AttributeHandleCallback = (parameters: AttributeHandleCallbackParameters) => void;
 
 export type AttributeHandleCallbackCustomParameters = {
 	callback: GenericCallback;
@@ -50,12 +44,7 @@ export type ControllerConstructor = new (context: Context) => Controller;
 
 export type ControllerDataTypes = Record<string, ControllerDataType>;
 
-export type ControllerDataType =
-	| 'array'
-	| 'boolean'
-	| 'number'
-	| 'object'
-	| 'string';
+export type ControllerDataType = 'array' | 'boolean' | 'number' | 'object' | 'string';
 
 //
 
@@ -81,11 +70,7 @@ export type ExtendedEventTarget = string | EventTarget;
 
 //
 
-export type ObserverCallback = (
-	element: Element,
-	name: string,
-	value: string,
-) => void;
+export type ObserverCallback = (element: Element, name: string, value: string) => void;
 
 //
 

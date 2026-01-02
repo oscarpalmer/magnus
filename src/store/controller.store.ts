@@ -8,10 +8,7 @@ class Controllers {
 		const controller = stored.get(name);
 
 		if (controller != null && !controller.instances.has(element)) {
-			controller.instances.set(
-				element,
-				new Context(name, element, controller.ctor),
-			);
+			controller.instances.set(element, new Context(name, element, controller.ctor));
 		}
 	}
 
@@ -23,7 +20,7 @@ class Controllers {
 		let found: Element | null;
 
 		if (id == null) {
-			found = findRelatives(origin, `[\\:${name}]`)[0];
+			found = origin.hasAttribute(`:${name}`) ? origin : findRelatives(origin, `[\\:${name}]`)[0];
 		} else {
 			found = origin.ownerDocument.querySelector(`#${id}`);
 		}
@@ -48,11 +45,9 @@ class Controllers {
 				removeInstance(controller, instances[index]);
 			}
 
-			controller.instances.clear();
-
 			stored.delete(name);
 		} else {
-			removeInstance(controller, controller.instances.get(element));
+			removeInstance(controller, controller.instances.get(element)!);
 		}
 	}
 }
@@ -68,27 +63,23 @@ export class StoredController {
 
 //
 
-function removeInstance(controller: StoredController, context?: Context): void {
+function removeInstance(controller: StoredController, context: Context): void {
 	context?.actions.clear();
 	context?.targets.clear();
 
 	context?.controller.disconnect?.();
 
-	controller?.instances.delete(context?.state.element as never);
+	controller.instances.delete(context?.state.element as never);
 
-	if (context != null) {
-		const elements = [
-			context.state.element,
-			...context.state.element.querySelectorAll('*'),
-		];
-		const {length} = elements;
+	const elements = [context.state.element, ...context.state.element.querySelectorAll('*')];
+	const {length} = elements;
 
-		for (let index = 0; index < length; index += 1) {
-			contexts.disconnect(elements[index], context.state.name);
-		}
-
-		context.state.element = undefined as never;
+	for (let index = 0; index < length; index += 1) {
+		contexts.disconnect(elements[index], context.state.name);
 	}
+
+	context.state.element = undefined as never;
+	context.state.name = undefined as never;
 }
 
 //

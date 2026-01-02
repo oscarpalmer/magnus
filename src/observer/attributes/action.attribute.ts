@@ -3,10 +3,7 @@ import {camelCase} from '@oscarpalmer/atoms/string';
 import type {Context} from '../../controller/context';
 import {getEventParameters} from '../../helpers/event';
 import {findTarget} from '../../helpers/index';
-import type {
-	AttributeHandleCallbackParameters,
-	EventParameters,
-} from '../../models';
+import type {AttributeHandleCallbackParameters, EventParameters} from '../../models';
 
 type HandleParameters = {
 	added: boolean;
@@ -53,9 +50,7 @@ function handle(parameters: HandleParameters): void {
 	);
 }
 
-export function handleActionAttribute(
-	parameters: AttributeHandleCallbackParameters,
-): void {
+export function handleActionAttribute(parameters: AttributeHandleCallbackParameters): void {
 	const {custom, element, name, value} = parameters;
 
 	const eventParameters =
@@ -91,9 +86,7 @@ function stepper(parameters: StepperParameters): void {
 
 	const callback =
 		custom?.callback ??
-		((context.controller as unknown as PlainObject)[event.callback] as (
-			event: Event,
-		) => void);
+		((context.controller as unknown as PlainObject)[event.callback] as (event: Event) => void);
 
 	let target: EventTarget | undefined;
 
@@ -105,7 +98,7 @@ function stepper(parameters: StepperParameters): void {
 	}
 
 	if (target == null) {
-		setTimeout(() => {
+		requestAnimationFrame(() => {
 			stepper(parameters);
 		});
 	} else {

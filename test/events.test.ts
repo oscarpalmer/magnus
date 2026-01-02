@@ -94,5 +94,5 @@ test('events', () =>
 			expect(once).toBe(1);
 
 			done();
-		}, 100);
+		}, 75);
 	}));

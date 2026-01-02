@@ -11,9 +11,7 @@ export function getEventParameters(
 	name: string,
 	value: string,
 ): EventParameters | undefined {
-	const nameMatches = EXPRESSION_ACTION_ATTRIBUTE_NAME.exec(
-		name,
-	) as RegExpExecArray;
+	const nameMatches = EXPRESSION_ACTION_ATTRIBUTE_NAME.exec(name) as RegExpExecArray;
 
 	const valueMatches = EXPRESSION_ACTION_ATTRIBUTE_VALUE.exec(value);
 

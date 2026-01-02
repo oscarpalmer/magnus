@@ -2,21 +2,37 @@
 import {afterAll, expect, test} from 'vitest';
 import {Controller, magnus} from '../src';
 
-class ControllerController extends Controller {
+class OneController extends Controller {
 	connect(): void {
-		controller = this;
+		one = this;
 	}
 
 	disconnect(): void {
-		controller = undefined;
+		one = undefined;
 	}
 }
 
-let controller: ControllerController | undefined;
+class TwoController extends Controller {
+	connect(): void {
+		two = this;
+	}
 
-document.body.innerHTML = '<div :controller-test></div>';
+	disconnect(): void {
+		two = undefined;
+	}
+}
 
-magnus.add('controller-test', ControllerController);
+let one: OneController | undefined;
+let two: TwoController | undefined;
+
+document.body.innerHTML = `<div
+	:controller-one
+	:controller-two
+	:not-real
+></div>`;
+
+magnus.add('controller-one', OneController);
+magnus.add('controller-two', TwoController);
 
 afterAll(() => {
 	document.body.innerHTML = '';
@@ -24,17 +40,28 @@ afterAll(() => {
 
 test('controller attribute', () =>
 	new Promise<void>(done => {
-		magnus.add('controller-test', ControllerController);
+		magnus.add('controller-one', OneController);
+		magnus.add('controller-two', TwoController);
 
 		setTimeout(() => {
-			expect(controller).toBeInstanceOf(ControllerController);
+			expect(one).toBeInstanceOf(OneController);
+			expect(two).toBeInstanceOf(TwoController);
 
-			controller?.element.removeAttribute(':controller-test');
+			one?.element.removeAttribute(':controller-one');
+			one?.element.removeAttribute(':not-real');
 		}, 25);
 
 		setTimeout(() => {
-			expect(controller).toBeUndefined();
+			expect(one).toBeUndefined();
+			expect(two).toBeInstanceOf(TwoController);
+
+			two?.element.removeAttribute(':controller-two');
+		}, 50);
+
+		setTimeout(() => {
+			expect(one).toBeUndefined();
+			expect(two).toBeUndefined();
 
 			done();
-		}, 50);
+		}, 75);
 	}));

@@ -40,8 +40,7 @@ export const EXPRESSION_DOCUMENT = /^document$/i;
  * - `controller(.identifier).property(:json)`
  * - `[, name, id?, value]`
  */
-export const EXPRESSION_IO_ATTRIBUTE_FULL =
-	/^([\w-]+)(?:\.([\w-]+))?\.([\w-]*)(?::json)?$/;
+export const EXPRESSION_IO_ATTRIBUTE_FULL = /^([\w-]+)(?:\.([\w-]+))?\.([\w-]*)(?::json)?$/;
 
 export const EXPRESSION_IO_ATTRIBUTE_PREFIX = /^[\w-]+(?:\.[\w-]+)?\./;
 
@@ -51,8 +50,7 @@ export const EXPRESSION_JSON_SUFFIX = /:json$/;
  * - `controller(.identifier):target`
  * - `[, name, id?, value]`
  */
-export const EXPRESSION_TARGET_ATTRIBUTE_FULL =
-	/^([\w-]+)(?:\.([\w-]+))?:([\w-]+)$/;
+export const EXPRESSION_TARGET_ATTRIBUTE_FULL = /^([\w-]+)(?:\.([\w-]+))?:([\w-]+)$/;
 
 export const EXPRESSION_TARGET_ATTRIBUTE_PREFIX = /^[\w-]+(?:\.[\w-]+)?:/;
 
@@ -89,12 +87,7 @@ export const EVENT_DEFAULTS: Record<string, string> = {
 /**
  * Input types that should be ignored
  */
-export const EVENT_IGNORED: Set<string> = new Set([
-	'button',
-	'image',
-	'reset',
-	'submit',
-]);
+export const EVENT_IGNORED: Set<string> = new Set(['button', 'image', 'reset', 'submit']);
 
 /**
  * Input types that should be handled as `number`
@@ -104,8 +97,4 @@ export const INPUT_NUMBER: Set<string> = new Set(['number', 'range']);
 /**
  * Input types that should be parsed
  */
-export const INPUT_PARSEABLE: Set<string> = new Set([
-	'checkbox',
-	'hidden',
-	'radio',
-]);
+export const INPUT_PARSEABLE: Set<string> = new Set(['checkbox', 'hidden', 'radio']);
