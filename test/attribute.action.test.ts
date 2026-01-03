@@ -1,4 +1,3 @@
-/** biome-ignore-all lint/style/noMagicNumbers: Testing */
 import {afterAll, expect, test} from 'vitest';
 import {Controller, magnus} from '../src';
 
@@ -21,6 +20,10 @@ class ActionOneController extends Controller {
 }
 
 class ActionTwoController extends Controller {
+	connect(): void {
+		connected += 1;
+	}
+
 	onA(): void {
 		a += 1;
 	}
@@ -64,6 +67,7 @@ let fromWindow: string | undefined;
 
 let a = 0;
 let b = 0;
+let connected = 0;
 let fromTwo = 0;
 let multiple = 0;
 let once = 0;
@@ -82,7 +86,7 @@ document.body.innerHTML = `<div
 		::action-two.on-multiple
 		::action-two.on-once:once
 		::action-two.not-real
-		::click="action-two@onA action-two@onB"
+		::click="action-two@connect action-two@onA action-two@onB"
 	></button>
 	<input type="submit" ::action-two.on-submit />
 	<input type="text" ::action-two.on-text />
@@ -116,6 +120,7 @@ test('action attribute', () =>
 		setTimeout(() => {
 			expect(a).toBe(10);
 			expect(b).toBe(10);
+			expect(connected).toBe(1);
 			expect(fromTwo).toBe(2);
 			expect(multiple).toBe(10);
 			expect(once).toBe(1);
@@ -135,6 +140,7 @@ test('action attribute', () =>
 		setTimeout(() => {
 			expect(a).toBe(20);
 			expect(b).toBe(20);
+			expect(connected).toBe(1);
 			expect(fromTwo).toBe(2);
 			expect(multiple).toBe(10);
 			expect(once).toBe(1);
@@ -149,6 +155,7 @@ test('action attribute', () =>
 		setTimeout(() => {
 			expect(a).toBe(20);
 			expect(b).toBe(30);
+			expect(connected).toBe(1);
 			expect(fromTwo).toBe(2);
 			expect(multiple).toBe(10);
 			expect(once).toBe(1);
@@ -163,6 +170,7 @@ test('action attribute', () =>
 		setTimeout(() => {
 			expect(a).toBe(20);
 			expect(b).toBe(30);
+			expect(connected).toBe(1);
 			expect(fromTwo).toBe(2);
 			expect(multiple).toBe(10);
 			expect(once).toBe(1);
@@ -175,10 +183,11 @@ test('action attribute', () =>
 		setTimeout(() => {
 			expect(a).toBe(20);
 			expect(b).toBe(30);
+			expect(connected).toBe(1);
 			expect(fromTwo).toBe(2);
 			expect(multiple).toBe(10);
 			expect(once).toBe(1);
 
 			done();
-		}, 150);
+		}, 250);
 	}));

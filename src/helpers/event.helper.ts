@@ -3,6 +3,7 @@ import {
 	EVENT_DEFAULTS,
 	EXPRESSION_ACTION_ATTRIBUTE_NAME,
 	EXPRESSION_ACTION_ATTRIBUTE_VALUE,
+	EXPRESSION_METHOD_INVALID,
 } from '../constants';
 import type {EventParameters} from '../models';
 
@@ -30,7 +31,7 @@ export function getEventParameters(
 
 	type = type ?? getType(element);
 
-	if (type != null) {
+	if (type != null && !EXPRESSION_METHOD_INVALID.test(method)) {
 		return {
 			callback: camelCase(method),
 			external:

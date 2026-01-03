@@ -1,6 +1,6 @@
 import {type CancellableCallback, debounce, type noop} from '@oscarpalmer/atoms/function';
 import {DEBOUNCE_DELAY} from '../constants';
-import {getAttributeType} from '../helpers/attribute';
+import {getAttributeType} from '../helpers/attribute.helper';
 import {contexts} from '../store/context.store';
 import {handleDataAttribute} from './attributes';
 import {handleAttributeChanges} from './attributes/changes.attribute';

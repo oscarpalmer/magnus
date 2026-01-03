@@ -1,10 +1,10 @@
-import {isArrayOrPlainObject, isPlainObject} from '@oscarpalmer/atoms/is';
-import type {ArrayOrPlainObject, PlainObject} from '@oscarpalmer/atoms/models';
-import {camelCase, getString, parse} from '@oscarpalmer/atoms/string';
+import type {PlainObject} from '@oscarpalmer/atoms/models';
+import {camelCase, getString} from '@oscarpalmer/atoms/string';
 import {dispatch} from '@oscarpalmer/toretto/event';
-import {EVENT_CHANGE, EXPRESSION_TRUE} from '../constants';
+import {EVENT_CHANGE} from '../constants';
 import type {Context} from '../controller/context';
-import type {ControllerDataType, ControllerDataTypes} from '../models';
+import {getDataValue} from '../helpers/data.helper';
+import type {ControllerDataTypes} from '../models';
 
 export class Data {
 	readonly frames: Record<string, number | undefined> = {};
@@ -30,12 +30,17 @@ export class Data {
 				get(target: PlainObject, property: PropertyKey): unknown {
 					return Reflect.get(target, camelCase(String(property)));
 				},
-				set(target: PlainObject, property: PropertyKey, next: unknown): boolean {
+				set(target: PlainObject, property: PropertyKey, value: unknown): boolean {
 					const name = camelCase(String(property));
-					const previous = Reflect.get(target, name);
-					const nextAsString = getString(next);
+					const type = types[name];
 
-					if (typeof previous === typeof next && getString(previous) === nextAsString) {
+					const previous = Reflect.get(target, name);
+					const previousAsString = getString(previous);
+
+					const nextValue = getDataValue(type, value);
+					const nextAsString = getString(nextValue);
+
+					if (typeof previous === typeof nextValue && previousAsString === nextAsString) {
 						return true;
 					}
 
@@ -43,7 +48,7 @@ export class Data {
 						context,
 						name,
 						target,
-						original: next,
+						original: nextValue,
 						stringified: nextAsString,
 					});
 				},
@@ -67,66 +72,6 @@ type Value = {
 
 //
 
-export function getDataValue(type: ControllerDataType, original: string): unknown {
-	switch (type) {
-		case 'array':
-		case 'object':
-			return getObjectValue(original, type === 'array');
-
-		case 'boolean':
-			return EXPRESSION_TRUE.test(original);
-
-		case 'number':
-			return getNumberValue(original);
-
-		default:
-			return original;
-	}
-}
-
-function getNumberValue(original: string): number | undefined {
-	const asNumber = Number.parseFloat(original);
-
-	return Number.isNaN(asNumber) ? undefined : asNumber;
-}
-
-function getObjectValue(original: string, array: boolean): ArrayOrPlainObject {
-	const parsed = parse(original);
-
-	if (parsed == null) {
-		return array ? [] : {};
-	}
-
-	if (array) {
-		return Array.isArray(parsed) ? parsed : [];
-	}
-
-	return isPlainObject(parsed) ? parsed : {};
-}
-
-export function replaceData(context: Context, value: unknown): void {
-	const previous = Object.keys(context.data.value);
-	const next = isArrayOrPlainObject(value) ? Object.keys(value) : [];
-
-	for (const key of previous) {
-		if (value == null || !next.includes(key)) {
-			delete context.data.value[key];
-		} else {
-			context.data.value[key] = (value as PlainObject)[key];
-		}
-	}
-
-	for (const key of next) {
-		if (!previous.includes(key)) {
-			const val = (value as PlainObject)[key];
-
-			if (val != null) {
-				context.data.value[key] = val;
-			}
-		}
-	}
-}
-
 function setElementContents(elements: Element[], value: string): void {
 	const {length} = elements;
 
@@ -146,36 +91,16 @@ function setElementValue(element: Element, value: string, focused: boolean): voi
 		case element === document.activeElement && !focused:
 			return;
 
-		case element instanceof HTMLInputElement && EVENT_CHANGE.has(element.type): {
-			element.checked =
-				element.value === value || (element.type === 'checkbox' && value === 'true');
-
-			event = 'change';
-
+		case element instanceof HTMLInputElement && EVENT_CHANGE.has(element.type):
+			event = updateToggle(element, value);
 			break;
-		}
 
-		case (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) &&
-			element.value !== value: {
-			element.value = value;
-			event = 'input';
-
+		case element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement:
+			event = updateInput(element, value);
 			break;
-		}
 
-		case element instanceof HTMLSelectElement && element.value !== value: {
-			const index = [...element.options].findIndex(option => option.value === value);
-
-			if (index > -1) {
-				element.selectedIndex = index;
-			}
-
-			event = 'change';
-
-			break;
-		}
-
-		default:
+		case element instanceof HTMLSelectElement:
+			event = updateSelect(element, value);
 			break;
 	}
 
@@ -249,8 +174,17 @@ export function setValueFromAttribute(context: Context, name: string, value: str
 
 	focused.add(attribute);
 
-	if (context.data.value[name] == null || getString(context.data.value[name]) !== value) {
-		context.data.value[name] = getDataValue(context.data.types[name], value);
+	context.data.value[name] = value;
+}
+
+function updateInput(
+	element: HTMLInputElement | HTMLTextAreaElement,
+	value: string,
+): string | undefined {
+	if (element.value !== value) {
+		element.value = value;
+
+		return 'input';
 	}
 }
 
@@ -279,6 +213,22 @@ function updateProperty(parameters: UpdatePropertyParameters): boolean {
 	});
 
 	return true;
+}
+
+function updateSelect(element: HTMLSelectElement, value: string): string | undefined {
+	const index = [...element.options].findIndex(option => option.value === value);
+
+	if (index > -1) {
+		element.selectedIndex = index;
+	}
+
+	return 'change';
+}
+
+function updateToggle(element: HTMLInputElement, value: string): string | undefined {
+	element.checked = element.value === value || (element.type === 'checkbox' && value === 'true');
+
+	return 'change';
 }
 
 //

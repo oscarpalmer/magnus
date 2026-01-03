@@ -1,4 +1,3 @@
-/** biome-ignore-all lint/style/noMagicNumbers: Testing */
 import {afterAll, expect, test} from 'vitest';
 import {Controller} from '../src/controller';
 import magnus from '../src/magnus';

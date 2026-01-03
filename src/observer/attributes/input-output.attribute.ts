@@ -6,8 +6,8 @@ import {
 	EXPRESSION_JSON_SUFFIX,
 } from '../../constants';
 import type {Context} from '../../controller/context';
+import {getDataValue, replaceData} from '../../helpers/data.helper';
 import type {AttributeHandleCallbackParameters} from '../../models';
-import {getDataValue, replaceData} from '../../store/data.store';
 import {handleActionAttribute} from './action.attribute';
 import {handleTargetAttribute} from './target.attribute';
 

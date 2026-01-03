@@ -24,9 +24,12 @@ export default defineConfig({
 			external: watch
 				? []
 				: [
-						'@oscarpalmer/atoms/is',
+						'@oscarpalmer/atoms/color',
 						'@oscarpalmer/atoms/function',
+						'@oscarpalmer/atoms/is',
+						'@oscarpalmer/atoms/number',
 						'@oscarpalmer/atoms/string',
+						'@oscarpalmer/datum/get',
 						'@oscarpalmer/toretto/event',
 						'@oscarpalmer/toretto/find',
 						'@oscarpalmer/toretto/is',

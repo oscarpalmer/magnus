@@ -15,10 +15,10 @@ export class Action {
 }
 
 export class Actions {
-	private readonly store = new Map<string, Action>();
+	readonly #store = new Map<string, Action>();
 
 	add(name: string, target: EventTarget): void {
-		const action = this.store.get(name);
+		const action = this.#store.get(name);
 
 		if (action != null) {
 			addActionTarget(action, target);
@@ -26,7 +26,7 @@ export class Actions {
 	}
 
 	clear(): void {
-		const actions = [...this.store.values()];
+		const actions = [...this.#store.values()];
 		const {length} = actions;
 
 		for (let index = 0; index < length; index += 1) {
@@ -37,28 +37,28 @@ export class Actions {
 			}
 		}
 
-		this.store.clear();
+		this.#store.clear();
 	}
 
 	create(parameters: ActionParameters, target: EventTarget): void {
-		if (!this.store.has(parameters.name)) {
+		if (!this.#store.has(parameters.name)) {
 			const action = new Action(parameters);
 
 			addActionTarget(action, target);
 
-			this.store.set(parameters.name, action);
+			this.#store.set(parameters.name, action);
 		}
 	}
 
 	has(name: string): boolean {
-		return this.store.has(name);
+		return this.#store.has(name);
 	}
 
 	remove(name: string, target: EventTarget): void {
-		const action = this.store.get(name);
+		const action = this.#store.get(name);
 
 		if (action != null) {
-			removeActionTarget(this.store, name, action, target);
+			removeActionTarget(this.#store, name, action, target);
 		}
 	}
 }

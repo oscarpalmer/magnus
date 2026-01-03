@@ -1,4 +1,16 @@
-/** biome-ignore-all lint/style/useNamingConvention: Matching HTML-tags, so okay to override */
+import type {ControllerDataType} from './models';
+
+export const DATA_TYPES = new Set<ControllerDataType>([
+	'array',
+	'boolean',
+	'color',
+	'date',
+	'datetime',
+	'number',
+	'object',
+	'string',
+	'time',
+]);
 
 export const DEBOUNCE_DELAY = 25;
 
@@ -36,6 +48,8 @@ export const EXPRESSION_DATA_ATTRIBUTE = /^\w+-[\w-]+$/;
  */
 export const EXPRESSION_DOCUMENT = /^document$/i;
 
+export const EXPRESSION_FALSE = /^(0|false)$/i;
+
 /**
  * - `controller(.identifier).property(:json)`
  * - `[, name, id?, value]`
@@ -46,6 +60,8 @@ export const EXPRESSION_IO_ATTRIBUTE_PREFIX = /^[\w-]+(?:\.[\w-]+)?\./;
 
 export const EXPRESSION_JSON_SUFFIX = /:json$/;
 
+export const EXPRESSION_METHOD_INVALID = /(^__|^(connect|constructor|disconnect)$)/i;
+
 /**
  * - `controller(.identifier):target`
  * - `[, name, id?, value]`
@@ -54,7 +70,9 @@ export const EXPRESSION_TARGET_ATTRIBUTE_FULL = /^([\w-]+)(?:\.([\w-]+))?:([\w-]
 
 export const EXPRESSION_TARGET_ATTRIBUTE_PREFIX = /^[\w-]+(?:\.[\w-]+)?:/;
 
-export const EXPRESSION_TRUE = /^true$/i;
+export const EXPRESSION_TIME = /^([01]?\d|2[0-3])(?::([0-5]?\d)(?::([0-5]?\d))?)?$/;
+
+export const EXPRESSION_TRUE = /^(1|true)$/i;
 
 export const EXPRESSION_WHITESPACE = /\s+/;
 

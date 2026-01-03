@@ -1,6 +1,6 @@
 import type {PlainObject} from '@oscarpalmer/atoms/models';
+import {replaceData} from '../helpers/data.helper';
 import type {ControllerDataTypes, ReadonlyTargets} from '../models';
-import {replaceData} from '../store/data.store';
 import type {Context} from './context';
 import type {Events} from './events';
 

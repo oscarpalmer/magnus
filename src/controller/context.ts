@@ -1,4 +1,5 @@
-import type {ControllerConstructor, ControllerDataTypes} from '../models';
+import {getDataTypes} from '../helpers';
+import type {ControllerConstructor} from '../models';
 import {Actions} from '../store/action.store';
 import {contexts} from '../store/context.store';
 import {Data} from '../store/data.store';
@@ -17,7 +18,7 @@ export class Context {
 		this.state = {element, name};
 
 		this.actions = new Actions();
-		this.data = new Data(this, ((creator as any).types ?? {}) as ControllerDataTypes);
+		this.data = new Data(this, getDataTypes((creator as any).types));
 		this.events = new Events(this);
 		this.targets = new Targets(this);
 

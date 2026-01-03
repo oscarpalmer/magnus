@@ -5,6 +5,7 @@
 	},
 	"dependencies": {
 		"@oscarpalmer/atoms": "^0.124",
+		"@oscarpalmer/datum": "^0.10",
 		"@oscarpalmer/toretto": "^0.34"
 	},
 	"description": "A JavaScript framework for developers who like HTML.",

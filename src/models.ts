@@ -44,7 +44,16 @@ export type ControllerConstructor = new (context: Context) => Controller;
 
 export type ControllerDataTypes = Record<string, ControllerDataType>;
 
-export type ControllerDataType = 'array' | 'boolean' | 'number' | 'object' | 'string';
+export type ControllerDataType =
+	| 'array'
+	| 'boolean'
+	| 'color'
+	| 'date'
+	| 'datetime'
+	| 'number'
+	| 'object'
+	| 'string'
+	| 'time';
 
 //
 

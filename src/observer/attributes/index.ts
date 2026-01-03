@@ -1,6 +1,6 @@
 import {camelCase} from '@oscarpalmer/atoms/string';
 import {EXPRESSION_CONTROLLER_ATTRIBUTE_PREFIX} from '../../constants';
-import {parseAttribute} from '../../helpers/attribute';
+import {parseAttribute} from '../../helpers/attribute.helper';
 import type {AttributeHandleCallback, AttributeType} from '../../models';
 import {contexts} from '../../store/context.store';
 import {controllers} from '../../store/controller.store';

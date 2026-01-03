@@ -1,7 +1,7 @@
 import type {GenericCallback, PlainObject} from '@oscarpalmer/atoms/models';
 import {camelCase} from '@oscarpalmer/atoms/string';
 import type {Context} from '../../controller/context';
-import {getEventParameters} from '../../helpers/event';
+import {getEventParameters} from '../../helpers/event.helper';
 import {findTarget} from '../../helpers/index';
 import type {AttributeHandleCallbackParameters, EventParameters} from '../../models';
 
