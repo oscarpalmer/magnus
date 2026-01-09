@@ -4,7 +4,7 @@ import {dispatch} from '@oscarpalmer/toretto/event';
 import {EVENT_CHANGE} from '../constants';
 import type {Context} from '../controller/context';
 import {getDataValue} from '../helpers/data.helper';
-import type {ControllerDataTypes} from '../models';
+import type {DataTypes, DataUpdateParameters, DataValue} from '../models';
 
 export class Data {
 	readonly frames: Record<string, number | undefined> = {};
@@ -12,7 +12,7 @@ export class Data {
 
 	constructor(
 		context: Context,
-		readonly types: ControllerDataTypes,
+		readonly types: DataTypes,
 	) {
 		this.value = new Proxy(
 			{},
@@ -56,19 +56,6 @@ export class Data {
 		);
 	}
 }
-
-type UpdatePropertyParameters = {
-	context: Context;
-	name: string;
-	original?: unknown;
-	stringified: string;
-	target: PlainObject;
-};
-
-type Value = {
-	original?: unknown;
-	stringified: string;
-};
 
 //
 
@@ -119,9 +106,7 @@ function setElementValues(elements: Element[], attribute: string, value: string)
 	}
 }
 
-function setJson(context: Context, property: string, value: Value, attribute: string): void {
-	const {element} = context.state;
-
+function setJson(context: Context, property: string, value: DataValue, attribute: string): void {
 	const properties = [property, ''];
 	const values = [value.original, context.data.value];
 
@@ -137,22 +122,22 @@ function setJson(context: Context, property: string, value: Value, attribute: st
 		}
 
 		const json =
-			value == null ? '' : JSON.stringify(value, null, +getComputedStyle(element).tabSize);
+			value == null
+				? ''
+				: JSON.stringify(value, null, +getComputedStyle(context.state.element).tabSize);
 
 		setElementContents(outputs, json);
 		setElementValues(inputs, attribute, json);
 	}
 }
 
-function setValue(context: Context, property: string, value: Value): void {
-	const {element, name} = context.state;
+function setValue(context: Context, property: string, value: DataValue): void {
+	const attribute = `${context.state.name}-${property}`;
 
-	const attribute = `${name}-${property}`;
-
-	if (element.hasAttribute(attribute)) {
+	if (context.state.element.hasAttribute(attribute)) {
 		ignored.add(attribute);
 
-		element.removeAttribute(attribute);
+		context.state.element.removeAttribute(attribute);
 	}
 
 	setElementContents(context.targets.getAll(`output.${property}`), value.stringified);
@@ -188,13 +173,13 @@ function updateInput(
 	}
 }
 
-function updateProperty(parameters: UpdatePropertyParameters): boolean {
-	const {context, name, original, stringified, target} = parameters;
+function updateProperty(parameters: DataUpdateParameters): boolean {
+	const {context, name, original, stringified} = parameters;
 
 	if (original == null) {
-		Reflect.deleteProperty(target, name);
+		Reflect.deleteProperty(parameters.target, name);
 	} else {
-		Reflect.set(target, name, original);
+		Reflect.set(parameters.target, name, original);
 	}
 
 	const frame = context.data.frames[name];
@@ -233,6 +218,6 @@ function updateToggle(element: HTMLInputElement, value: string): string | undefi
 
 //
 
-const focused: Set<string> = new Set();
+const focused = new Set<string>();
 
-const ignored: Set<string> = new Set();
+const ignored = new Set<string>();

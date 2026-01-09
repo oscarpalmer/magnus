@@ -1,8 +1,10 @@
 import type {Context} from '../controller/context';
 
 export class Contexts {
+	private readonly store = new WeakMap<Element, Record<string, Context>>();
+
 	connect(element: Element, context: Context): void {
-		let connection = connections.get(element);
+		let connection = this.store.get(element);
 
 		if (connection?.[context.state.name] != null) {
 			return;
@@ -11,7 +13,7 @@ export class Contexts {
 		if (connection == null) {
 			connection = {};
 
-			connections.set(element, connection);
+			this.store.set(element, connection);
 		}
 
 		connection[context.state.name] = context;
@@ -19,12 +21,12 @@ export class Contexts {
 
 	disconnect(element: Element, name?: string): void {
 		if (name == null) {
-			connections.delete(element);
+			this.store.delete(element);
 
 			return;
 		}
 
-		const connection = connections.get(element);
+		const connection = this.store.get(element);
 
 		if (connection == null || connection[name] == null) {
 			return;
@@ -44,21 +46,17 @@ export class Contexts {
 		}
 
 		if (length === 1) {
-			connections.delete(element);
+			this.store.delete(element);
 		} else {
-			connections.set(element, updated);
+			this.store.set(element, updated);
 		}
 	}
 
 	get(element: Element, name: string): Context | undefined {
-		return connections.get(element)?.[name];
+		return this.store.get(element)?.[name];
 	}
 }
 
 //
 
-const connections: WeakMap<Element, Record<string, Context>> = new WeakMap();
-
-const contexts: Contexts = new Contexts();
-
-export {contexts};
+export const contexts = new Contexts();

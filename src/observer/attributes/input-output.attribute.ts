@@ -1,13 +1,12 @@
 import {camelCase, parse} from '@oscarpalmer/atoms/string';
 import {
 	EVENT_CHANGE,
-	EVENT_IGNORED,
 	EXPRESSION_IO_ATTRIBUTE_PREFIX,
 	EXPRESSION_JSON_SUFFIX,
 } from '../../constants';
 import type {Context} from '../../controller/context';
 import {getDataValue, replaceData} from '../../helpers/data.helper';
-import type {AttributeHandleCallbackParameters} from '../../models';
+import type {AttributeHandlerCallbackParameters} from '../../models';
 import {handleActionAttribute} from './action.attribute';
 import {handleTargetAttribute} from './target.attribute';
 
@@ -18,7 +17,7 @@ function getEventType(element: Element): string | undefined {
 		return 'change';
 	}
 
-	if (isInput && EVENT_IGNORED.has(element.type)) {
+	if (isInput && ignoredEvent.has(element.type)) {
 		return;
 	}
 
@@ -46,52 +45,36 @@ function handleDataValue(
 	}
 }
 
-function handleInputAttribute(parameters: AttributeHandleCallbackParameters): void {
-	const {context, element, name, type, value, added} = parameters;
+function handleInputAttribute(parameters: AttributeHandlerCallbackParameters): void {
+	const {type} = parameters;
 
-	const unprefixed = name.replace(EXPRESSION_IO_ATTRIBUTE_PREFIX, '');
-	const isJson = unprefixed.endsWith(':json');
+	const unprefixed = parameters.name.replace(EXPRESSION_IO_ATTRIBUTE_PREFIX, '');
+	const isJson = EXPRESSION_JSON_SUFFIX.test(unprefixed);
 	const property = camelCase(unprefixed.replace(EXPRESSION_JSON_SUFFIX, ''));
 
 	handleActionAttribute({
-		added,
-		context,
-		element,
-		type,
-		value,
+		...parameters,
 		custom: {
 			callback: (event: Event) => {
-				handleDataValue(context, event.target as never, property, isJson);
+				handleDataValue(parameters.context, event.target as never, property, isJson);
 			},
 			event: type,
 		},
 		name: `input:${type}.${unprefixed}`,
 	});
 
-	handleTargetAttribute(
-		{
-			added,
-			context,
-			element,
-			type,
-			value,
-			name: `input.${unprefixed}`,
-		},
-		false,
-	);
+	handleTargetAttribute({...parameters, name: `input.${unprefixed}`}, false);
 }
 
-export function handleInputOutputAttribute(parameters: AttributeHandleCallbackParameters): void {
-	const {added, context, element, name} = parameters;
+export function handleInputOutputAttribute(parameters: AttributeHandlerCallbackParameters): void {
+	const {name} = parameters;
 
-	const type = getEventType(element);
+	const type = getEventType(parameters.element);
 
 	if (type == null) {
 		handleTargetAttribute(
 			{
-				added,
-				context,
-				element,
+				...parameters,
 				name: `output.${name.replace(EXPRESSION_IO_ATTRIBUTE_PREFIX, '')}`,
 				type: '',
 				value: '',
@@ -99,14 +82,7 @@ export function handleInputOutputAttribute(parameters: AttributeHandleCallbackPa
 			false,
 		);
 	} else {
-		handleInputAttribute({
-			added,
-			context,
-			element,
-			name,
-			type,
-			value: name,
-		});
+		handleInputAttribute({...parameters, type, value: name});
 	}
 }
 
@@ -125,3 +101,7 @@ function setDataValue(
 			? element.checked
 			: getDataValue(context.data.types[name], value ?? element.value);
 }
+
+//
+
+const ignoredEvent = new Set(['button', 'image', 'reset', 'submit']);

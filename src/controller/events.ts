@@ -3,15 +3,8 @@ import {isPlainObject} from '@oscarpalmer/atoms/is';
 import {dispatch, off, on} from '@oscarpalmer/toretto/event';
 import {isEventTarget} from '@oscarpalmer/toretto/is';
 import type {RemovableEventListener} from '@oscarpalmer/toretto/models';
-import type {ExtendedEventTarget} from '../models';
+import type {EventListenerParameters, ExtendedEventTarget} from '../models';
 import type {Context} from './context';
-
-type HandleEventParameters = {
-	first?: boolean | AddEventListenerOptions | ExtendedEventTarget;
-	listener: EventListener;
-	second?: ExtendedEventTarget;
-	type: string;
-};
 
 export class Events {
 	constructor(private readonly context: Context) {}
@@ -221,7 +214,7 @@ function getTarget(context: Context, target?: ExtendedEventTarget): EventTarget 
 
 function handleEvent(
 	context: Context,
-	parameters: HandleEventParameters,
+	parameters: EventListenerParameters,
 	add: boolean,
 ): GenericCallback {
 	const firstIsOptions = typeof parameters.first === 'boolean' || isPlainObject(parameters.first);

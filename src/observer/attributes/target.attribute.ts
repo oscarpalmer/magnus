@@ -1,23 +1,23 @@
 import {EXPRESSION_TARGET_ATTRIBUTE_PREFIX} from '../../constants';
-import type {AttributeHandleCallbackParameters} from '../../models';
+import type {AttributeHandlerCallbackParameters} from '../../models';
 
-export function handleTargetAttribute(parameters: AttributeHandleCallbackParameters): void;
+export function handleTargetAttribute(parameters: AttributeHandlerCallbackParameters): void;
 
 export function handleTargetAttribute(
-	parameters: AttributeHandleCallbackParameters,
+	parameters: AttributeHandlerCallbackParameters,
 	removePrefix: boolean,
 ): void;
 
 export function handleTargetAttribute(
-	parameters: AttributeHandleCallbackParameters,
+	parameters: AttributeHandlerCallbackParameters,
 	unprefix?: boolean,
 ): void {
-	const {added, context, element, name} = parameters;
+	const {context, element, name} = parameters;
 
 	const normalized =
 		(unprefix ?? true) ? name.replace(EXPRESSION_TARGET_ATTRIBUTE_PREFIX, '') : name;
 
-	if (added) {
+	if (parameters.added) {
 		context.targets.add(normalized, element);
 	} else {
 		context.targets.remove(normalized, element);

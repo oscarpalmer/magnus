@@ -1,19 +1,22 @@
 import {findRelatives} from '@oscarpalmer/toretto/find';
 import {Context} from '../controller/context';
-import type {ControllerConstructor} from '../models';
+import {getDataTypes} from '../helpers/data.helper';
+import type {ControllerConstructor, DataTypes} from '../models';
 import {contexts} from './context.store';
 
 class Controllers {
+	private readonly store = new Map<string, StoredController>();
+
 	add(name: string, element: Element): void {
-		const controller = stored.get(name);
+		const controller = this.store.get(name);
 
 		if (controller != null && !controller.instances.has(element)) {
-			controller.instances.set(element, new Context(name, element, controller.ctor));
+			controller.instances.set(element, new Context(name, element, controller));
 		}
 	}
 
 	create(name: string, ctor: ControllerConstructor): void {
-		stored.set(name, new StoredController(ctor));
+		this.store.set(name, new StoredController(ctor));
 	}
 
 	find(origin: Element, name: string, id?: string): Context | undefined {
@@ -26,16 +29,16 @@ class Controllers {
 		}
 
 		if (found != null) {
-			return stored.get(name)?.instances.get(found);
+			return this.store.get(name)?.instances.get(found);
 		}
 	}
 
 	has(name: string): boolean {
-		return stored.has(name);
+		return this.store.has(name);
 	}
 
 	remove(name: string, element?: Element): void {
-		const controller = stored.get(name) as StoredController;
+		const controller = this.store.get(name) as StoredController;
 
 		if (element == null) {
 			const instances = [...controller.instances.values()];
@@ -45,7 +48,7 @@ class Controllers {
 				removeInstance(controller, instances[index]);
 			}
 
-			stored.delete(name);
+			this.store.delete(name);
 		} else {
 			removeInstance(controller, controller.instances.get(element)!);
 		}
@@ -53,11 +56,12 @@ class Controllers {
 }
 
 export class StoredController {
-	readonly ctor: ControllerConstructor;
 	readonly instances = new Map<Element, Context>();
 
-	constructor(ctor: ControllerConstructor) {
-		this.ctor = ctor;
+	readonly types: DataTypes;
+
+	constructor(readonly ctor: ControllerConstructor) {
+		this.types = getDataTypes((ctor as any).types);
 	}
 }
 
@@ -84,6 +88,4 @@ function removeInstance(controller: StoredController, context: Context): void {
 
 //
 
-export const controllers: Controllers = new Controllers();
-
-const stored: Map<string, StoredController> = new Map();
+export const controllers = new Controllers();

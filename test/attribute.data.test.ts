@@ -31,9 +31,9 @@ class DataController extends Controller<Data> {
 	connect(): void {
 		controller = this;
 
-		allOutput = this.targets.find('div') as HTMLDivElement;
-		numberJsonOutput = this.targets.find('var') as HTMLSpanElement;
-		numberRawOutput = this.targets.find('span') as HTMLElement;
+		allOutput = this.targets.find('div');
+		numberJsonOutput = this.targets.find('var');
+		numberRawOutput = this.targets.find('span');
 	}
 }
 
@@ -48,7 +48,7 @@ document.body.innerHTML = `<div
 	d-radio="alpha"
 	d-select="1"
 	d-text="Hello, world!"
-	d-time="12:34:56"
+	d-time="12:34:56.789"
 >
 	<input d.check type="checkbox" />
 	<input d.date type="date" />
@@ -77,10 +77,10 @@ document.body.innerHTML = `<div
 
 magnus.add('d', DataController);
 
-let allOutput: HTMLDivElement;
+let allOutput: HTMLDivElement | null;
 let controller: DataController;
-let numberJsonOutput: HTMLElement;
-let numberRawOutput: HTMLSpanElement;
+let numberJsonOutput: HTMLElement | null;
+let numberRawOutput: HTMLSpanElement | null;
 
 afterAll(() => {
 	document.body.innerHTML = '';
@@ -93,7 +93,7 @@ test('data attribute', () =>
 				array: [1, 2, 3],
 				check: true,
 				date: '1992-01-02',
-				datetime: '1992-01-02T12:34:56',
+				datetime: '1992-01-02T12:34',
 				number: 123,
 				object: {key: 'value'},
 				radio: 'alpha',
@@ -102,14 +102,14 @@ test('data attribute', () =>
 				time: '12:34:56',
 			});
 
-			expect(numberJsonOutput.textContent).toBe('123');
-			expect(numberRawOutput.textContent).toBe('123');
-			expect(allOutput.textContent).toBe(JSON.stringify(controller.data));
+			expect(numberJsonOutput?.textContent).toBe('123');
+			expect(numberRawOutput?.textContent).toBe('123');
+			expect(allOutput?.textContent).toBe(JSON.stringify(controller.data));
 
 			controller.data.array = [4, 5, 6];
 			controller.data.check = false;
 			controller.data.date = '2000-01-01';
-			controller.data.datetime = '2000-01-01T00:00:00';
+			controller.data.datetime = '2000-01-01T00:00';
 			controller.data.number = 123;
 			controller.data.object = {key: 'new value'};
 			controller.data.radio = 'omega';
@@ -123,7 +123,7 @@ test('data attribute', () =>
 				array: [4, 5, 6],
 				check: false,
 				date: '2000-01-01',
-				datetime: '2000-01-01T00:00:00',
+				datetime: '2000-01-01T00:00',
 				number: 123,
 				object: {key: 'new value'},
 				radio: 'omega',
@@ -132,9 +132,9 @@ test('data attribute', () =>
 				time: '23:59:59',
 			});
 
-			expect(numberJsonOutput.textContent).toBe('123');
-			expect(numberRawOutput.textContent).toBe('123');
-			expect(allOutput.textContent).toBe(JSON.stringify(controller.data));
+			expect(numberJsonOutput?.textContent).toBe('123');
+			expect(numberRawOutput?.textContent).toBe('123');
+			expect(allOutput?.textContent).toBe(JSON.stringify(controller.data));
 
 			controller.data = {
 				array: [7, 8, 9],
@@ -155,7 +155,7 @@ test('data attribute', () =>
 				array: [7, 8, 9],
 				check: true,
 				date: '1900-01-01',
-				datetime: '1900-01-01T09:15:00',
+				datetime: '1900-01-01T09:15',
 				number: 456,
 				object: {key: 'another value'},
 				radio: 'alpha',
@@ -164,9 +164,9 @@ test('data attribute', () =>
 				time: '09:15:00',
 			});
 
-			expect(numberJsonOutput.textContent).toBe('456');
-			expect(numberRawOutput.textContent).toBe('456');
-			expect(allOutput.textContent).toBe(JSON.stringify(controller.data));
+			expect(numberJsonOutput?.textContent).toBe('456');
+			expect(numberRawOutput?.textContent).toBe('456');
+			expect(allOutput?.textContent).toBe(JSON.stringify(controller.data));
 
 			controller.data = {
 				check: 123,
@@ -192,9 +192,9 @@ test('data attribute', () =>
 				text: 'Spring cleaning :)',
 			});
 
-			expect(numberJsonOutput.textContent).toBe('789');
-			expect(numberRawOutput.textContent).toBe('789');
-			expect(allOutput.textContent).toBe(JSON.stringify(controller.data));
+			expect(numberJsonOutput?.textContent).toBe('789');
+			expect(numberRawOutput?.textContent).toBe('789');
+			expect(allOutput?.textContent).toBe(JSON.stringify(controller.data));
 
 			controller.data.number = undefined as never;
 
@@ -212,9 +212,9 @@ test('data attribute', () =>
 				text: 'Spring cleaning :)',
 			});
 
-			expect(numberJsonOutput.textContent).toBe('');
-			expect(numberRawOutput.textContent).toBe('');
-			expect(allOutput.textContent).toBe(JSON.stringify(controller.data));
+			expect(numberJsonOutput?.textContent).toBe('');
+			expect(numberRawOutput?.textContent).toBe('');
+			expect(allOutput?.textContent).toBe(JSON.stringify(controller.data));
 
 			controller.data.array = undefined as never;
 			controller.data.object = undefined as never;
@@ -233,9 +233,9 @@ test('data attribute', () =>
 				text: 'Hello, again!',
 			});
 
-			expect(numberJsonOutput.textContent).toBe('');
-			expect(numberRawOutput.textContent).toBe('');
-			expect(allOutput.textContent).toBe(JSON.stringify(controller.data));
+			expect(numberJsonOutput?.textContent).toBe('');
+			expect(numberRawOutput?.textContent).toBe('');
+			expect(allOutput?.textContent).toBe(JSON.stringify(controller.data));
 
 			controller.element.setAttribute('d-check', '');
 			controller.element.setAttribute('d-text', 'Hello, again!');
@@ -251,9 +251,9 @@ test('data attribute', () =>
 				text: 'Hello, again!',
 			});
 
-			expect(numberJsonOutput.textContent).toBe('');
-			expect(numberRawOutput.textContent).toBe('');
-			expect(allOutput.textContent).toBe(JSON.stringify(controller.data));
+			expect(numberJsonOutput?.textContent).toBe('');
+			expect(numberRawOutput?.textContent).toBe('');
+			expect(allOutput?.textContent).toBe(JSON.stringify(controller.data));
 
 			controller.data = null;
 		}, 1375);
@@ -265,9 +265,9 @@ test('data attribute', () =>
 				text: '',
 			});
 
-			expect(numberJsonOutput.textContent).toBe('');
-			expect(numberRawOutput.textContent).toBe('');
-			expect(allOutput.textContent).toBe(JSON.stringify(controller.data));
+			expect(numberJsonOutput?.textContent).toBe('');
+			expect(numberRawOutput?.textContent).toBe('');
+			expect(allOutput?.textContent).toBe(JSON.stringify(controller.data));
 
 			done();
 		}, 1500);

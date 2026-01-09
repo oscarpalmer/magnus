@@ -1,7 +1,11 @@
 import {camelCase} from '@oscarpalmer/atoms/string';
 import {EXPRESSION_CONTROLLER_ATTRIBUTE_PREFIX} from '../../constants';
 import {parseAttribute} from '../../helpers/attribute.helper';
-import type {AttributeHandleCallback, AttributeType} from '../../models';
+import type {
+	AttributeHandlerCallback,
+	AttributeType,
+	ContextualAttributeHandlerParameters,
+} from '../../models';
 import {contexts} from '../../store/context.store';
 import {controllers} from '../../store/controller.store';
 import {setValueFromAttribute} from '../../store/data.store';
@@ -9,15 +13,11 @@ import {handleActionAttribute} from './action.attribute';
 import {handleInputOutputAttribute} from './input-output.attribute';
 import {handleTargetAttribute} from './target.attribute';
 
-export function handleContextualAttribute(
-	type: AttributeType,
-	element: Element,
-	name: string,
-	value: string,
-	added: boolean,
-): void {
+export function handleContextualAttribute(parameters: ContextualAttributeHandlerParameters): void {
+	const {added, element, type} = parameters;
+
 	const callback = callbacks[type];
-	const parsed = parseAttribute(type, name, value);
+	const parsed = parseAttribute(type, parameters.name, parameters.value);
 
 	let count = 0;
 
@@ -37,7 +37,7 @@ export function handleContextualAttribute(
 		} else if (context != null) {
 			contexts.connect(element, context);
 
-			callback?.({context, element, name, value, added, type});
+			callback?.({...parameters, context});
 		}
 	}
 
@@ -61,13 +61,13 @@ export function handleDataAttribute(element: Element, name: string): void {
 	const length = parts.length - 1;
 
 	for (let index = 0; index < length; index += 1) {
-		const controller = parts.slice(0, index + 1).join('-');
+		const controller = parts.slice(0, index + 1).join(delimiter);
 		const context = controllers.find(element, controller);
 
 		if (context != null) {
 			setValueFromAttribute(
 				context,
-				camelCase(parts.slice(index + 1).join('-')),
+				camelCase(parts.slice(index + 1).join(delimiter)),
 				element.getAttribute(name) ?? '',
 			);
 
@@ -78,8 +78,10 @@ export function handleDataAttribute(element: Element, name: string): void {
 
 //
 
-const callbacks: Partial<Record<AttributeType, AttributeHandleCallback>> = {
+const callbacks: Partial<Record<AttributeType, AttributeHandlerCallback>> = {
 	action: handleActionAttribute,
 	io: handleInputOutputAttribute,
 	target: handleTargetAttribute,
 };
+
+const delimiter = '-';

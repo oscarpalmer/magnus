@@ -1,42 +1,38 @@
 import {getNormalizedHex, isHexColor} from '@oscarpalmer/atoms/color';
 import {isArrayOrPlainObject, isPlainObject} from '@oscarpalmer/atoms/is';
-import type {ArrayOrPlainObject, PlainObject} from '@oscarpalmer/atoms/models';
+import type {ArrayOrPlainObject, GenericCallback, PlainObject} from '@oscarpalmer/atoms/models';
 import {getNumber} from '@oscarpalmer/atoms/number';
 import {parse} from '@oscarpalmer/atoms/string';
+import {MINUTE} from '@oscarpalmer/datum/constants';
 import {getDate} from '@oscarpalmer/datum/get';
 import {EXPRESSION_FALSE, EXPRESSION_TIME, EXPRESSION_TRUE} from '../constants';
 import type {Context} from '../controller/context';
-import type {ControllerDataType} from '../models';
+import type {DataType, DataTypes} from '../models';
 
-export function getDataValue(type: ControllerDataType, value: unknown): unknown {
-	if (type == null) {
-		return value;
+export function getDataTypes(input: unknown): DataTypes {
+	const types: DataTypes = {};
+
+	if (!isPlainObject(input)) {
+		return types;
 	}
 
-	switch (type) {
-		case 'array':
-		case 'object':
-			return getObject(value, type === 'array');
+	const keys = Object.keys(input);
+	const {length} = keys;
 
-		case 'boolean':
-			return getBoolean(value);
+	for (let index = 0; index < length; index += 1) {
+		const key = keys[index];
+		const value = input[key];
 
-		case 'color':
-			return isHexColor(value) ? `#${getNormalizedHex(value)}` : undefined;
-
-		case 'date':
-		case 'datetime':
-			return getDateValue(value, type === 'datetime');
-
-		case 'number':
-			return getNumberValue(value);
-
-		case 'time':
-			return getTime(value);
-
-		default:
-			return value;
+		if (dataTypes.has(value as never)) {
+			types[key] = value as DataType;
+		}
 	}
+
+	return types;
+}
+
+export function getDataValue(type: DataType, value: unknown): unknown {
+	return type in transformers ? (transformers[type] as GenericCallback)(value, type) : value;
 }
 
 function getBoolean(value: unknown): boolean | undefined {
@@ -59,34 +55,24 @@ function getBoolean(value: unknown): boolean | undefined {
 	return EXPRESSION_FALSE.test(value) ? false : undefined;
 }
 
-function getDateValue(value: unknown, datetime: boolean): string | undefined {
-	let date = getDate(value);
-
-	if (date == null) {
-		if (typeof value !== 'string') {
-			return;
-		}
-
-		const parsed = Date.parse(value);
-
-		if (!Number.isNaN(parsed)) {
-			date = new Date(parsed);
-		}
+function getColorValue(value: unknown): string | undefined {
+	if (isHexColor(value)) {
+		return `#${getNormalizedHex(value)}`;
 	}
+}
+
+function getDateValue(value: unknown, type: DataType): string | undefined {
+	const date = getDate(value);
 
 	if (date == null) {
 		return;
 	}
 
-	formatter ??= new Intl.DateTimeFormat('sv-SE');
+	timezoneModifier ??= date.getTimezoneOffset() * MINUTE;
 
-	let suffix = '';
-
-	if (datetime) {
-		suffix = `T${getTime(date)}`;
-	}
-
-	return `${formatter.format(date)}${suffix}`;
+	return new Date(date.valueOf() - timezoneModifier)
+		.toISOString()
+		.slice(0, type === 'date' ? 10 : 16);
 }
 
 function getNumberValue(value: unknown): number | undefined {
@@ -95,25 +81,34 @@ function getNumberValue(value: unknown): number | undefined {
 	return Number.isNaN(asNumber) ? undefined : asNumber;
 }
 
-function getObject(value: unknown, array: boolean): ArrayOrPlainObject | undefined {
-	const obj = typeof value === 'string' ? parse(value) : value;
+function getObjectValue(value: unknown, type: DataType): ArrayOrPlainObject | undefined {
+	const array = type === 'array';
+	const actual = typeof value === 'string' ? parse(value) : value;
 
 	if (array) {
-		return Array.isArray(obj) ? obj : [];
+		return Array.isArray(actual) ? actual : [];
 	}
 
-	return isPlainObject(obj) ? obj : {};
+	return isPlainObject(actual) ? actual : {};
 }
 
 function getTime(value: unknown): string | undefined {
 	if (value instanceof Date) {
-		return `${padPart(String(value.getHours()))}:${padPart(String(value.getMinutes()))}:${padPart(String(value.getSeconds()))}`;
+		return `${pad(value.getHours())}:${pad(value.getMinutes())}`;
 	}
 
 	if (typeof value === 'number') {
-		return value >= 0 && value <= 23 ? `${padPart(String(value))}:00` : undefined;
+		return value >= 0 && value <= 23 ? `${pad(value)}:00:00` : undefined;
 	}
 
+	return parseTime(value);
+}
+
+function pad(value?: number | string): string {
+	return String(value ?? '').padStart(2, '0');
+}
+
+function parseTime(value: unknown): string | undefined {
 	if (typeof value !== 'string') {
 		return;
 	}
@@ -121,12 +116,8 @@ function getTime(value: unknown): string | undefined {
 	const [_, hour, minutes, seconds] = EXPRESSION_TIME.exec(value) ?? [];
 
 	if (hour != null) {
-		return `${padPart(hour)}:${padPart(minutes)}:${padPart(seconds)}`;
+		return `${pad(hour)}:${pad(minutes)}:${pad(seconds)}`;
 	}
-}
-
-function padPart(value: string | undefined): string {
-	return value == null ? '00' : value.padStart(2, '0');
 }
 
 export function replaceData(context: Context, value: unknown): void {
@@ -154,4 +145,27 @@ export function replaceData(context: Context, value: unknown): void {
 
 //
 
-let formatter: Intl.DateTimeFormat;
+const dataTypes = new Set<DataType>([
+	'array',
+	'boolean',
+	'color',
+	'date',
+	'datetime',
+	'number',
+	'object',
+	'string',
+	'time',
+]);
+
+const transformers: Partial<Record<DataType, (value: unknown, type: DataType) => unknown>> = {
+	array: getObjectValue,
+	boolean: getBoolean,
+	color: getColorValue,
+	date: getDateValue,
+	datetime: getDateValue,
+	number: getNumberValue,
+	object: getObjectValue,
+	time: getTime,
+};
+
+let timezoneModifier: number;

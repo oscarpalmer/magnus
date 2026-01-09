@@ -121,7 +121,15 @@ test('datetime', () => {
 		new Date(),
 		new Date().toISOString(),
 		1234567890,
-		'1992-01-02T12:34:56',
+		'1992',
+		'1992-1',
+		'1992-01',
+		'1992-01-2',
+		'1992-01-02',
+		'1992-01-02T1',
+		'1992-01-02T01',
+		'1992-01-02T01:2',
+		'1992-01-02T01:02',
 		Number.MIN_SAFE_INTEGER,
 		Number.MAX_SAFE_INTEGER,
 		'hello',
@@ -138,7 +146,7 @@ test('datetime', () => {
 	const {length} = values;
 
 	for (let index = 0; index < length; index += 1) {
-		expect(getDataValue('datetime', values[index])).toBeTypeOf(index < 4 ? 'string' : 'undefined');
+		expect(getDataValue('datetime', values[index])).toBeTypeOf(index < 12 ? 'string' : 'undefined');
 	}
 });
 

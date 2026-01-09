@@ -1,33 +1,21 @@
-import type {GenericCallback, PlainObject} from '@oscarpalmer/atoms/models';
+import type {PlainObject} from '@oscarpalmer/atoms/models';
 import {camelCase} from '@oscarpalmer/atoms/string';
-import type {Context} from '../../controller/context';
 import {getEventParameters} from '../../helpers/event.helper';
 import {findTarget} from '../../helpers/index';
-import type {AttributeHandleCallbackParameters, EventParameters} from '../../models';
-
-type HandleParameters = {
-	added: boolean;
-	callback: GenericCallback;
-	context: Context;
-	event: EventParameters;
-	name: string;
-	target: EventTarget;
-	value: string;
-};
-
-type StepperParameters = {
-	count: number;
-	event: EventParameters;
-} & AttributeHandleCallbackParameters;
+import type {
+	ActionAttributeHandlerParameters,
+	ActionAttributeStepHandlerParameters,
+	AttributeHandlerCallbackParameters,
+} from '../../models';
 
 //
 
-function handle(parameters: HandleParameters): void {
-	const {added, callback, context, event, name, target, value} = parameters;
+function handle(parameters: ActionAttributeHandlerParameters): void {
+	const {context, event, target, value} = parameters;
 
-	const action = `${name}${value.length === 0 ? '' : `/${value}`}`;
+	const action = `${parameters.name}${value.length === 0 ? '' : `/${value}`}`;
 
-	if (!added) {
+	if (!parameters.added) {
 		context.actions.remove(action, target);
 
 		return;
@@ -35,27 +23,25 @@ function handle(parameters: HandleParameters): void {
 
 	if (context.actions.has(action)) {
 		context.actions.add(action, target);
-
-		return;
+	} else {
+		context.actions.create(
+			{
+				callback: parameters.callback.bind(context.controller),
+				name: action,
+				options: event.options,
+				type: event.type,
+			},
+			target,
+		);
 	}
-
-	context.actions.create(
-		{
-			callback: callback.bind(context.controller),
-			name: action,
-			options: event.options,
-			type: event.type,
-		},
-		target,
-	);
 }
 
-export function handleActionAttribute(parameters: AttributeHandleCallbackParameters): void {
-	const {custom, element, name, value} = parameters;
+export function handleActionAttribute(parameters: AttributeHandlerCallbackParameters): void {
+	const {callback, event} = parameters.custom ?? {};
 
 	const eventParameters =
-		custom?.callback == null
-			? getEventParameters(element, name, value)
+		callback == null || event == null
+			? getEventParameters(parameters.element, parameters.name, parameters.value)
 			: {
 					callback: '',
 					options: {
@@ -63,7 +49,7 @@ export function handleActionAttribute(parameters: AttributeHandleCallbackParamet
 						once: false,
 						passive: true,
 					},
-					type: camelCase(custom.event),
+					type: camelCase(event),
 				};
 
 	if (eventParameters != null) {
@@ -75,41 +61,33 @@ export function handleActionAttribute(parameters: AttributeHandleCallbackParamet
 	}
 }
 
-function stepper(parameters: StepperParameters): void {
+function stepper(parameters: ActionAttributeStepHandlerParameters): void {
 	if (parameters.count >= 10) {
 		return;
 	}
 
-	parameters.count += 1;
-
-	const {added, context, element, event, name, value, custom} = parameters;
+	const {element, event} = parameters;
+	const {external} = event;
 
 	const callback =
-		custom?.callback ??
-		((context.controller as unknown as PlainObject)[event.callback] as (event: Event) => void);
+		parameters.custom?.callback ??
+		((parameters.context.controller as unknown as PlainObject)[event.callback] as (
+			event: Event,
+		) => void);
 
 	let target: EventTarget | undefined;
 
 	if (typeof callback === 'function') {
-		target =
-			event.external == null
-				? element
-				: findTarget(element, event.external.name, event.external.identifier);
+		target = external == null ? element : findTarget(element, external.name, external.identifier);
 	}
 
 	if (target == null) {
+		parameters.count += 1;
+
 		requestAnimationFrame(() => {
 			stepper(parameters);
 		});
 	} else {
-		handle({
-			added,
-			callback,
-			context,
-			event,
-			name,
-			target,
-			value,
-		});
+		handle({...parameters, callback, target});
 	}
 }

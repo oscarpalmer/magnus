@@ -1,5 +1,5 @@
-import {type CancellableCallback, debounce, type noop} from '@oscarpalmer/atoms/function';
-import {DEBOUNCE_DELAY} from '../constants';
+import {debounce} from '@oscarpalmer/atoms/function';
+import {TYPE_DATA} from '../constants';
 import {getAttributeType} from '../helpers/attribute.helper';
 import {contexts} from '../store/context.store';
 import {handleDataAttribute} from './attributes';
@@ -61,7 +61,7 @@ function handleAttribute(
 ): void {
 	const type = getAttributeType(name);
 
-	if (type === 'data') {
+	if (type === TYPE_DATA) {
 		handleDataAttribute(element, name);
 	} else if (type != null) {
 		handleAttributeChanges(type, element, name, value!, removed);
@@ -97,9 +97,9 @@ function handleNodes(nodes: NodeList | Node[], removed: boolean): void {
 	}
 }
 
-const debouncer: CancellableCallback<typeof noop> = debounce(() => {
+const debouncer = debounce(() => {
 	handleNodes([document.body], false);
-}, DEBOUNCE_DELAY);
+}, 25);
 
 const options: MutationObserverInit = {
 	attributeOldValue: true,
@@ -108,6 +108,6 @@ const options: MutationObserverInit = {
 	subtree: true,
 };
 
-const observer: Observer = createObserver();
+const observer = createObserver();
 
 export default observer;

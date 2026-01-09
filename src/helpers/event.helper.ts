@@ -1,19 +1,19 @@
 import {camelCase} from '@oscarpalmer/atoms/string';
 import {
-	EVENT_DEFAULTS,
 	EXPRESSION_ACTION_ATTRIBUTE_NAME,
 	EXPRESSION_ACTION_ATTRIBUTE_VALUE,
-	EXPRESSION_METHOD_INVALID,
+	EXPRESSION_EVENT_ACTIVE,
+	EXPRESSION_EVENT_CAPTURE,
+	EXPRESSION_EVENT_ONCE,
 } from '../constants';
-import type {EventParameters} from '../models';
+import type {EventAttributeParameters} from '../models';
 
 export function getEventParameters(
 	element: Element,
 	name: string,
 	value: string,
-): EventParameters | undefined {
+): EventAttributeParameters | undefined {
 	const nameMatches = EXPRESSION_ACTION_ATTRIBUTE_NAME.exec(name) as RegExpExecArray;
-
 	const valueMatches = EXPRESSION_ACTION_ATTRIBUTE_VALUE.exec(value);
 
 	let external: string | undefined;
@@ -31,7 +31,7 @@ export function getEventParameters(
 
 	type = type ?? getType(element);
 
-	if (type != null && !EXPRESSION_METHOD_INVALID.test(method)) {
+	if (type != null && !invalidMethodExpression.test(method)) {
 		return {
 			callback: camelCase(method),
 			external:
@@ -51,9 +51,9 @@ function getOptions(options: string): AddEventListenerOptions {
 	const items = options.toLowerCase().split(':');
 
 	return {
-		capture: items.includes('capture') || items.includes('c'),
-		once: items.includes('once') || items.includes('o'),
-		passive: !(items.includes('active') || items.includes('a')),
+		capture: items.some(item => EXPRESSION_EVENT_CAPTURE.test(item)),
+		once: items.some(item => EXPRESSION_EVENT_ONCE.test(item)),
+		passive: !items.some(item => EXPRESSION_EVENT_ACTIVE.test(item)),
 	};
 }
 
@@ -62,5 +62,18 @@ function getType(element: Element): string | undefined {
 		return element.type === 'submit' ? 'submit' : 'input';
 	}
 
-	return EVENT_DEFAULTS[element.tagName];
+	return defaultEvents[element.tagName];
 }
+
+//
+
+const defaultEvents: Record<string, string> = {
+	A: 'click',
+	BUTTON: 'click',
+	DETAILS: 'toggle',
+	FORM: 'submit',
+	SELECT: 'change',
+	TEXTAREA: 'input',
+};
+
+const invalidMethodExpression = /(^__|^(connect|constructor|disconnect)$)/i;

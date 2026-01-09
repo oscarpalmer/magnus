@@ -1,4 +1,4 @@
-import {EXPRESSION_WHITESPACE} from '../../constants';
+import {TYPE_ACTION, TYPE_CONTROLLER} from '../../constants';
 import type {AttributeType} from '../../models';
 import {handleContextualAttribute, handleControllerAttribute} from './index';
 
@@ -31,7 +31,7 @@ function getChanges(from: string, to: string): string[][] {
 
 function getParts(value: string): string[] {
 	return value
-		.split(EXPRESSION_WHITESPACE)
+		.split(whitespaceExpression)
 		.map(part => part.trim())
 		.filter(part => part.length > 0);
 }
@@ -60,7 +60,13 @@ function handleActionAttributes(
 		const added = changesIndex === 1;
 
 		for (let changedIndex = 0; changedIndex < changedLength; changedIndex += 1) {
-			handleContextualAttribute('action', element, name, changed[changedIndex], added);
+			handleContextualAttribute({
+				added,
+				element,
+				name,
+				type: TYPE_ACTION,
+				value: changed[changedIndex],
+			});
 		}
 	}
 
@@ -78,7 +84,7 @@ export function handleAttributeChanges(
 	const current = element.getAttribute(name);
 
 	if (
-		type === 'action' &&
+		type === TYPE_ACTION &&
 		(value == null ? previous != null : (current ?? value).trim().length > 0)
 	) {
 		handleActionAttributes(element, name, previous ?? value, current ?? '', removed);
@@ -92,10 +98,16 @@ export function handleAttributeChanges(
 
 	const added = !removed && current != null && value != null;
 
-	if (type === 'controller') {
+	if (type === TYPE_CONTROLLER) {
 		handleControllerAttribute(element, name, added);
 	} else {
-		handleContextualAttribute(type, element, name, current ?? '', added);
+		handleContextualAttribute({
+			added,
+			element,
+			name,
+			type,
+			value: current ?? '',
+		});
 	}
 }
 
@@ -117,3 +129,5 @@ function updateAttributes(element: Element, name: string, value: string): void {
 //
 
 const attributes: WeakMap<Element, Map<string, string>> = new WeakMap();
+
+const whitespaceExpression = /\s+/;

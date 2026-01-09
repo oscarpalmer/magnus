@@ -1,6 +1,8 @@
-import type {GenericCallback} from '@oscarpalmer/atoms/models';
+import type {GenericCallback, PlainObject} from '@oscarpalmer/atoms/models';
 import type {Controller} from './controller';
 import type {Context} from './controller/context';
+
+// Action
 
 export type ActionParameters = {
 	callback: (event: Event) => void;
@@ -9,28 +11,43 @@ export type ActionParameters = {
 	type: string;
 };
 
-//
+// Attribute
+
+export type ActionAttributeHandlerParameters = {
+	added: boolean;
+	callback: GenericCallback;
+	context: Context;
+	event: EventAttributeParameters;
+	name: string;
+	target: EventTarget;
+	value: string;
+};
+
+export type ActionAttributeStepHandlerParameters = {
+	count: number;
+	event: EventAttributeParameters;
+} & AttributeHandlerCallbackParameters;
 
 export type AttributeChangeCallback = (element: Element, value: string, added: boolean) => void;
 
-export type AttributeHandleCallback = (parameters: AttributeHandleCallbackParameters) => void;
+export type AttributeHandlerCallback = (parameters: AttributeHandlerCallbackParameters) => void;
 
-export type AttributeHandleCallbackCustomParameters = {
-	callback: GenericCallback;
-	event: string;
-};
-
-export type AttributeHandleCallbackParameters = {
+export type AttributeHandlerCallbackParameters = {
 	added: boolean;
 	context: Context;
-	custom?: AttributeHandleCallbackCustomParameters;
+	custom?: AttributeHandlerCallbackParametersCustom;
 	element: Element;
 	name: string;
 	type: string;
 	value: string;
 };
 
-export type AttributeHandleParameters = {
+type AttributeHandlerCallbackParametersCustom = {
+	callback: GenericCallback;
+	event: string;
+};
+
+export type AttributeHandlerParameters = {
 	callback?: AttributeChangeCallback;
 	element: Element;
 	value: string;
@@ -38,13 +55,28 @@ export type AttributeHandleParameters = {
 
 export type AttributeType = 'action' | 'controller' | 'data' | 'io' | 'target';
 
-//
+export type ContextualAttributeHandlerParameters = {
+	added: boolean;
+	element: Element;
+	name: string;
+	type: AttributeType;
+	value: string;
+};
+
+export type ParsedAttribute = {
+	identifier?: string;
+	name: string;
+};
+
+// Controller
 
 export type ControllerConstructor = new (context: Context) => Controller;
 
-export type ControllerDataTypes = Record<string, ControllerDataType>;
+// Data
 
-export type ControllerDataType =
+export type DataTypes = Record<string, DataType>;
+
+export type DataType =
 	| 'array'
 	| 'boolean'
 	| 'color'
@@ -55,56 +87,75 @@ export type ControllerDataType =
 	| 'string'
 	| 'time';
 
-//
+export type DataUpdateParameters = {
+	context: Context;
+	name: string;
+	original?: unknown;
+	stringified: string;
+	target: PlainObject;
+};
 
-export type DataType = 'boolean' | 'number' | 'parseable' | 'string';
+export type DataValue = {
+	original?: unknown;
+	stringified: string;
+};
 
-//
+// Event
 
-export type EventParameters = {
+export type EventAttributeParameters = {
 	callback: string;
-	external?: EventExternal;
+	external?: EventAttributeExternal;
 	options: AddEventListenerOptions;
 	type: string;
 };
 
-export type EventExternal = {
+type EventAttributeExternal = {
 	identifier?: string;
 	name: string;
 };
 
-//
+export type EventListenerParameters = {
+	first?: boolean | AddEventListenerOptions | ExtendedEventTarget;
+	listener: EventListener;
+	second?: ExtendedEventTarget;
+	type: string;
+};
 
 export type ExtendedEventTarget = string | EventTarget;
 
-//
+// Observer
 
 export type ObserverCallback = (element: Element, name: string, value: string) => void;
 
-//
+// Targets
 
-export type ParsedAttribute = {
-	identifier?: string;
-	name: string;
-};
-
-//
-
-export type ReadonlyTargets = {
+export type TargetsCallbacks = {
 	/**
-	 * Find an element within the controller
+	 * Finds the first element with the given tag name within the controller
+	 */
+	find<TagName extends keyof HTMLElementTagNameMap>(
+		tagName: TagName,
+	): HTMLElementTagNameMap[TagName] | null;
+	/**
+	 * Finds the first element matching the given selector within the controller
 	 */
 	find<Found extends Element = Element>(selector: string): Found | null;
 	/**
-	 * Find all elements within the controller
+	 * Finds all elements with the given tag name within the controller
+	 */
+	findAll<TagName extends keyof HTMLElementTagNameMap>(
+		tagName: TagName,
+	): Array<HTMLElementTagNameMap[TagName]>;
+	/**
+	 * Finds all elements matching the given selector within the controller
 	 */
 	findAll<Found extends Element = Element>(selector: string): Found[];
 	/**
-	 * Get the first element with the given target name
+	 * Gets the first element with the given target name
 	 */
 	get<Target extends Element = Element>(name: string): Target | undefined;
 	/**
-	 * Get all elements with the given target name
+	 * Gets all elements with the given target name
 	 */
 	getAll<Target extends Element = Element>(name: string): Target[];
 	/**

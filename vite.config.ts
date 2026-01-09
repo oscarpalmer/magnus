@@ -29,6 +29,7 @@ export default defineConfig({
 						'@oscarpalmer/atoms/is',
 						'@oscarpalmer/atoms/number',
 						'@oscarpalmer/atoms/string',
+						'@oscarpalmer/datum/constants',
 						'@oscarpalmer/datum/get',
 						'@oscarpalmer/toretto/event',
 						'@oscarpalmer/toretto/find',
