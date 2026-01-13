@@ -1,19 +1,43 @@
-import type {PlainObject} from '@oscarpalmer/atoms/models';
+import type {GenericCallback} from '@oscarpalmer/atoms/models';
 import {camelCase} from '@oscarpalmer/atoms/string';
+import type {Context} from '../../controller/context';
 import {getEventParameters} from '../../helpers/event.helper';
 import {findTarget} from '../../helpers/index';
-import type {
-	ActionAttributeHandlerParameters,
-	ActionAttributeStepHandlerParameters,
-	AttributeHandlerCallbackParameters,
-} from '../../models';
+import type {Attribute, EventAttributeParameters} from '../../models';
 
 //
 
-function handle(parameters: ActionAttributeHandlerParameters): void {
-	const {context, event, target, value} = parameters;
+type CustomAction = {
+	callback: GenericCallback;
+	event: string;
+};
 
-	const action = `${parameters.name}${value.length === 0 ? '' : `/${value}`}`;
+export type HandleParameters = {
+	added: boolean;
+	callback: GenericCallback;
+	context: Context;
+	event: EventAttributeParameters;
+	properties: HandleParametersProperties;
+	target: EventTarget;
+};
+
+type HandleParametersProperties = {
+	name: string;
+	value: string;
+};
+
+type Step = {
+	count: number;
+	custom?: CustomAction;
+	event: EventAttributeParameters;
+};
+
+//
+
+function handleAction(parameters: HandleParameters): void {
+	const {context, event, properties, target} = parameters;
+
+	const action = `${properties.name}${properties.value.length === 0 ? '' : `/${properties.value}`}`;
 
 	if (!parameters.added) {
 		context.actions.remove(action, target);
@@ -36,12 +60,31 @@ function handle(parameters: ActionAttributeHandlerParameters): void {
 	}
 }
 
-export function handleActionAttribute(parameters: AttributeHandlerCallbackParameters): void {
-	const {callback, event} = parameters.custom ?? {};
+export function handleActionAttribute(
+	context: Context,
+	element: Element,
+	attribute: Attribute,
+	added: boolean,
+	custom: CustomAction,
+): void;
 
-	const eventParameters =
-		callback == null || event == null
-			? getEventParameters(parameters.element, parameters.name, parameters.value)
+export function handleActionAttribute(
+	context: Context,
+	element: Element,
+	attribute: Attribute,
+	added: boolean,
+): void;
+
+export function handleActionAttribute(
+	context: Context,
+	element: Element,
+	attribute: Attribute,
+	added: boolean,
+	custom?: CustomAction,
+): void {
+	const event =
+		custom?.callback == null || custom?.event == null
+			? getEventParameters(element, attribute.name, attribute.value)
 			: {
 					callback: '',
 					options: {
@@ -49,31 +92,30 @@ export function handleActionAttribute(parameters: AttributeHandlerCallbackParame
 						once: false,
 						passive: true,
 					},
-					type: camelCase(event),
+					type: camelCase(custom?.event),
 				};
 
-	if (eventParameters != null) {
-		stepper({
-			...parameters,
-			count: 0,
-			event: eventParameters,
-		});
+	if (event != null) {
+		stepper(context, element, attribute, added, {custom, event, count: 0});
 	}
 }
 
-function stepper(parameters: ActionAttributeStepHandlerParameters): void {
-	if (parameters.count >= 10) {
+function stepper(
+	context: Context,
+	element: Element,
+	attribute: Attribute,
+	added: boolean,
+	step: Step,
+): void {
+	if (step.count >= 10) {
 		return;
 	}
 
-	const {element, event} = parameters;
+	const {custom, event} = step;
 	const {external} = event;
 
 	const callback =
-		parameters.custom?.callback ??
-		((parameters.context.controller as unknown as PlainObject)[event.callback] as (
-			event: Event,
-		) => void);
+		custom?.callback ?? ((context.controller as any)[event.callback] as (event: Event) => void);
 
 	let target: EventTarget | undefined;
 
@@ -82,12 +124,19 @@ function stepper(parameters: ActionAttributeStepHandlerParameters): void {
 	}
 
 	if (target == null) {
-		parameters.count += 1;
+		step.count += 1;
 
 		requestAnimationFrame(() => {
-			stepper(parameters);
+			stepper(context, element, attribute, added, step);
 		});
 	} else {
-		handle({...parameters, callback, target});
+		handleAction({
+			added,
+			callback,
+			context,
+			event,
+			target,
+			properties: attribute,
+		});
 	}
 }

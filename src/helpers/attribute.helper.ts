@@ -11,7 +11,7 @@ import {
 	TYPE_IO,
 	TYPE_TARGET,
 } from '../constants';
-import type {AttributeType, ParsedAttribute} from '../models';
+import type {Attribute, AttributeParsed, AttributeType} from '../models';
 
 export function getAttributeType(name: string): AttributeType | undefined {
 	for (let index = 0; index < 5; index += 1) {
@@ -21,28 +21,24 @@ export function getAttributeType(name: string): AttributeType | undefined {
 	}
 }
 
-export function parseAttribute(
-	type: AttributeType,
-	name: string,
-	value: string,
-): ParsedAttribute | undefined {
+export function parseAttribute(attribute: Attribute): AttributeParsed | undefined {
 	let matches: RegExpExecArray;
 
-	switch (type) {
+	switch (attribute.type) {
 		case TYPE_ACTION:
 			matches = (
-				value.length > 0
-					? EXPRESSION_ACTION_ATTRIBUTE_VALUE.exec(value)
-					: EXPRESSION_ACTION_ATTRIBUTE_NAME.exec(name)
+				attribute.value.length > 0
+					? EXPRESSION_ACTION_ATTRIBUTE_VALUE.exec(attribute.value)
+					: EXPRESSION_ACTION_ATTRIBUTE_NAME.exec(attribute.name)
 			) as RegExpExecArray;
 			break;
 
 		case TYPE_IO:
-			matches = EXPRESSION_IO_ATTRIBUTE_FULL.exec(name) as RegExpExecArray;
+			matches = EXPRESSION_IO_ATTRIBUTE_FULL.exec(attribute.name) as RegExpExecArray;
 			break;
 
 		default:
-			matches = EXPRESSION_TARGET_ATTRIBUTE_FULL.exec(name) as RegExpExecArray;
+			matches = EXPRESSION_TARGET_ATTRIBUTE_FULL.exec(attribute.name) as RegExpExecArray;
 			break;
 	}
 

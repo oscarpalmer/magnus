@@ -60,13 +60,15 @@ function handleActionAttributes(
 		const added = changesIndex === 1;
 
 		for (let changedIndex = 0; changedIndex < changedLength; changedIndex += 1) {
-			handleContextualAttribute({
-				added,
+			handleContextualAttribute(
 				element,
-				name,
-				type: TYPE_ACTION,
-				value: changed[changedIndex],
-			});
+				{
+					name,
+					type: TYPE_ACTION,
+					value: changed[changedIndex],
+				},
+				added,
+			);
 		}
 	}
 
@@ -101,13 +103,15 @@ export function handleAttributeChanges(
 	if (type === TYPE_CONTROLLER) {
 		handleControllerAttribute(element, name, added);
 	} else {
-		handleContextualAttribute({
-			added,
+		handleContextualAttribute(
 			element,
-			name,
-			type,
-			value: current ?? '',
-		});
+			{
+				name,
+				type,
+				value: current ?? '',
+			},
+			added,
+		);
 	}
 }
 
@@ -128,6 +132,6 @@ function updateAttributes(element: Element, name: string, value: string): void {
 
 //
 
-const attributes: WeakMap<Element, Map<string, string>> = new WeakMap();
+const attributes = new WeakMap<Element, Map<string, string>>();
 
 const whitespaceExpression = /\s+/;

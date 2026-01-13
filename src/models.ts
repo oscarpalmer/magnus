@@ -1,4 +1,4 @@
-import type {GenericCallback, PlainObject} from '@oscarpalmer/atoms/models';
+import type {PlainObject} from '@oscarpalmer/atoms/models';
 import type {Controller} from './controller';
 import type {Context} from './controller/context';
 
@@ -13,60 +13,18 @@ export type ActionParameters = {
 
 // Attribute
 
-export type ActionAttributeHandlerParameters = {
-	added: boolean;
-	callback: GenericCallback;
-	context: Context;
-	event: EventAttributeParameters;
+export type Attribute = {
 	name: string;
-	target: EventTarget;
 	value: string;
-};
-
-export type ActionAttributeStepHandlerParameters = {
-	count: number;
-	event: EventAttributeParameters;
-} & AttributeHandlerCallbackParameters;
-
-export type AttributeChangeCallback = (element: Element, value: string, added: boolean) => void;
-
-export type AttributeHandlerCallback = (parameters: AttributeHandlerCallbackParameters) => void;
-
-export type AttributeHandlerCallbackParameters = {
-	added: boolean;
-	context: Context;
-	custom?: AttributeHandlerCallbackParametersCustom;
-	element: Element;
-	name: string;
-	type: string;
-	value: string;
-};
-
-type AttributeHandlerCallbackParametersCustom = {
-	callback: GenericCallback;
-	event: string;
-};
-
-export type AttributeHandlerParameters = {
-	callback?: AttributeChangeCallback;
-	element: Element;
-	value: string;
-};
-
-export type AttributeType = 'action' | 'controller' | 'data' | 'io' | 'target';
-
-export type ContextualAttributeHandlerParameters = {
-	added: boolean;
-	element: Element;
-	name: string;
 	type: AttributeType;
-	value: string;
 };
 
-export type ParsedAttribute = {
+export type AttributeParsed = {
 	identifier?: string;
 	name: string;
 };
+
+export type AttributeType = 'action' | 'controller' | 'data' | 'io' | 'target';
 
 // Controller
 
@@ -122,10 +80,6 @@ export type EventListenerParameters = {
 };
 
 export type ExtendedEventTarget = string | EventTarget;
-
-// Observer
-
-export type ObserverCallback = (element: Element, name: string, value: string) => void;
 
 // Targets
 

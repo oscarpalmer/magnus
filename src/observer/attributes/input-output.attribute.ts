@@ -6,7 +6,7 @@ import {
 } from '../../constants';
 import type {Context} from '../../controller/context';
 import {getDataValue, replaceData} from '../../helpers/data.helper';
-import type {AttributeHandlerCallbackParameters} from '../../models';
+import type {Attribute} from '../../models';
 import {handleActionAttribute} from './action.attribute';
 import {handleTargetAttribute} from './target.attribute';
 
@@ -45,44 +45,55 @@ function handleDataValue(
 	}
 }
 
-function handleInputAttribute(parameters: AttributeHandlerCallbackParameters): void {
-	const {type} = parameters;
-
-	const unprefixed = parameters.name.replace(EXPRESSION_IO_ATTRIBUTE_PREFIX, '');
+function handleInputAttribute(
+	event: string,
+	context: Context,
+	element: Element,
+	attribute: Attribute,
+	added: boolean,
+): void {
+	const unprefixed = attribute.name.replace(EXPRESSION_IO_ATTRIBUTE_PREFIX, '');
 	const isJson = EXPRESSION_JSON_SUFFIX.test(unprefixed);
 	const property = camelCase(unprefixed.replace(EXPRESSION_JSON_SUFFIX, ''));
 
-	handleActionAttribute({
-		...parameters,
-		custom: {
-			callback: (event: Event) => {
-				handleDataValue(parameters.context, event.target as never, property, isJson);
-			},
-			event: type,
+	handleActionAttribute(
+		context,
+		element,
+		{
+			name: `input:${event}.${unprefixed}`,
+			type: 'io',
+			value: '',
 		},
-		name: `input:${type}.${unprefixed}`,
-	});
+		added,
+		{
+			event,
+			callback: (event: Event) => {
+				handleDataValue(context, event.target as never, property, isJson);
+			},
+		},
+	);
 
-	handleTargetAttribute({...parameters, name: `input.${unprefixed}`}, false);
+	handleTargetAttribute(context, element, attribute, added, `input.${unprefixed}`);
 }
 
-export function handleInputOutputAttribute(parameters: AttributeHandlerCallbackParameters): void {
-	const {name} = parameters;
+export function handleInputOutputAttribute(
+	context: Context,
+	element: Element,
+	attribute: Attribute,
+	added: boolean,
+): void {
+	const event = getEventType(element);
 
-	const type = getEventType(parameters.element);
-
-	if (type == null) {
+	if (event == null) {
 		handleTargetAttribute(
-			{
-				...parameters,
-				name: `output.${name.replace(EXPRESSION_IO_ATTRIBUTE_PREFIX, '')}`,
-				type: '',
-				value: '',
-			},
-			false,
+			context,
+			element,
+			attribute,
+			added,
+			`output.${attribute.name.replace(EXPRESSION_IO_ATTRIBUTE_PREFIX, '')}`,
 		);
 	} else {
-		handleInputAttribute({...parameters, type, value: name});
+		handleInputAttribute(event, context, element, attribute, added);
 	}
 }
 

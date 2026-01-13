@@ -1,11 +1,8 @@
 import {camelCase} from '@oscarpalmer/atoms/string';
 import {EXPRESSION_CONTROLLER_ATTRIBUTE_PREFIX} from '../../constants';
+import type {Context} from '../../controller/context';
 import {parseAttribute} from '../../helpers/attribute.helper';
-import type {
-	AttributeHandlerCallback,
-	AttributeType,
-	ContextualAttributeHandlerParameters,
-} from '../../models';
+import type {Attribute, AttributeType} from '../../models';
 import {contexts} from '../../store/context.store';
 import {controllers} from '../../store/controller.store';
 import {setValueFromAttribute} from '../../store/data.store';
@@ -13,11 +10,13 @@ import {handleActionAttribute} from './action.attribute';
 import {handleInputOutputAttribute} from './input-output.attribute';
 import {handleTargetAttribute} from './target.attribute';
 
-export function handleContextualAttribute(parameters: ContextualAttributeHandlerParameters): void {
-	const {added, element, type} = parameters;
-
-	const callback = callbacks[type];
-	const parsed = parseAttribute(type, parameters.name, parameters.value);
+export function handleContextualAttribute(
+	element: Element,
+	attribute: Attribute,
+	added: boolean,
+): void {
+	const callback = callbacks[attribute.type];
+	const parsed = parseAttribute(attribute);
 
 	let count = 0;
 
@@ -37,7 +36,7 @@ export function handleContextualAttribute(parameters: ContextualAttributeHandler
 		} else if (context != null) {
 			contexts.connect(element, context);
 
-			callback?.({...parameters, context});
+			callback?.(context, element, attribute, added);
 		}
 	}
 
@@ -78,7 +77,12 @@ export function handleDataAttribute(element: Element, name: string): void {
 
 //
 
-const callbacks: Partial<Record<AttributeType, AttributeHandlerCallback>> = {
+const callbacks: Partial<
+	Record<
+		AttributeType,
+		(context: Context, element: Element, attribute: Attribute, added: boolean) => void
+	>
+> = {
 	action: handleActionAttribute,
 	io: handleInputOutputAttribute,
 	target: handleTargetAttribute,

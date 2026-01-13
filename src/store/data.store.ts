@@ -63,11 +63,7 @@ function setElementContents(elements: Element[], value: string): void {
 	const {length} = elements;
 
 	for (let index = 0; index < length; index += 1) {
-		const element = elements[index];
-
-		if (element.textContent !== value) {
-			element.textContent = value;
-		}
+		elements[index].textContent = value;
 	}
 }
 

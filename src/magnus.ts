@@ -55,7 +55,7 @@ export class Magnus {
 	}
 }
 
-const magnus: Magnus = new Magnus();
+const magnus = new Magnus();
 
 let active = true;
 
