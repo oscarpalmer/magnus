@@ -204,9 +204,9 @@ export class Events {
 	}
 }
 
-function getTarget(context: Context, target?: ExtendedEventTarget): EventTarget | undefined {
+function getTarget(context: Context, target?: ExtendedEventTarget): EventTarget | null {
 	if (typeof target === 'string') {
-		return context.targets.get(target);
+		return context.targets.find(target);
 	}
 
 	return isEventTarget(target) ? target : context.state.element;

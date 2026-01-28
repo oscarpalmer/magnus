@@ -1,17 +1,16 @@
 /**
- * - `::(controller.)(identifier.)action(:options)`
+ * - `_(controller.)(identifier.)action(:options)`
  * - `[, name, id?, value, options?]`
  */
 export const EXPRESSION_ACTION_ATTRIBUTE_NAME =
-	/^::(?:([\w-]+)\.(?:([\w-]+)\.)?)?([\w-]+)(?::([a-z:]+))?$/i;
+	/^_(?:([\w-]+)\.(?:([\w-]+)\.)?)?([\w-]+)(?::([a-z:]+))?$/i;
 
 /**
- * - `controller(.identifier)@action(:options)`
+ * - `controller(.identifier).action(:options)`
  * - `[, name, id?, value, options?]`
  */
 export const EXPRESSION_ACTION_ATTRIBUTE_VALUE =
-	/^([\w-]+)(?:\.([\w-]+))?@([\w-]+)(?::([a-z:]+))?$/i;
-
+	/^([\w-]+)(?:\.([\w-]+))?\.([\w-]+)(?::([a-z:]+))?$/i;
 /**
  * - `:controller`
  * - `[, name]`

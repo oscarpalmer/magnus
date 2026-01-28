@@ -74,25 +74,25 @@ let once = 0;
 
 document.body.innerHTML = `<div
 	:action-one
-	::action-two.emit="action-one@fromTwo"
-	::action-two.two.emit="action-one@fromTwo"
-	::btn.click="action-one@fromElement"
-	::document.from-document="action-one@fromDocument"
-	::window.from-window="action-one@fromWindow"
+	_action-two.emit="action-one.fromTwo"
+	_action-two.two.emit="action-one.fromTwo"
+	_btn.click="action-one.fromElement"
+	_document.from-document="action-one.fromDocument"
+	_window.from-window="action-one.fromWindow"
 ></div>
 <div :action-two id="two">
 	<button
 		id="btn"
-		::action-two.on-multiple
-		::action-two.on-once:once
-		::action-two.not-real
-		::click="action-two@connect action-two@onA action-two@onB"
+		_action-two.on-multiple
+		_action-two.on-once:once
+		_action-two.not-real
+		_click="action-two.connect action-two.onA action-two.onB"
 	></button>
-	<input type="submit" ::action-two.on-submit />
-	<input type="text" ::action-two.on-text />
+	<input type="submit" _action-two.on-submit />
+	<input type="text" _action-two.on-text />
 	<div
-		::this-will.be-ignored
-		::action-two.and-so-will-this
+		_action-two.this-will.be-ignored
+		_action-two.and-so-will-this
 	></div>
 </div>`;
 
@@ -114,7 +114,7 @@ test('action attribute', () =>
 				button?.click();
 			}
 
-			button?.removeAttribute('::action-two.on-multiple');
+			button?.removeAttribute('_action-two.on-multiple');
 		}, 25);
 
 		setTimeout(() => {
@@ -133,8 +133,8 @@ test('action attribute', () =>
 				button?.click();
 			}
 
-			button?.setAttribute('::click', 'action-two@onB');
-			button?.setAttribute('::action-two.on-multiple', '');
+			button?.setAttribute('_click', 'action-two.onB');
+			button?.setAttribute('_action-two.on-multiple', '');
 		}, 50);
 
 		setTimeout(() => {
@@ -149,7 +149,7 @@ test('action attribute', () =>
 				button?.click();
 			}
 
-			button?.removeAttribute('::click');
+			button?.removeAttribute('_click');
 		}, 75);
 
 		setTimeout(() => {
