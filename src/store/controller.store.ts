@@ -28,9 +28,7 @@ class Controllers {
 			found = origin.ownerDocument.querySelector(`#${id}`);
 		}
 
-		if (found != null) {
-			return this.store.get(name)?.instances.get(found);
-		}
+		return found == null ? undefined : this.store.get(name)?.instances.get(found);
 	}
 
 	has(name: string): boolean {

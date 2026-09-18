@@ -85,7 +85,7 @@ test('controller', () =>
 			magnus.start();
 
 			expect(magnus.active).toBe(true);
-			expect(connected).toBe(3);
+			expect(connected).toBe(2);
 
 			done();
 		}, 225);

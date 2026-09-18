@@ -19,6 +19,8 @@ export function getAttributeType(name: string): AttributeType | undefined {
 			return types[index];
 		}
 	}
+
+	return undefined;
 }
 
 export function parseAttribute(attribute: Attribute): AttributeParsed | undefined {
@@ -42,7 +44,7 @@ export function parseAttribute(attribute: Attribute): AttributeParsed | undefine
 			break;
 	}
 
-	return {
+	return matches == null ? undefined : {
 		identifier: matches[2],
 		name: matches[1],
 	};

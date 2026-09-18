@@ -1,7 +1,0 @@
-{
-	"$schema": "./node_modules/oxfmt/configuration_schema.json",
-	"arrowParens": "avoid",
-	"bracketSpacing": false,
-	"singleQuote": true,
-	"useTabs": true
-}

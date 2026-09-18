@@ -1,5 +1,6 @@
-import {type GenericCallback, noop} from '@oscarpalmer/atoms/function';
+import {noop} from '@oscarpalmer/atoms/function';
 import {isPlainObject} from '@oscarpalmer/atoms/is';
+import type {GenericCallback} from '@oscarpalmer/atoms/models';
 import {dispatch, off, on} from '@oscarpalmer/toretto/event';
 import {isEventTarget} from '@oscarpalmer/toretto/is';
 import type {RemovableEventListener} from '@oscarpalmer/toretto/models';

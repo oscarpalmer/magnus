@@ -56,9 +56,7 @@ function getBoolean(value: unknown): boolean | undefined {
 }
 
 function getColorValue(value: unknown): string | undefined {
-	if (isHexColor(value)) {
-		return `#${getNormalizedHex(value)}`;
-	}
+	return isHexColor(value) ? `#${getNormalizedHex(value)}` : undefined;
 }
 
 function getDateValue(value: unknown, type: DataType): string | undefined {
@@ -110,14 +108,12 @@ function pad(value?: number | string): string {
 
 function parseTime(value: unknown): string | undefined {
 	if (typeof value !== 'string') {
-		return;
+		return undefined;
 	}
 
 	const [_, hour, minutes, seconds] = EXPRESSION_TIME.exec(value) ?? [];
 
-	if (hour != null) {
-		return `${pad(hour)}:${pad(minutes)}:${pad(seconds)}`;
-	}
+	return hour == null ? undefined : `${pad(hour)}:${pad(minutes)}:${pad(seconds)}`;
 }
 
 export function replaceData(context: Context, value: unknown): void {

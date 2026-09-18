@@ -1,4 +1,5 @@
-import {camelCase, parse} from '@oscarpalmer/atoms/string';
+import {parse} from '@oscarpalmer/atoms/string';
+import {camelCase} from '@oscarpalmer/atoms/string/case';
 import {
 	EVENT_CHANGE,
 	EXPRESSION_IO_ATTRIBUTE_PREFIX,
@@ -21,9 +22,7 @@ function getEventType(element: Element): string | undefined {
 		return;
 	}
 
-	if (isInput || element instanceof HTMLTextAreaElement) {
-		return 'input';
-	}
+	return isInput || element instanceof HTMLTextAreaElement ? 'input' : undefined;
 }
 
 function handleDataValue(

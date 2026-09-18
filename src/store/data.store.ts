@@ -1,5 +1,6 @@
 import type {PlainObject} from '@oscarpalmer/atoms/models';
-import {camelCase, getString} from '@oscarpalmer/atoms/string';
+import {getString} from '@oscarpalmer/atoms/string';
+import {camelCase} from '@oscarpalmer/atoms/string/case';
 import {dispatch} from '@oscarpalmer/toretto/event';
 import {EVENT_CHANGE} from '../constants';
 import type {Context} from '../controller/context';
@@ -162,11 +163,13 @@ function updateInput(
 	element: HTMLInputElement | HTMLTextAreaElement,
 	value: string,
 ): string | undefined {
-	if (element.value !== value) {
-		element.value = value;
-
-		return 'input';
+	if (element.value === value) {
+		return undefined;
 	}
+
+	element.value = value;
+
+	return 'input';
 }
 
 function updateProperty(parameters: DataUpdateParameters): boolean {

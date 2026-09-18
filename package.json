@@ -1,39 +1,7 @@
 {
-	"author": {
-		"name": "Oscar Palmér",
-		"url": "https://oscarpalmer.se"
-	},
-	"dependencies": {
-		"@oscarpalmer/atoms": "^0.130",
-		"@oscarpalmer/datum": "^0.11",
-		"@oscarpalmer/toretto": "^0.37"
-	},
+	"name": "@oscarpalmer/magnus",
+	"version": "0.31.0",
 	"description": "A JavaScript framework for developers who like HTML.",
-	"devDependencies": {
-		"@oscarpalmer/oui": "^0.19",
-		"@types/node": "^25",
-		"@vitest/coverage-istanbul": "^4",
-		"jsdom": "^27.4",
-		"oxfmt": "^0.27",
-		"oxlint": "^1.42",
-		"rolldown": "1.0.0-rc.1",
-		"tslib": "^2.8",
-		"typescript": "^5.9",
-		"vite": "8.0.0-beta.10",
-		"vitest": "^4"
-	},
-	"exports": {
-		"./package.json": "./package.json",
-		".": {
-			"types": "./types/index.d.ts",
-			"default": "./dist/index.js"
-		}
-	},
-	"files": [
-		"dist",
-		"src",
-		"types"
-	],
 	"keywords": [
 		"framework",
 		"frontend",
@@ -42,22 +10,50 @@
 		"stimulusjs"
 	],
 	"license": "MIT",
-	"module": "dist/index.js",
-	"name": "@oscarpalmer/magnus",
+	"author": {
+		"name": "Oscar Palmér",
+		"url": "https://oscarpalmer.se"
+	},
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/oscarpalmer/magnus.git"
 	},
-	"scripts": {
-		"build": "npm run clean && npm run compile",
-		"compile": "npx vite build && npm run rolldown:build && npx tsc",
-		"clean": "rm -rf ./dist && rm -rf ./types && rm -f ./tsconfig.tsbuildinfo",
-		"rolldown:build": "npx rolldown -c",
-		"rolldown:watch": "npx rolldown -c ./rolldown.config.js --watch",
-		"test": "npx vitest --coverage",
-		"watch": "npx vite build --watch"
-	},
+	"files": [
+		"dist",
+		"src",
+		"types"
+	],
 	"type": "module",
+	"module": "dist/index.js",
 	"types": "types/index.d.ts",
-	"version": "0.31.0"
+	"exports": {
+		"./package.json": "./package.json",
+		".": {
+			"types": "./types/index.d.ts",
+			"default": "./dist/index.js"
+		}
+	},
+	"scripts": {
+		"build": "vpx vp run tsdown:build && vpx vp pack",
+		"tsdown:build": "vpx tsdown -c ./tsdown.config.ts",
+		"tsdown:watch": "vpx tsdown -c ./tsdown.config.ts --watch",
+		"test": "npx vp test run --coverage",
+		"test:leak": "vpx vp test run --detect-async-leaks --coverage"
+	},
+	"dependencies": {
+		"@oscarpalmer/atoms": "^0.204",
+		"@oscarpalmer/datum": "^0.11",
+		"@oscarpalmer/toretto": "^0.54"
+	},
+	"devDependencies": {
+		"@oscarpalmer/oui": "^0.38",
+		"@types/node": "^26.5",
+		"@vitest/coverage-istanbul": "^4.1",
+		"jsdom": "^30.1",
+		"tsdown": "^0.23",
+		"typescript": "^6",
+		"vite": "npm:@voidzero-dev/vite-plus-core@latest",
+		"vite-plus": "latest",
+		"vitest": "npm:@voidzero-dev/vite-plus-test@latest"
+	}
 }

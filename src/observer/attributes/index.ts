@@ -1,4 +1,4 @@
-import {camelCase} from '@oscarpalmer/atoms/string';
+import {camelCase} from '@oscarpalmer/atoms/string/case';
 import {EXPRESSION_CONTROLLER_ATTRIBUTE_PREFIX} from '../../constants';
 import type {Context} from '../../controller/context';
 import {parseAttribute} from '../../helpers/attribute.helper';

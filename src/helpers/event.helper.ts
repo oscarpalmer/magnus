@@ -1,4 +1,4 @@
-import {camelCase} from '@oscarpalmer/atoms/string';
+import {camelCase} from '@oscarpalmer/atoms/string/case';
 import {
 	EXPRESSION_ACTION_ATTRIBUTE_NAME,
 	EXPRESSION_ACTION_ATTRIBUTE_VALUE,
@@ -31,20 +31,22 @@ export function getEventParameters(
 
 	type = type ?? getType(element);
 
-	if (type != null && !invalidMethodExpression.test(method)) {
-		return {
-			callback: camelCase(method),
-			external:
-				external == null
-					? undefined
-					: {
-							identifier,
-							name: external,
-						},
-			options: getOptions(options ?? ''),
-			type: camelCase(type),
-		};
+	if (type == null || invalidMethodExpression.test(method)) {
+		return undefined;
 	}
+
+	return {
+		callback: camelCase(method),
+		external:
+			external == null
+				? undefined
+				: {
+						identifier,
+						name: external,
+					},
+		options: getOptions(options ?? ''),
+		type: camelCase(type),
+	};
 }
 
 function getOptions(options: string): AddEventListenerOptions {

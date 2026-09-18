@@ -1,4 +1,4 @@
-import {debounce} from '@oscarpalmer/atoms/function';
+import {debounce} from '@oscarpalmer/atoms/function/limit';
 import {TYPE_DATA} from '../constants';
 import {getAttributeType} from '../helpers/attribute.helper';
 import {contexts} from '../store/context.store';
@@ -45,7 +45,7 @@ export class Observer {
 	}
 
 	update(): void {
-		debouncer();
+		debouncer.run();
 	}
 }
 
