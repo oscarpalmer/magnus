@@ -1,62 +1,77 @@
-import type {Context} from '../controller/context';
+import type {Context, Contexts} from '../models';
 
-export class Contexts {
-	private readonly store = new WeakMap<Element, Record<string, Context>>();
+// #region Instances
 
-	connect(element: Element, context: Context): void {
-		let connection = this.store.get(element);
+function Contexts(this: any) {
+	this.store = new WeakMap<Element, Record<string, Context>>();
+}
 
-		if (connection?.[context.state.name] != null) {
-			return;
-		}
+Contexts.prototype.connect = connectContext;
+Contexts.prototype.disconnect = disconnectContext;
+Contexts.prototype.get = getContext;
 
-		if (connection == null) {
-			connection = {};
+// #endregion
 
-			this.store.set(element, connection);
-		}
+// #region Functions
 
-		connection[context.state.name] = context;
+function connectContext(this: Contexts, element: Element, context: Context): void {
+	let connection = this.store.get(element);
+
+	if (connection?.[context.state.name] != null) {
+		return;
 	}
 
-	disconnect(element: Element, name?: string): void {
-		if (name == null) {
-			this.store.delete(element);
+	if (connection == null) {
+		connection = {};
 
-			return;
-		}
+		this.store.set(element, connection);
+	}
 
-		const connection = this.store.get(element);
+	connection[context.state.name] = context;
+}
 
-		if (connection == null || connection[name] == null) {
-			return;
-		}
+function disconnectContext(this: Contexts, element: Element, name?: string): void {
+	if (name == null) {
+		this.store.delete(element);
 
-		const names = Object.keys(connection);
-		const {length} = names;
+		return;
+	}
 
-		const updated: Record<string, Context> = {};
+	const connection = this.store.get(element);
 
-		for (let index = 0; index < length; index += 1) {
-			const key = names[index];
+	if (connection == null || connection[name] == null) {
+		return;
+	}
 
-			if (key !== name) {
-				updated[key] = connection[key];
-			}
-		}
+	const names = Object.keys(connection);
+	const {length} = names;
 
-		if (length === 1) {
-			this.store.delete(element);
-		} else {
-			this.store.set(element, updated);
+	const updated: Record<string, Context> = {};
+
+	for (let index = 0; index < length; index += 1) {
+		const key = names[index];
+
+		if (key !== name) {
+			updated[key] = connection[key];
 		}
 	}
 
-	get(element: Element, name: string): Context | undefined {
-		return this.store.get(element)?.[name];
+	if (length === 1) {
+		this.store.delete(element);
+	} else {
+		this.store.set(element, updated);
 	}
 }
 
-//
+function getContext(this: Contexts, element: Element, name: string): Context | undefined {
+	return this.store.get(element)?.[name];
+}
 
-export const contexts = new Contexts();
+// #endregion
+
+// #region Variables
+
+// @ts-expect-error All good, no worries :-)
+export const contexts = new Contexts() as Contexts;
+
+// #endregion

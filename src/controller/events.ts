@@ -4,204 +4,46 @@ import type {GenericCallback} from '@oscarpalmer/atoms/models';
 import {dispatch, off, on} from '@oscarpalmer/toretto/event';
 import {isEventTarget} from '@oscarpalmer/toretto/is';
 import type {RemovableEventListener} from '@oscarpalmer/toretto/models';
-import type {EventListenerParameters, ExtendedEventTarget} from '../models';
-import type {Context} from './context';
+import {SYMBOL} from '../constants';
+import type {
+	Context,
+	EventListenerParameters,
+	Events,
+	ExtendedEventTarget,
+	InternalEvents,
+} from '../models';
 
-export class Events {
-	constructor(private readonly context: Context) {}
+// #region Instances
 
-	/**
-	 * Dispatch an event for the controller
-	 */
-	dispatch<Type extends keyof HTMLElementEventMap>(type: Type): void;
+function Events(this: any, context: Context) {
+	this[SYMBOL] = context;
+}
 
-	/**
-	 * Dispatch an event for the controller
-	 */
-	dispatch(type: string): void;
+Events.prototype.dispatch = dispatchEvent;
+Events.prototype.off = offEvent;
+Events.prototype.on = onEvent;
 
-	/**
-	 * - Dispatch an event for a target element
-	 *
-	 * If target is a `string`, the controller will use the first matching target element
-	 */
-	dispatch<Type extends keyof HTMLElementEventMap>(type: Type, target: ExtendedEventTarget): void;
+// #endregion
 
-	/**
-	 * - Dispatch an event for a target element
-	 *
-	 * If target is a `string`, the controller will use the first matching target element
-	 */
-	dispatch(type: string, target: ExtendedEventTarget): void;
+// #region Functions
 
-	/**
-	 * - Dispatch an event with specific options
-	 *
-	 * - If target is a `string`, the controller will use the first matching target element
-	 * - It target is not provided, the controller's element will be used
-	 */
-	dispatch<Type extends keyof HTMLElementEventMap>(
-		type: Type,
-		options: CustomEventInit,
-		target?: ExtendedEventTarget,
-	): void;
+export function createEvents(context: Context): Events {
+	// @ts-expect-error All good, no worries :-)
+	return new Events(context);
+}
 
-	/**
-	 * - Dispatch an event with specific options
-	 *
-	 * - If target is a `string`, the controller will use the first matching target element
-	 * - It target is not provided, the controller's element will be used
-	 */
-	dispatch(type: string, options?: CustomEventInit, target?: ExtendedEventTarget): void;
+function dispatchEvent(
+	this: InternalEvents,
+	type: string,
+	first?: ExtendedEventTarget | CustomEventInit,
+	second?: ExtendedEventTarget,
+): void {
+	const firstIsOptions = isPlainObject(first);
 
-	dispatch(
-		type: string,
-		first?: ExtendedEventTarget | CustomEventInit,
-		second?: ExtendedEventTarget,
-	): void {
-		const firstIsOptions = isPlainObject(first);
+	const target = getTarget(this[SYMBOL], (firstIsOptions ? second : first) as ExtendedEventTarget);
 
-		const target = getTarget(
-			this.context,
-			(firstIsOptions ? second : first) as ExtendedEventTarget,
-		);
-
-		if (target != null) {
-			dispatch(target, type, firstIsOptions ? (first as CustomEventInit) : undefined);
-		}
-	}
-
-	/**
-	 * Remove an event listener from the controller's element
-	 */
-	off<Type extends keyof HTMLElementEventMap>(type: Type, listener: EventListener): void;
-
-	/**
-	 * Remove an event listener from the controller's element
-	 */
-	off(type: string, listener: EventListener): void;
-
-	/**
-	 * Remove an event listener from a target element
-	 *
-	 * If target is a `string`, the controller will use the first matching target element
-	 */
-	off<Type extends keyof HTMLElementEventMap>(
-		type: Type,
-		listener: EventListener,
-		target: ExtendedEventTarget,
-	): void;
-
-	/**
-	 * Remove an event listener from a target element
-	 *
-	 * If target is a `string`, the controller will use the first matching target element
-	 */
-	off(type: string, listener: EventListener, target: ExtendedEventTarget): void;
-
-	/**
-	 * Remove an event listener from a target element
-	 *
-	 * If target is a `string`, the controller will use the first matching target element
-	 */
-	off<Type extends keyof HTMLElementEventMap>(
-		type: Type,
-		listener: EventListener,
-		options: boolean | EventListenerOptions,
-		target?: ExtendedEventTarget,
-	): void;
-
-	/**
-	 * Remove an event listener from a target element
-	 *
-	 * If target is a `string`, the controller will use the first matching target element
-	 */
-	off(
-		type: string,
-		listener: EventListener,
-		options: boolean | EventListenerOptions,
-		target?: ExtendedEventTarget,
-	): void;
-
-	off(
-		type: string,
-		listener: EventListener,
-		first?: boolean | EventListenerOptions | ExtendedEventTarget,
-		second?: ExtendedEventTarget,
-	): void {
-		handleEvent(this.context, {listener, type, first, second}, false);
-	}
-
-	/**
-	 * - Add an event listener to the controller's element
-	 *
-	 * Returns a function that removes the event listener
-	 */
-	on<Type extends keyof HTMLElementEventMap>(
-		type: Type,
-		listener: EventListener,
-	): RemovableEventListener;
-
-	/**
-	 * - Add an event listener to the controller's element
-	 *
-	 * Returns a function that removes the event listener
-	 */
-	on(type: string, listener: EventListener): RemovableEventListener;
-
-	/**
-	 * - Add an event listener to a target element
-	 *
-	 * - If target is a `string`, the controller will use the first matching target element
-	 * - Returns a function that removes the event listener
-	 */
-	on<Type extends keyof HTMLElementEventMap>(
-		type: Type,
-		listener: EventListener,
-		target: ExtendedEventTarget,
-	): RemovableEventListener;
-
-	/**
-	 * - Add an event listener to a target element
-	 *
-	 * - If target is a `string`, the controller will use the first matching target element
-	 * - Returns a function that removes the event listener
-	 */
-	on(type: string, listener: EventListener, target: ExtendedEventTarget): RemovableEventListener;
-
-	/**
-	 * - Add an event listener to a target element
-	 *
-	 * - If target is a `string`, the controller will use the first matching target element
-	 * - Returns a function that removes the event listener
-	 */
-	on<Type extends keyof HTMLElementEventMap>(
-		type: Type,
-		listener: EventListener,
-		options: boolean | AddEventListenerOptions,
-		target?: ExtendedEventTarget,
-	): RemovableEventListener;
-
-	/**
-	 * - Add an event listener to a target element
-	 *
-	 * - If target is a `string`, the controller will use the first matching target element
-	 * - Returns a function that removes the event listener
-	 */
-	on(
-		type: string,
-		listener: EventListener,
-		options: boolean | AddEventListenerOptions,
-		target?: ExtendedEventTarget,
-	): RemovableEventListener;
-
-	on(
-		type: string,
-		listener: EventListener,
-		first?: boolean | AddEventListenerOptions | ExtendedEventTarget,
-		second?: ExtendedEventTarget,
-	): RemovableEventListener {
-		return handleEvent(this.context, {listener, type, first, second}, true);
+	if (target != null) {
+		dispatch(target, type, firstIsOptions ? (first as CustomEventInit) : undefined);
 	}
 }
 
@@ -233,3 +75,25 @@ function handleEvent(
 
 	return (add ? on : off)(target, parameters.type, parameters.listener, options) ?? noop;
 }
+
+function offEvent(
+	this: InternalEvents,
+	type: string,
+	listener: EventListener,
+	first?: boolean | EventListenerOptions | ExtendedEventTarget,
+	second?: ExtendedEventTarget,
+): void {
+	handleEvent(this[SYMBOL], {listener, type, first, second}, false);
+}
+
+function onEvent(
+	this: InternalEvents,
+	type: string,
+	listener: EventListener,
+	first?: boolean | AddEventListenerOptions | ExtendedEventTarget,
+	second?: ExtendedEventTarget,
+): RemovableEventListener {
+	return handleEvent(this[SYMBOL], {listener, type, first, second}, true);
+}
+
+// #endregion

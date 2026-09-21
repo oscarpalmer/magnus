@@ -1,12 +1,16 @@
 import {camelCase} from '@oscarpalmer/atoms/string/case';
 import {
+	EVENT_DEFAULTS,
 	EXPRESSION_ACTION_ATTRIBUTE_NAME,
 	EXPRESSION_ACTION_ATTRIBUTE_VALUE,
 	EXPRESSION_EVENT_ACTIVE,
 	EXPRESSION_EVENT_CAPTURE,
 	EXPRESSION_EVENT_ONCE,
+	EXPRESSION_INVALID_METHOD,
 } from '../constants';
 import type {EventAttributeParameters} from '../models';
+
+// #region Functions
 
 export function getEventParameters(
 	element: Element,
@@ -31,7 +35,7 @@ export function getEventParameters(
 
 	type = type ?? getType(element);
 
-	if (type == null || invalidMethodExpression.test(method)) {
+	if (type == null || EXPRESSION_INVALID_METHOD.test(method)) {
 		return undefined;
 	}
 
@@ -64,18 +68,7 @@ function getType(element: Element): string | undefined {
 		return element.type === 'submit' ? 'submit' : 'input';
 	}
 
-	return defaultEvents[element.tagName];
+	return EVENT_DEFAULTS[element.tagName];
 }
 
-//
-
-const defaultEvents: Record<string, string> = {
-	A: 'click',
-	BUTTON: 'click',
-	DETAILS: 'toggle',
-	FORM: 'submit',
-	SELECT: 'change',
-	TEXTAREA: 'input',
-};
-
-const invalidMethodExpression = /(^__|^(connect|constructor|disconnect)$)/i;
+// #endregion

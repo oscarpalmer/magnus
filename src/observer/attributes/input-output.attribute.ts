@@ -2,14 +2,16 @@ import {parse} from '@oscarpalmer/atoms/string';
 import {camelCase} from '@oscarpalmer/atoms/string/case';
 import {
 	EVENT_CHANGE,
+	EVENT_IGNORED,
 	EXPRESSION_IO_ATTRIBUTE_PREFIX,
 	EXPRESSION_JSON_SUFFIX,
 } from '../../constants';
-import type {Context} from '../../controller/context';
 import {getDataValue, replaceData} from '../../helpers/data.helper';
-import type {Attribute} from '../../models';
+import type {Attribute, Context} from '../../models';
 import {handleActionAttribute} from './action.attribute';
 import {handleTargetAttribute} from './target.attribute';
+
+// #region Functions
 
 function getEventType(element: Element): string | undefined {
 	const isInput = element instanceof HTMLInputElement;
@@ -18,7 +20,7 @@ function getEventType(element: Element): string | undefined {
 		return 'change';
 	}
 
-	if (isInput && ignoredEvent.has(element.type)) {
+	if (isInput && EVENT_IGNORED.has(element.type)) {
 		return;
 	}
 
@@ -112,6 +114,4 @@ function setDataValue(
 			: getDataValue(context.data.types[name], value ?? element.value);
 }
 
-//
-
-const ignoredEvent = new Set(['button', 'image', 'reset', 'submit']);
+// #endregion

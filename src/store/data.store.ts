@@ -3,62 +3,65 @@ import {getString} from '@oscarpalmer/atoms/string';
 import {camelCase} from '@oscarpalmer/atoms/string/case';
 import {dispatch} from '@oscarpalmer/toretto/event';
 import {EVENT_CHANGE} from '../constants';
-import type {Context} from '../controller/context';
 import {getDataValue} from '../helpers/data.helper';
-import type {DataTypes, DataUpdateParameters, DataValue} from '../models';
+import type {Context, Data, DataTypes, DataUpdateParameters, DataValue} from '../models';
 
-export class Data {
-	readonly frames: Record<string, number | undefined> = {};
-	readonly value: PlainObject;
+// #region Instances
 
-	constructor(
-		context: Context,
-		readonly types: DataTypes,
-	) {
-		this.value = new Proxy(
-			{},
-			{
-				deleteProperty(target: PlainObject, property: PropertyKey): boolean {
-					const name = camelCase(String(property));
+function Data(this: any, context: Context, types: DataTypes) {
+	this.frames = {};
+	this.types = types;
 
-					return updateProperty({
-						context,
-						name,
-						target,
-						stringified: '',
-					});
-				},
-				get(target: PlainObject, property: PropertyKey): unknown {
-					return Reflect.get(target, camelCase(String(property)));
-				},
-				set(target: PlainObject, property: PropertyKey, value: unknown): boolean {
-					const name = camelCase(String(property));
-					const type = types[name];
+	this.value = new Proxy(
+		{},
+		{
+			deleteProperty(target: PlainObject, property: PropertyKey): boolean {
+				const name = camelCase(String(property));
 
-					const previous = Reflect.get(target, name);
-					const previousAsString = getString(previous);
-
-					const nextValue = getDataValue(type, value);
-					const nextAsString = getString(nextValue);
-
-					if (typeof previous === typeof nextValue && previousAsString === nextAsString) {
-						return true;
-					}
-
-					return updateProperty({
-						context,
-						name,
-						target,
-						original: nextValue,
-						stringified: nextAsString,
-					});
-				},
+				return updateProperty({
+					context,
+					name,
+					target,
+					stringified: '',
+				});
 			},
-		);
-	}
+			get(target: PlainObject, property: PropertyKey): unknown {
+				return Reflect.get(target, camelCase(String(property)));
+			},
+			set(target: PlainObject, property: PropertyKey, value: unknown): boolean {
+				const name = camelCase(String(property));
+				const type = types[name];
+
+				const previous = Reflect.get(target, name);
+				const previousAsString = getString(previous);
+
+				const nextValue = getDataValue(type, value);
+				const nextAsString = getString(nextValue);
+
+				if (typeof previous === typeof nextValue && previousAsString === nextAsString) {
+					return true;
+				}
+
+				return updateProperty({
+					context,
+					name,
+					target,
+					original: nextValue,
+					stringified: nextAsString,
+				});
+			},
+		},
+	);
 }
 
-//
+// #endregion
+
+// #region Functions
+
+export function createData(context: Context, types: DataTypes): Data {
+	// @ts-expect-error All good, no worries :-)
+	return new Data(context, types);
+}
 
 function setElementContents(elements: Element[], value: string): void {
 	const {length} = elements;
@@ -118,10 +121,7 @@ function setJson(context: Context, property: string, value: DataValue, attribute
 			continue;
 		}
 
-		const json =
-			value == null
-				? ''
-				: JSON.stringify(value, null, +getComputedStyle(context.state.element).tabSize);
+		const json = value == null ? '' : JSON.stringify(value, null, 0);
 
 		setElementContents(outputs, json);
 		setElementValues(inputs, attribute, json);
@@ -215,8 +215,12 @@ function updateToggle(element: HTMLInputElement, value: string): string | undefi
 	return 'change';
 }
 
-//
+// #endregion
+
+// #region Variables
 
 const focused = new Set<string>();
 
 const ignored = new Set<string>();
+
+// #endregion

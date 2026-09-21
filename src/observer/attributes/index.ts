@@ -1,14 +1,16 @@
+import {join} from '@oscarpalmer/atoms/string';
 import {camelCase} from '@oscarpalmer/atoms/string/case';
 import {EXPRESSION_CONTROLLER_ATTRIBUTE_PREFIX} from '../../constants';
-import type {Context} from '../../controller/context';
 import {parseAttribute} from '../../helpers/attribute.helper';
-import type {Attribute, AttributeType} from '../../models';
+import type {Attribute, AttributeType, Context} from '../../models';
 import {contexts} from '../../store/context.store';
 import {controllers} from '../../store/controller.store';
 import {setValueFromAttribute} from '../../store/data.store';
 import {handleActionAttribute} from './action.attribute';
 import {handleInputOutputAttribute} from './input-output.attribute';
 import {handleTargetAttribute} from './target.attribute';
+
+// #region Functions
 
 export function handleContextualAttribute(
 	element: Element,
@@ -60,13 +62,13 @@ export function handleDataAttribute(element: Element, name: string): void {
 	const length = parts.length - 1;
 
 	for (let index = 0; index < length; index += 1) {
-		const controller = parts.slice(0, index + 1).join(delimiter);
+		const controller = join(parts.slice(0, index + 1), delimiter);
 		const context = controllers.find(element, controller);
 
 		if (context != null) {
 			setValueFromAttribute(
 				context,
-				camelCase(parts.slice(index + 1).join(delimiter)),
+				camelCase(join(parts.slice(index + 1), delimiter)),
 				element.getAttribute(name) ?? '',
 			);
 
@@ -75,7 +77,9 @@ export function handleDataAttribute(element: Element, name: string): void {
 	}
 }
 
-//
+// #endregion
+
+// #region Variables
 
 const callbacks: Partial<
 	Record<
@@ -89,3 +93,5 @@ const callbacks: Partial<
 };
 
 const delimiter = '-';
+
+// #endregion

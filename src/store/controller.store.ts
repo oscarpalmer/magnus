@@ -1,77 +1,89 @@
 import {findRelatives} from '@oscarpalmer/toretto/find';
-import {Context} from '../controller/context';
+import {createContext} from '../controller/context';
 import {getDataTypes} from '../helpers/data.helper';
-import type {ControllerConstructor, DataTypes} from '../models';
+import type {Context, ControllerConstructor, Controllers, StoredController} from '../models';
 import {contexts} from './context.store';
 
-class Controllers {
-	private readonly store = new Map<string, StoredController>();
+// #region Instances
 
-	add(name: string, element: Element): void {
-		const controller = this.store.get(name);
+function Controllers(this: any) {
+	this.store = new Map<string, StoredController>();
+}
 
-		if (controller != null && !controller.instances.has(element)) {
-			controller.instances.set(element, new Context(name, element, controller));
-		}
-	}
+Controllers.prototype.add = addController;
+Controllers.prototype.create = createController;
+Controllers.prototype.find = findController;
+Controllers.prototype.has = hasController;
+Controllers.prototype.remove = removeController;
 
-	create(name: string, ctor: ControllerConstructor): void {
-		this.store.set(name, new StoredController(ctor));
-	}
+function StoredController(this: any, ctor: ControllerConstructor) {
+	this.ctor = ctor;
+	this.instances = new Map<Element, Context>();
+	this.types = getDataTypes((ctor as any).types);
+}
 
-	find(origin: Element, name: string, id?: string): Context | undefined {
-		let found: Element | null;
+// #endregion
 
-		if (id == null) {
-			found = origin.hasAttribute(`:${name}`) ? origin : findRelatives(origin, `[\\:${name}]`)[0];
-		} else {
-			found = origin.ownerDocument.querySelector(`#${id}`);
-		}
+// #region Functions
 
-		return found == null ? undefined : this.store.get(name)?.instances.get(found);
-	}
+function addController(this: Controllers, name: string, element: Element): void {
+	const controller = this.store.get(name);
 
-	has(name: string): boolean {
-		return this.store.has(name);
-	}
-
-	remove(name: string, element?: Element): void {
-		const controller = this.store.get(name) as StoredController;
-
-		if (element == null) {
-			const instances = [...controller.instances.values()];
-			const {length} = instances;
-
-			for (let index = 0; index < length; index += 1) {
-				removeInstance(controller, instances[index]);
-			}
-
-			this.store.delete(name);
-		} else {
-			removeInstance(controller, controller.instances.get(element)!);
-		}
+	if (controller != null && !controller.instances.has(element)) {
+		controller.instances.set(element, createContext(name, element, controller));
 	}
 }
 
-export class StoredController {
-	readonly instances = new Map<Element, Context>();
-
-	readonly types: DataTypes;
-
-	constructor(readonly ctor: ControllerConstructor) {
-		this.types = getDataTypes((ctor as any).types);
-	}
+function createController(this: Controllers, name: string, ctor: ControllerConstructor): void {
+	this.store.set(name, createStoredController(ctor));
 }
 
-//
+export function createStoredController(ctor: ControllerConstructor): StoredController {
+	// @ts-expect-error All good, no worries :-)
+	return new StoredController(ctor);
+}
+
+function findController(
+	this: Controllers,
+	origin: Element,
+	name: string,
+	id?: string,
+): Context | undefined {
+	let found: Element | null;
+
+	if (id == null) {
+		found = origin.hasAttribute(`:${name}`) ? origin : findRelatives(origin, `[\\:${name}]`)[0];
+	} else {
+		found = origin.ownerDocument.querySelector(`#${id}`);
+	}
+
+	return found == null ? undefined : this.store.get(name)?.instances.get(found);
+}
+
+function hasController(this: Controllers, name: string): boolean {
+	return this.store.has(name);
+}
+
+function removeController(this: Controllers, name: string): void {
+	const controller = this.store.get(name) as StoredController;
+
+	const instances = [...controller.instances.values()];
+	const {length} = instances;
+
+	for (let index = 0; index < length; index += 1) {
+		removeInstance(controller, instances[index]);
+	}
+
+	this.store.delete(name);
+}
 
 function removeInstance(controller: StoredController, context: Context): void {
-	context?.actions.clear();
-	context?.targets.clear();
+	context.actions.clear();
+	context.targets.clear();
 
-	context?.controller.disconnect?.();
+	context.controller.disconnect?.();
 
-	controller.instances.delete(context?.state.element as never);
+	controller.instances.delete(context.state.element);
 
 	const elements = [context.state.element, ...context.state.element.querySelectorAll('*')];
 	const {length} = elements;
@@ -84,6 +96,11 @@ function removeInstance(controller: StoredController, context: Context): void {
 	context.state.name = undefined as never;
 }
 
-//
+// #endregion
 
-export const controllers = new Controllers();
+// #region Variables
+
+// @ts-expect-error All good, no worries :-)
+export const controllers = new Controllers() as Controllers;
+
+// #endregion

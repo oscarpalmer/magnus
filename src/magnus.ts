@@ -1,62 +1,67 @@
-import type {ControllerConstructor} from './models';
-import observer from './observer/index';
+import type {ControllerConstructor, Magnus} from './models';
+import {observer} from './observer/index';
 import {controllers} from './store/controller.store';
 
-export class Magnus {
-	/**
-	 * Is Magnus active?
-	 */
-	get active(): boolean {
-		return active;
-	}
+// #region Instances
 
-	/**
-	 * Adds a named controller to observe
-	 */
-	add(name: string, ctor: ControllerConstructor): void {
-		if (!controllers.has(name)) {
-			controllers.create(name, ctor);
+function Magnus(this: any) {}
 
-			if (active) {
-				observer.update();
-			}
-		}
-	}
+Magnus.prototype.add = addController;
+Magnus.prototype.remove = removeController;
+Magnus.prototype.start = startMagnus;
+Magnus.prototype.stop = stopMagnus;
 
-	/**
-	 * Removes a named controller _(and all its instances)_ from observation
-	 */
-	remove(name: string): void {
-		if (controllers.has(name)) {
-			controllers.remove(name);
-		}
-	}
+Object.defineProperty(Magnus.prototype, 'active', {
+	get: getActive,
+});
 
-	/**
-	 * Starts the observer
-	 */
-	start(): void {
-		if (!active) {
-			active = true;
+// #endregion
 
-			observer.start();
-		}
-	}
+// #region Functions
 
-	/**
-	 * Stops the observer
-	 */
-	stop(): void {
+function addController(this: Magnus, name: string, ctor: ControllerConstructor): void {
+	if (!controllers.has(name)) {
+		controllers.create(name, ctor);
+
 		if (active) {
-			active = false;
-
-			observer.stop();
+			observer.update();
 		}
 	}
 }
 
-const magnus = new Magnus();
+function getActive(this: Magnus): boolean {
+	return active;
+}
+
+function removeController(this: Magnus, name: string): void {
+	if (controllers.has(name)) {
+		controllers.remove(name);
+	}
+}
+
+function startMagnus(this: Magnus): void {
+	if (!active) {
+		active = true;
+
+		observer.start();
+	}
+}
+
+function stopMagnus(this: Magnus): void {
+	if (active) {
+		active = false;
+
+		observer.stop();
+	}
+}
+
+// #endregion
+
+// #region Variables
+
+// @ts-expect-error All good, no worries :-)
+export const magnus = new Magnus() as Magnus;
 
 let active = true;
 
-export default magnus;
+// #endregion

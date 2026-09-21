@@ -1,6 +1,6 @@
 import {afterAll, expect, test} from 'vitest';
 import {Controller} from '../src/controller';
-import magnus from '../src/magnus';
+import {magnus} from '../src/magnus';
 
 class TestController extends Controller {
 	connect(): void {

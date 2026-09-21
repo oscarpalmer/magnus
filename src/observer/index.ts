@@ -1,56 +1,48 @@
 import {debounce} from '@oscarpalmer/atoms/function/limit';
 import {TYPE_DATA} from '../constants';
 import {getAttributeType} from '../helpers/attribute.helper';
+import type {Observer} from '../models';
 import {contexts} from '../store/context.store';
 import {handleDataAttribute} from './attributes';
 import {handleAttributeChanges} from './attributes/changes.attribute';
 
-export class Observer {
-	private readonly observer: MutationObserver;
+// #region Instances
 
-	constructor() {
-		this.observer = new MutationObserver(entries => {
-			const {length} = entries;
+function Observer(this: any) {
+	this.observer = new MutationObserver(entries => {
+		const {length} = entries;
 
-			for (let index = 0; index < length; index += 1) {
-				const entry = entries[index];
+		for (let index = 0; index < length; index += 1) {
+			const entry = entries[index];
 
-				if (entry.type === 'attributes') {
-					handleAttribute(
-						entry.target as Element,
-						entry.attributeName as string,
-						entry.oldValue,
-						false,
-					);
-				} else {
-					handleNodes(entry.addedNodes, false);
-					handleNodes(entry.removedNodes, true);
-				}
+			if (entry.type === 'attributes') {
+				handleAttribute(
+					entry.target as Element,
+					entry.attributeName as string,
+					entry.oldValue,
+					false,
+				);
+			} else {
+				handleNodes(entry.addedNodes, false);
+				handleNodes(entry.removedNodes, true);
 			}
-		});
+		}
+	});
 
-		this.start();
-	}
-
-	start(): void {
-		this.observer.observe(document.body, options);
-
-		this.update();
-	}
-
-	stop(): void {
-		debouncer.cancel();
-
-		this.observer.disconnect();
-	}
-
-	update(): void {
-		debouncer.run();
-	}
+	this.start();
 }
 
+Observer.prototype.start = startObserver;
+Observer.prototype.stop = stopObserver;
+Observer.prototype.update = updateObserver;
+
+// #endregion
+
+// #region Functions
+
 function createObserver(): Observer {
-	return new Observer();
+	// @ts-expect-error All good, no worries :-)
+	return new Observer() as Observer;
 }
 
 function handleAttribute(
@@ -97,6 +89,26 @@ function handleNodes(nodes: NodeList | Node[], removed: boolean): void {
 	}
 }
 
+function startObserver(this: Observer): void {
+	this.observer.observe(document.body, options);
+
+	this.update();
+}
+
+function stopObserver(this: Observer): void {
+	debouncer.cancel();
+
+	this.observer.disconnect();
+}
+
+function updateObserver(this: Observer): void {
+	debouncer.run();
+}
+
+// #endregion
+
+// #region Variables
+
 const debouncer = debounce(() => {
 	handleNodes([document.body], false);
 }, 25);
@@ -108,6 +120,6 @@ const options: MutationObserverInit = {
 	subtree: true,
 };
 
-const observer = createObserver();
+export const observer = createObserver();
 
-export default observer;
+// #endregion

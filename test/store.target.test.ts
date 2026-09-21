@@ -1,15 +1,19 @@
 import {expect, test} from 'vitest';
 import {Controller} from '../src/controller';
-import {Context} from '../src/controller/context';
-import {StoredController} from '../src/store/controller.store';
-import {Targets} from '../src/store/target.store';
+import {createContext} from '../src/controller/context';
+import {createStoredController} from '../src/store/controller.store';
+import {createTargets} from '../src/store/target.store';
 
 class TargetsController extends Controller {}
 
 test('target store', () =>
 	new Promise<void>(done => {
-		const context = new Context('targets', document.body, new StoredController(TargetsController));
-		const store = new Targets(context);
+		const context = createContext(
+			'targets',
+			document.body,
+			createStoredController(TargetsController),
+		);
+		const store = createTargets(context);
 
 		const one = document.createElement('div');
 		const two = document.createElement('div');

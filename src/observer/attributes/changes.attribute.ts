@@ -1,6 +1,8 @@
-import {TYPE_ACTION, TYPE_CONTROLLER} from '../../constants';
+import {TYPE_ACTION, TYPE_CONTROLLER, EXPRESSION_WHITESPACE} from '../../constants';
 import type {AttributeType} from '../../models';
 import {handleContextualAttribute, handleControllerAttribute} from './index';
+
+// #region Functions
 
 function getAttribute(element: Element, name: string): string | undefined {
 	return attributes.get(element)?.get(name);
@@ -31,7 +33,7 @@ function getChanges(from: string, to: string): string[][] {
 
 function getParts(value: string): string[] {
 	return value
-		.split(whitespaceExpression)
+		.split(EXPRESSION_WHITESPACE)
 		.map(part => part.trim())
 		.filter(part => part.length > 0);
 }
@@ -130,8 +132,10 @@ function updateAttributes(element: Element, name: string, value: string): void {
 	}
 }
 
-//
+// #endregion
+
+// #region Variables
 
 const attributes = new WeakMap<Element, Map<string, string>>();
 
-const whitespaceExpression = /\s+/;
+// #endregion

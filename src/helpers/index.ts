@@ -1,13 +1,16 @@
+import {EXPRESSION_DOCUMENT, EXPRESSION_WINDOW} from '../constants';
 import {controllers} from '../store/controller.store';
+
+// #region Functions
 
 export function findTarget(origin: Element, name: string, id?: string): EventTarget | undefined {
 	const noId = id == null;
 
 	switch (true) {
-		case noId && documentExpression.test(name):
+		case noId && EXPRESSION_DOCUMENT.test(name):
 			return document;
 
-		case noId && windowExpression.test(name):
+		case noId && EXPRESSION_WINDOW.test(name):
 			return window;
 
 		default:
@@ -18,8 +21,4 @@ export function findTarget(origin: Element, name: string, id?: string): EventTar
 	}
 }
 
-//
-
-const documentExpression = /^document$/i;
-
-const windowExpression = /^window$/i;
+// #endregion

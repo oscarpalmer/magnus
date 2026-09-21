@@ -1,8 +1,8 @@
 import type {PlainObject} from '@oscarpalmer/atoms/models';
 import {replaceData} from '../helpers/data.helper';
-import type {DataTypes, TargetsCallbacks} from '../models';
-import type {Context} from './context';
-import type {Events} from './events';
+import type {Context, DataTypes, Events, TargetsCallbacks} from '../models';
+
+// #region Types
 
 /**
  * Base controller class
@@ -51,7 +51,7 @@ export abstract class Controller<Data extends PlainObject = PlainObject> {
 	 * The controller's targets
 	 */
 	get targets(): TargetsCallbacks {
-		return this.#context.targets.readonly;
+		return this.#context.targets as TargetsCallbacks;
 	}
 
 	constructor(context: Context) {
@@ -74,3 +74,5 @@ export abstract class Controller<Data extends PlainObject = PlainObject> {
 	// eslint-disable-next-line no-unused-vars
 	valueChanged(name: string, value: unknown): void {}
 }
+
+// #endregion

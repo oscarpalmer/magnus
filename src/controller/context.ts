@@ -1,36 +1,34 @@
-import type {ControllerConstructor} from '../models';
-import {Actions} from '../store/action.store';
+import type {StoredController} from '../models';
+import {createActions} from '../store/action.store';
 import {contexts} from '../store/context.store';
-import type {StoredController} from '../store/controller.store';
-import {Data} from '../store/data.store';
-import {Targets} from '../store/target.store';
-import {Events} from './events';
+import {createData} from '../store/data.store';
+import {createTargets} from '../store/target.store';
+import {createEvents} from './events';
 
-export class Context {
-	readonly actions: Actions;
-	readonly controller: InstanceType<ControllerConstructor>;
-	readonly data: Data;
-	readonly events: Events;
-	readonly state: State;
-	readonly targets: Targets;
+// #region Instances
 
-	constructor(name: string, element: Element, controller: StoredController) {
-		this.state = {element, name};
+function Context(this: any, name: string, element: Element, controller: StoredController) {
+	this.state = {element, name};
 
-		this.actions = new Actions();
-		this.data = new Data(this, controller.types);
-		this.events = new Events(this);
-		this.targets = new Targets(this);
+	this.actions = createActions();
+	this.data = createData(this, controller.types);
+	this.events = createEvents(this);
+	this.targets = createTargets(this);
 
-		contexts.connect(element, this);
+	contexts.connect(element, this);
 
-		this.controller = new controller.ctor(this);
+	this.controller = new controller.ctor(this);
 
-		this.controller.connect?.();
-	}
+	this.controller.connect?.();
 }
 
-type State = {
-	name: string;
-	element: Element;
-};
+// #endregion
+
+// #region Functions
+
+export function createContext(name: string, element: Element, controller: StoredController) {
+	// @ts-expect-error All good, no worries :-)
+	return new Context(name, element, controller);
+}
+
+// #endregion

@@ -1,6 +1,7 @@
 import {EXPRESSION_TARGET_ATTRIBUTE_PREFIX} from '../../constants';
-import type {Context} from '../../controller/context';
-import type {Attribute} from '../../models';
+import type {Attribute, Context} from '../../models';
+
+// #region Functions
 
 export function handleTargetAttribute(
 	context: Context,
@@ -32,3 +33,5 @@ export function handleTargetAttribute(
 		context.targets.remove(normalized, element);
 	}
 }
+
+// #endregion

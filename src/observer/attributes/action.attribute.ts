@@ -1,11 +1,10 @@
 import type {GenericCallback} from '@oscarpalmer/atoms/models';
 import {camelCase} from '@oscarpalmer/atoms/string/case';
-import type {Context} from '../../controller/context';
 import {getEventParameters} from '../../helpers/event.helper';
 import {findTarget} from '../../helpers/index';
-import type {Attribute, EventAttributeParameters} from '../../models';
+import type {Attribute, Context, EventAttributeParameters} from '../../models';
 
-//
+// #region Types
 
 type CustomAction = {
 	callback: GenericCallback;
@@ -32,7 +31,9 @@ type Step = {
 	event: EventAttributeParameters;
 };
 
-//
+// #endregion
+
+// #region Functions
 
 function handleAction(parameters: HandleParameters): void {
 	const {context, event, properties, target} = parameters;
@@ -140,3 +141,5 @@ function stepper(
 		});
 	}
 }
+
+// #endregion

@@ -1,22 +1,21 @@
 import {
+	ATTRIBUTES,
 	EXPRESSION_ACTION_ATTRIBUTE_NAME,
 	EXPRESSION_ACTION_ATTRIBUTE_VALUE,
-	EXPRESSION_CONTROLLER_ATTRIBUTE_FULL,
-	EXPRESSION_DATA_ATTRIBUTE,
 	EXPRESSION_IO_ATTRIBUTE_FULL,
 	EXPRESSION_TARGET_ATTRIBUTE_FULL,
 	TYPE_ACTION,
-	TYPE_CONTROLLER,
-	TYPE_DATA,
 	TYPE_IO,
-	TYPE_TARGET,
+	TYPES_ATTRIBUTE,
 } from '../constants';
 import type {Attribute, AttributeParsed, AttributeType} from '../models';
 
+// #region Functions
+
 export function getAttributeType(name: string): AttributeType | undefined {
 	for (let index = 0; index < 5; index += 1) {
-		if (expressions[index].test(name)) {
-			return types[index];
+		if (ATTRIBUTES[index].test(name)) {
+			return TYPES_ATTRIBUTE[index];
 		}
 	}
 
@@ -44,20 +43,10 @@ export function parseAttribute(attribute: Attribute): AttributeParsed | undefine
 			break;
 	}
 
-	return matches == null ? undefined : {
+	return {
 		identifier: matches[2],
 		name: matches[1],
 	};
 }
 
-//
-
-const expressions = [
-	EXPRESSION_ACTION_ATTRIBUTE_NAME,
-	EXPRESSION_CONTROLLER_ATTRIBUTE_FULL,
-	EXPRESSION_DATA_ATTRIBUTE,
-	EXPRESSION_IO_ATTRIBUTE_FULL,
-	EXPRESSION_TARGET_ATTRIBUTE_FULL,
-];
-
-const types: AttributeType[] = [TYPE_ACTION, TYPE_CONTROLLER, TYPE_DATA, TYPE_IO, TYPE_TARGET];
+// #endregion

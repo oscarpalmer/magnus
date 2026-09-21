@@ -1,12 +1,12 @@
 import {expect, test} from 'vitest';
-import {Actions} from '../src/store/action.store';
+import {createActions} from '../src/store/action.store';
 
 test('action store', () =>
 	new Promise<void>(done => {
 		const one = document.createElement('div');
 		const two = document.createElement('div');
 
-		const store = new Actions();
+		const store = createActions();
 
 		expect(store.has('test')).toBe(false);
 

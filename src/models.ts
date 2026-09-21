@@ -1,8 +1,16 @@
 import type {PlainObject} from '@oscarpalmer/atoms/models';
+import type {RemovableEventListener} from '@oscarpalmer/toretto/models';
+import type {SYMBOL} from './constants';
 import type {Controller} from './controller';
-import type {Context} from './controller/context';
 
-// Action
+// #region Action
+
+export type Action = {
+	readonly callback: (event: Event) => void;
+	readonly options: AddEventListenerOptions;
+	readonly targets: Set<EventTarget>;
+	readonly type: string;
+};
 
 export type ActionParameters = {
 	callback: (event: Event) => void;
@@ -11,7 +19,18 @@ export type ActionParameters = {
 	type: string;
 };
 
-// Attribute
+export type Actions = {
+	readonly store: Map<string, Action>;
+	add(name: string, target: EventTarget): void;
+	clear(): void;
+	create(parameters: ActionParameters, target: EventTarget): void;
+	has(name: string): boolean;
+	remove(name: string, target: EventTarget): void;
+};
+
+// #endregion
+
+// #region Attribute
 
 export type Attribute = {
 	name: string;
@@ -26,13 +45,64 @@ export type AttributeParsed = {
 
 export type AttributeType = 'action' | 'controller' | 'data' | 'io' | 'target';
 
-// Controller
+// #endregion
+
+// #region Context
+
+export type Context = {
+	readonly actions: Actions;
+	readonly controller: InstanceType<ControllerConstructor>;
+	readonly data: Data;
+	readonly events: Events;
+	readonly state: ContextState;
+	readonly targets: Targets;
+};
+
+type ContextState = {
+	element: Element;
+	name: string;
+};
+
+export type Contexts = {
+	readonly store: WeakMap<Element, Record<string, Context>>;
+
+	connect(element: Element, context: Context): void;
+
+	disconnect(element: Element, name?: string): void;
+
+	get(element: Element, name: string): Context | undefined;
+};
+
+// #endregion
+
+// #region Controller
 
 export type ControllerConstructor = new (context: Context) => Controller;
 
-// Data
+export type Controllers = {
+	readonly store: Map<string, StoredController>;
+	add(name: string, element: Element): void;
+	create(name: string, ctor: ControllerConstructor): void;
+	find(origin: Element, name: string, id?: string): Context | undefined;
+	has(name: string): boolean;
+	remove(name: string, element?: Element): void;
+};
 
-export type DataTypes = Record<string, DataType>;
+export type StoredController = {
+	readonly ctor: ControllerConstructor;
+	readonly instances: Map<Element, Context>;
+	readonly types: DataTypes;
+};
+
+// #endregion
+
+// #region Data
+
+export type Data = {
+	readonly frames: Record<string, number | undefined>;
+	readonly types: DataTypes;
+	readonly value: PlainObject;
+};
 
 export type DataType =
 	| 'array'
@@ -44,6 +114,8 @@ export type DataType =
 	| 'object'
 	| 'string'
 	| 'time';
+
+export type DataTypes = Record<string, DataType>;
 
 export type DataUpdateParameters = {
 	context: Context;
@@ -58,7 +130,9 @@ export type DataValue = {
 	stringified: string;
 };
 
-// Event
+// #endregion
+
+// #region Event
 
 export type EventAttributeParameters = {
 	callback: string;
@@ -79,9 +153,237 @@ export type EventListenerParameters = {
 	type: string;
 };
 
+export type Events = {
+	/**
+	 * Dispatch an event for the controller
+	 */
+	dispatch<Type extends keyof HTMLElementEventMap>(type: Type): void;
+
+	/**
+	 * Dispatch an event for the controller
+	 */
+	dispatch(type: string): void;
+
+	/**
+	 * - Dispatch an event for a target element
+	 *
+	 * If target is a `string`, the controller will use the first matching target element
+	 */
+	dispatch<Type extends keyof HTMLElementEventMap>(type: Type, target: ExtendedEventTarget): void;
+
+	/**
+	 * - Dispatch an event for a target element
+	 *
+	 * If target is a `string`, the controller will use the first matching target element
+	 */
+	dispatch(type: string, target: ExtendedEventTarget): void;
+
+	/**
+	 * - Dispatch an event with specific options
+	 *
+	 * - If target is a `string`, the controller will use the first matching target element
+	 * - It target is not provided, the controller's element will be used
+	 */
+	dispatch<Type extends keyof HTMLElementEventMap>(
+		type: Type,
+		options: CustomEventInit,
+		target?: ExtendedEventTarget,
+	): void;
+
+	/**
+	 * - Dispatch an event with specific options
+	 *
+	 * - If target is a `string`, the controller will use the first matching target element
+	 * - It target is not provided, the controller's element will be used
+	 */
+	dispatch(type: string, options?: CustomEventInit, target?: ExtendedEventTarget): void;
+
+	/**
+	 * Remove an event listener from the controller's element
+	 */
+	off<Type extends keyof HTMLElementEventMap>(type: Type, listener: EventListener): void;
+
+	/**
+	 * Remove an event listener from the controller's element
+	 */
+	off(type: string, listener: EventListener): void;
+
+	/**
+	 * Remove an event listener from a target element
+	 *
+	 * If target is a `string`, the controller will use the first matching target element
+	 */
+	off<Type extends keyof HTMLElementEventMap>(
+		type: Type,
+		listener: EventListener,
+		target: ExtendedEventTarget,
+	): void;
+
+	/**
+	 * Remove an event listener from a target element
+	 *
+	 * If target is a `string`, the controller will use the first matching target element
+	 */
+	off(type: string, listener: EventListener, target: ExtendedEventTarget): void;
+
+	/**
+	 * Remove an event listener from a target element
+	 *
+	 * If target is a `string`, the controller will use the first matching target element
+	 */
+	off<Type extends keyof HTMLElementEventMap>(
+		type: Type,
+		listener: EventListener,
+		options: boolean | EventListenerOptions,
+		target?: ExtendedEventTarget,
+	): void;
+
+	/**
+	 * Remove an event listener from a target element
+	 *
+	 * If target is a `string`, the controller will use the first matching target element
+	 */
+	off(
+		type: string,
+		listener: EventListener,
+		options: boolean | EventListenerOptions,
+		target?: ExtendedEventTarget,
+	): void;
+
+	/**
+	 * - Add an event listener to the controller's element
+	 *
+	 * Returns a function that removes the event listener
+	 */
+	on<Type extends keyof HTMLElementEventMap>(
+		type: Type,
+		listener: EventListener,
+	): RemovableEventListener;
+
+	/**
+	 * - Add an event listener to the controller's element
+	 *
+	 * Returns a function that removes the event listener
+	 */
+	on(type: string, listener: EventListener): RemovableEventListener;
+
+	/**
+	 * - Add an event listener to a target element
+	 *
+	 * - If target is a `string`, the controller will use the first matching target element
+	 * - Returns a function that removes the event listener
+	 */
+	on<Type extends keyof HTMLElementEventMap>(
+		type: Type,
+		listener: EventListener,
+		target: ExtendedEventTarget,
+	): RemovableEventListener;
+
+	/**
+	 * - Add an event listener to a target element
+	 *
+	 * - If target is a `string`, the controller will use the first matching target element
+	 * - Returns a function that removes the event listener
+	 */
+	on(type: string, listener: EventListener, target: ExtendedEventTarget): RemovableEventListener;
+
+	/**
+	 * - Add an event listener to a target element
+	 *
+	 * - If target is a `string`, the controller will use the first matching target element
+	 * - Returns a function that removes the event listener
+	 */
+	on<Type extends keyof HTMLElementEventMap>(
+		type: Type,
+		listener: EventListener,
+		options: boolean | AddEventListenerOptions,
+		target?: ExtendedEventTarget,
+	): RemovableEventListener;
+
+	/**
+	 * - Add an event listener to a target element
+	 *
+	 * - If target is a `string`, the controller will use the first matching target element
+	 * - Returns a function that removes the event listener
+	 */
+	on(
+		type: string,
+		listener: EventListener,
+		options: boolean | AddEventListenerOptions,
+		target?: ExtendedEventTarget,
+	): RemovableEventListener;
+};
+
 export type ExtendedEventTarget = string | EventTarget;
 
-// Targets
+// #endregion
+
+// #region Internals
+
+export type InternalEvents = {
+	[SYMBOL]: Context;
+};
+
+// #endregion
+
+// #region Magnus
+
+export type Magnus = {
+	/**
+	 * Is Magnus active?
+	 */
+	get active(): boolean;
+
+	/**
+	 * Adds a named controller to observe
+	 */
+	add(name: string, ctor: ControllerConstructor): void;
+
+	/**
+	 * Removes a named controller _(and all its instances)_ from observation
+	 */
+	remove(name: string): void;
+
+	/**
+	 * Starts the observer
+	 */
+	start(): void;
+
+	/**
+	 * Stops the observer
+	 */
+	stop(): void;
+};
+
+// #endregion
+
+// #region Observer
+
+export type Observer = {
+	readonly observer: MutationObserver;
+	start(): void;
+	stop(): void;
+	update(): void;
+};
+
+// #endregion
+
+// #region Target
+
+export type Targets = {
+	readonly callbacks: TargetsCallbacks | undefined;
+	readonly context: Context;
+	readonly store: Map<string, Set<Element>>;
+	get readonly(): TargetsCallbacks;
+	add(name: string, element: Element): void;
+	clear(): void;
+	find(selector: string): Element | null;
+	findAll(selector: string): Element[];
+	get(name: string): Element | undefined;
+	getAll(name: string): Element[];
+	has(name: string): boolean;
+	remove(name: string, element: Element): void;
+};
 
 export type TargetsCallbacks = {
 	/**
@@ -117,3 +419,5 @@ export type TargetsCallbacks = {
 	 */
 	has(name: string): boolean;
 };
+
+// #endregion

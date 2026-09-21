@@ -5,9 +5,10 @@ import {getNumber} from '@oscarpalmer/atoms/number';
 import {parse} from '@oscarpalmer/atoms/string';
 import {MINUTE} from '@oscarpalmer/datum/constants';
 import {getDate} from '@oscarpalmer/datum/get';
-import {EXPRESSION_FALSE, EXPRESSION_TIME, EXPRESSION_TRUE} from '../constants';
-import type {Context} from '../controller/context';
-import type {DataType, DataTypes} from '../models';
+import {EXPRESSION_FALSE, EXPRESSION_TIME, EXPRESSION_TRUE, TYPES_DATA} from '../constants';
+import type {Context, DataType, DataTypes} from '../models';
+
+// #region Functions
 
 export function getDataTypes(input: unknown): DataTypes {
 	const types: DataTypes = {};
@@ -23,7 +24,7 @@ export function getDataTypes(input: unknown): DataTypes {
 		const key = keys[index];
 		const value = input[key];
 
-		if (dataTypes.has(value as never)) {
+		if (TYPES_DATA.has(value as never)) {
 			types[key] = value as DataType;
 		}
 	}
@@ -139,19 +140,9 @@ export function replaceData(context: Context, value: unknown): void {
 	}
 }
 
-//
+// #endregion
 
-const dataTypes = new Set<DataType>([
-	'array',
-	'boolean',
-	'color',
-	'date',
-	'datetime',
-	'number',
-	'object',
-	'string',
-	'time',
-]);
+// #region Variables
 
 const transformers: Partial<Record<DataType, (value: unknown, type: DataType) => unknown>> = {
 	array: getObjectValue,
@@ -165,3 +156,5 @@ const transformers: Partial<Record<DataType, (value: unknown, type: DataType) =>
 };
 
 let timezoneModifier: number;
+
+// #endregion
