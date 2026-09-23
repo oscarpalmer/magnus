@@ -65,6 +65,12 @@ document.body.innerHTML = `<div
 	<textarea output:io-test.nested:raw></textarea>
 
 	<pre output:io-test.:raw></pre>
+
+	<textarea input:io-test.textarea></textarea>
+	<textarea input:io-test.textarea></textarea>
+
+	<textarea input:io-test.:raw></textarea>
+	<textarea input:io-test.nested:raw></textarea>
 </div>`;
 
 magnus.add('io-test', InputOutputController);
@@ -86,6 +92,17 @@ test('input/output attribute', async () => {
 	const text = controller.targets.find<HTMLInputElement>('input[type="text"]')!;
 	const textareas = controller.targets.findAll<HTMLTextAreaElement>('textarea');
 
+	const [
+		textareaOutputOne,
+		textareaOutputTwo,
+		textareaRaw,
+		textareaNestedRaw,
+		textareaInputOne,
+		textareaInputTwo,
+		textareaJsonInput,
+		textareaNestedInput,
+	] = textareas;
+
 	function snapshot(): string {
 		return `${outputs.map(output => output.textContent).join('; ')}\n${select.options[select.selectedIndex].textContent}\n${pre.textContent}`;
 	}
@@ -103,6 +120,11 @@ test('input/output attribute', async () => {
 		expect(snapshot()).toBe(
 			'true; 42; 2; Hello, world!; Hello, universe!\nB\n{"boolean":true,"nested":{"value":""},"number":42,"select":2,"text":"Hello, world!","textarea":"Hello, universe!"}',
 		);
+
+		expect(textareaOutputOne.value).toBe('Hello, universe!');
+		expect(textareaOutputTwo.value).toBe('Hello, universe!');
+		expect(textareaInputOne.value).toBe('Hello, universe!');
+		expect(textareaInputTwo.value).toBe('Hello, universe!');
 	});
 
 	controller.data.boolean = false;
@@ -125,6 +147,11 @@ test('input/output attribute', async () => {
 		expect(snapshot()).toBe(
 			'false; 99; 1; foo bar; foo baz\nA\n{"boolean":false,"nested":{"value":"foo"},"number":99,"select":1,"text":"foo bar","textarea":"foo baz"}',
 		);
+
+		expect(textareaOutputOne.value).toBe('foo baz');
+		expect(textareaOutputTwo.value).toBe('foo baz');
+		expect(textareaInputOne.value).toBe('foo baz');
+		expect(textareaInputTwo.value).toBe('foo baz');
 	});
 
 	checkbox.checked = true;
@@ -132,58 +159,124 @@ test('input/output attribute', async () => {
 	select.value = '3';
 	text.value = 'Magnus!';
 
-	textareas[0].focus();
-
-	textareas[0].value = '!sungaM';
-	textareas[3].value = '{"value": "bar"}';
-
 	checkbox.dispatchEvent(new Event('change', {bubbles: true}));
 	number.dispatchEvent(new Event('input', {bubbles: true}));
 	select.dispatchEvent(new Event('change', {bubbles: true}));
 	text.dispatchEvent(new Event('input', {bubbles: true}));
-	textareas[0].dispatchEvent(new Event('input', {bubbles: true}));
-	textareas[3].dispatchEvent(new Event('input', {bubbles: true}));
 
 	await vi.waitFor(() => {
 		expect(controller.data).toEqual({
 			boolean: true,
-			nested: {value: 'bar'},
+			nested: {value: 'foo'},
 			number: 123,
 			select: 3,
 			text: 'Magnus!',
-			textarea: '!sungaM',
+			textarea: 'foo baz',
 		});
 
 		expect(snapshot()).toBe(
-			'true; 123; 3; Magnus!; !sungaM\nC\n{"boolean":true,"nested":{"value":"bar"},"number":123,"select":3,"text":"Magnus!","textarea":"!sungaM"}',
+			'true; 123; 3; Magnus!; foo baz\nC\n{"boolean":true,"nested":{"value":"foo"},"number":123,"select":3,"text":"Magnus!","textarea":"foo baz"}',
 		);
 	});
 
-	textareas[2].value = `{
-	"boolean": false,
-	"nested": {
-		"value": "foo bar"
-	},
-	"number": 99,
-	"select": 1,
-	"text": "Hello, world!",
-	"textarea": "Hello, universe!"
-}`;
+	// outputs (plain, `:raw`, and `nested:raw`) never emit, even when edited directly
+	textareaOutputOne.value = '!sungaM';
+	textareaRaw.value = '{"boolean": false}';
+	textareaNestedRaw.value = '{"value": "bar"}';
 
-	textareas[2].dispatchEvent(new Event('input', {bubbles: true}));
+	textareaOutputOne.dispatchEvent(new Event('input', {bubbles: true}));
+	textareaRaw.dispatchEvent(new Event('input', {bubbles: true}));
+	textareaNestedRaw.dispatchEvent(new Event('input', {bubbles: true}));
+
+	expect(controller.data).toEqual({
+		boolean: true,
+		nested: {value: 'foo'},
+		number: 123,
+		select: 3,
+		text: 'Magnus!',
+		textarea: 'foo baz',
+	});
+
+	// a subsequent data change still reaches the (never-emitting) outputs
+	controller.data.textarea = 'restored';
+
+	await vi.waitFor(() => {
+		expect(textareaOutputOne.value).toBe('restored');
+		expect(textareaOutputTwo.value).toBe('restored');
+		expect(textareaInputOne.value).toBe('restored');
+		expect(textareaInputTwo.value).toBe('restored');
+	});
+
+	// typing into one input reaches data and every other input/output for the same property
+	textareaInputOne.value = 'typed by one';
+	textareaInputOne.dispatchEvent(new Event('input', {bubbles: true}));
+
+	await vi.waitFor(() => {
+		expect(controller.data.textarea).toBe('typed by one');
+		expect(textareaInputTwo.value).toBe('typed by one');
+		expect(textareaOutputOne.value).toBe('typed by one');
+		expect(textareaOutputTwo.value).toBe('typed by one');
+	});
+
+	// a focused input is skipped when the change came from elsewhere, so it isn't clobbered mid-edit
+	let inputCount = 0;
+
+	textareaInputOne.addEventListener('input', () => {
+		inputCount += 1;
+	});
+
+	textareaInputOne.focus();
+
+	controller.data.textarea = 'changed elsewhere';
+
+	await vi.waitFor(() => {
+		expect(textareaInputTwo.value).toBe('changed elsewhere');
+		expect(textareaOutputOne.value).toBe('changed elsewhere');
+		expect(textareaOutputTwo.value).toBe('changed elsewhere');
+	});
+
+	expect(textareaInputOne.value).toBe('typed by one');
+	expect(inputCount).toBe(0);
+
+	// once it's no longer focused, it catches up like everything else, dispatching normally
+	textareaInputOne.blur();
+
+	controller.data.textarea = 'changed after blur';
+
+	await vi.waitFor(() => {
+		expect(textareaInputOne.value).toBe('changed after blur');
+	});
+
+	expect(inputCount).toBe(1);
+
+	// pasting a whole JSON object into a bound `input:` (never `output:`) replaces all data
+	textareaJsonInput.value = JSON.stringify({
+		boolean: false,
+		nested: {value: 'replaced'},
+		number: 7,
+		select: 1,
+		text: 'Replaced!',
+		textarea: 'replaced too',
+	});
+
+	textareaJsonInput.dispatchEvent(new Event('input', {bubbles: true}));
 
 	await vi.waitFor(() => {
 		expect(controller.data).toEqual({
 			boolean: false,
-			nested: {value: 'foo bar'},
-			number: 99,
+			nested: {value: 'replaced'},
+			number: 7,
 			select: 1,
-			text: 'Hello, world!',
-			textarea: 'Hello, universe!',
+			text: 'Replaced!',
+			textarea: 'replaced too',
 		});
+	});
 
-		expect(snapshot()).toBe(
-			'false; 99; 1; Hello, world!; Hello, universe!\nA\n{"boolean":false,"nested":{"value":"foo bar"},"number":99,"select":1,"text":"Hello, world!","textarea":"Hello, universe!"}',
-		);
+	// pasting raw JSON into a named+formatted `input:` sets just that property
+	textareaNestedInput.value = '{"value": "named and formatted"}';
+	textareaNestedInput.dispatchEvent(new Event('input', {bubbles: true}));
+
+	await vi.waitFor(() => {
+		expect(controller.data.nested).toEqual({value: 'named and formatted'});
 	});
 });

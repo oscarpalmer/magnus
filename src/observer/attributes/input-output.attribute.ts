@@ -1,6 +1,12 @@
 import {parse} from '@oscarpalmer/atoms/string';
 import {camelCase} from '@oscarpalmer/atoms/string/case';
-import {EVENT_CHANGE, EVENT_IGNORED, EXPRESSION_IO_ATTRIBUTE, TYPE_INPUT} from '../../constants';
+import {
+	EVENT_CHANGE,
+	EVENT_IGNORED,
+	EXPRESSION_IO_ATTRIBUTE,
+	TYPE_INPUT,
+	TYPE_OUTPUT,
+} from '../../constants';
 import {getDataValue, replaceData} from '../../helpers/data.helper';
 import type {Attribute, Context} from '../../models';
 import {handleActionAttribute} from './action.attribute';
@@ -85,7 +91,7 @@ export function handleInputOutputAttribute(
 
 	const event = getEventType(element);
 
-	if (event == null) {
+	if (event == null || type === TYPE_OUTPUT) {
 		handleTargetAttribute(
 			context,
 			element,
