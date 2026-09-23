@@ -1,19 +1,7 @@
 import {expect, test} from 'vitest';
 import {removeController, removeTarget, setController, setTarget} from '../src';
 
-const values = [
-	null,
-	undefined,
-	false,
-	true,
-	123,
-	123n,
-	[],
-	{},
-	() => {},
-	new Map(),
-	new Set(),
-];
+const values = [null, undefined, false, true, 123, 123n, [], {}, () => {}, new Map(), new Set()];
 
 test('set & remove controller', () => {
 	const element = document.createElement('div');

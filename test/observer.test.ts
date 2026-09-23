@@ -1,4 +1,4 @@
-import {afterAll, expect, test} from 'vitest';
+import {afterAll, expect, test, vi} from 'vitest';
 import {Controller, magnus} from '../src';
 
 class ObserverController extends Controller {
@@ -13,17 +13,14 @@ afterAll(() => {
 	document.body.innerHTML = '';
 });
 
-test('observer', () =>
-	new Promise<void>(done => {
-		expect(controller).toBeUndefined();
+test('observer', async () => {
+	expect(controller).toBeUndefined();
 
-		document.body.innerHTML = '<div :observer-test></div>';
+	document.body.innerHTML = '<div :observer-test></div>';
 
-		magnus.add('observer-test', ObserverController);
+	magnus.add('observer-test', ObserverController);
 
-		setTimeout(() => {
-			expect(controller).toBeInstanceOf(ObserverController);
-
-			done();
-		}, 25);
-	}));
+	await vi.waitFor(() => {
+		expect(controller).toBeInstanceOf(ObserverController);
+	});
+});

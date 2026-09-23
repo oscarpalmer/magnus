@@ -1,5 +1,10 @@
-import {afterAll, expect, test} from 'vitest';
+import {afterAll, expect, test, vi} from 'vitest';
 import {Controller, magnus} from '../src';
+
+// cross-controller action bindings resolve via a `requestAnimationFrame` retry
+async function nextFrame(): Promise<void> {
+	return new Promise(resolve => requestAnimationFrame(() => resolve()));
+}
 
 class ActionOneController extends Controller {
 	fromDocument(event: CustomEventInit): void {
@@ -103,91 +108,86 @@ afterAll(() => {
 	document.body.innerHTML = '';
 });
 
-test('action attribute', () =>
-	new Promise<void>(done => {
-		let button: HTMLButtonElement | null;
+test('action attribute', async () => {
+	await vi.waitFor(() => {
+		expect(connected).toBe(1);
+	});
 
-		setTimeout(() => {
-			button = document.querySelector('button');
+	// invalid/dead-end bindings (`not-real`, `this-will.be-ignored`, `and-so-will-this`) retry
+	// for up to 10 animation frames before giving up
+	for (let index = 0; index < 12; index += 1) {
+		await nextFrame();
+	}
 
-			for (let index = 0; index < 10; index += 1) {
-				button?.click();
-			}
+	const button = document.querySelector('button');
 
-			button?.removeAttribute('on:action-two.on-multiple');
-		}, 25);
+	for (let index = 0; index < 10; index += 1) {
+		button?.click();
+	}
 
-		setTimeout(() => {
-			expect(a).toBe(10);
-			expect(b).toBe(10);
-			expect(connected).toBe(1);
-			expect(fromTwo).toBe(2);
-			expect(multiple).toBe(10);
-			expect(once).toBe(1);
+	button?.removeAttribute('on:action-two.on-multiple');
 
-			expect(fromDocument).toBe('Hello, world! -- fromDocument');
-			expect(fromElement).toBe('Hello, world! -- fromElement');
-			expect(fromWindow).toBe('Hello, world! -- fromWindow');
+	await vi.waitFor(() => {
+		expect(a).toBe(10);
+		expect(b).toBe(10);
+		expect(connected).toBe(1);
+		expect(fromTwo).toBe(2);
+		expect(multiple).toBe(10);
+		expect(once).toBe(1);
 
-			for (let index = 0; index < 10; index += 1) {
-				button?.click();
-			}
+		expect(fromDocument).toBe('Hello, world! -- fromDocument');
+		expect(fromElement).toBe('Hello, world! -- fromElement');
+		expect(fromWindow).toBe('Hello, world! -- fromWindow');
+	});
 
-			button?.setAttribute('on:click', 'action-two.onB');
-			button?.setAttribute('on:action-two.on-multiple', '');
-		}, 50);
+	for (let index = 0; index < 10; index += 1) {
+		button?.click();
+	}
 
-		setTimeout(() => {
-			expect(a).toBe(20);
-			expect(b).toBe(20);
-			expect(connected).toBe(1);
-			expect(fromTwo).toBe(2);
-			expect(multiple).toBe(10);
-			expect(once).toBe(1);
+	button?.setAttribute('on:click', 'action-two.onB');
+	button?.setAttribute('on:action-two.on-multiple', '');
 
-			for (let index = 0; index < 10; index += 1) {
-				button?.click();
-			}
+	await vi.waitFor(() => {
+		expect(a).toBe(20);
+		expect(b).toBe(20);
+		expect(connected).toBe(1);
+		expect(fromTwo).toBe(2);
+		expect(multiple).toBe(10);
+		expect(once).toBe(1);
+	});
 
-			button?.removeAttribute('on:click');
-		}, 75);
+	for (let index = 0; index < 10; index += 1) {
+		button?.click();
+	}
 
-		setTimeout(() => {
-			expect(a).toBe(20);
-			expect(b).toBe(30);
-			expect(connected).toBe(1);
-			expect(fromTwo).toBe(2);
-			expect(multiple).toBe(10);
-			expect(once).toBe(1);
+	button?.removeAttribute('on:click');
 
-			for (let index = 0; index < 10; index += 1) {
-				button?.click();
-			}
+	await nextFrame();
 
-			magnus.remove('action-two');
-		}, 100);
+	await vi.waitFor(() => {
+		expect(a).toBe(20);
+		expect(b).toBe(30);
+		expect(connected).toBe(1);
+		expect(fromTwo).toBe(2);
+		expect(multiple).toBe(10);
+		expect(once).toBe(1);
+	});
 
-		setTimeout(() => {
-			expect(a).toBe(20);
-			expect(b).toBe(30);
-			expect(connected).toBe(1);
-			expect(fromTwo).toBe(2);
-			expect(multiple).toBe(10);
-			expect(once).toBe(1);
+	for (let index = 0; index < 10; index += 1) {
+		button?.click();
+	}
 
-			for (let index = 0; index < 10; index += 1) {
-				button?.click();
-			}
-		}, 125);
+	// removal detaches listeners synchronously, so further clicks are a no-op immediately
+	magnus.remove('action-two');
 
-		setTimeout(() => {
-			expect(a).toBe(20);
-			expect(b).toBe(30);
-			expect(connected).toBe(1);
-			expect(fromTwo).toBe(2);
-			expect(multiple).toBe(10);
-			expect(once).toBe(1);
+	for (let index = 0; index < 10; index += 1) {
+		button?.click();
+	}
 
-			done();
-		}, 250);
-	}));
+	expect(a).toBe(20);
+	expect(b).toBe(30);
+	expect(connected).toBe(1);
+	expect(fromTwo).toBe(2);
+	expect(multiple).toBe(10);
+	expect(once).toBe(1);
+});

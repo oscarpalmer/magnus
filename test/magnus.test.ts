@@ -1,6 +1,6 @@
-import {afterAll, expect, test} from 'vitest';
-import {Controller} from '../src/controller';
+import {afterAll, expect, test, vi} from 'vitest';
 import {magnus, setController} from '../src';
+import {Controller} from '../src/controller';
 
 class TestController extends Controller {
 	connect(): void {
@@ -17,76 +17,58 @@ afterAll(() => {
 	document.body.innerHTML = '';
 });
 
-test('controller', () =>
-	new Promise<void>(done => {
-		expect(magnus.active).toBe(true);
-		expect(connected).toBe(0);
+test('controller', async () => {
+	expect(magnus.active).toBe(true);
+	expect(connected).toBe(0);
 
-		document.body.innerHTML = '<div :magnus-test>1</div>';
+	document.body.innerHTML = '<div :magnus-test>1</div>';
 
-		setTimeout(() => {
-			expect(magnus.active).toBe(true);
-			expect(connected).toBe(1);
+	await vi.waitFor(() => {
+		expect(connected).toBe(1);
+	});
 
-			magnus.stop();
-		}, 25);
+	expect(magnus.active).toBe(true);
 
-		setTimeout(() => {
-			magnus.stop();
+	magnus.stop();
+	magnus.stop();
 
-			const second = document.createElement('div');
+	const second = document.createElement('div');
 
-			second.textContent = '2';
+	second.textContent = '2';
 
-			setController(second, 'magnus-test');
+	setController(second, 'magnus-test');
 
-			document.body.append(second);
-		}, 50);
+	document.body.append(second);
 
-		setTimeout(() => {
-			expect(magnus.active).toBe(false);
-			expect(connected).toBe(1);
+	expect(magnus.active).toBe(false);
+	expect(connected).toBe(1);
 
-			magnus.start();
-		}, 75);
+	magnus.start();
+	magnus.start();
 
-		setTimeout(() => {
-			magnus.start();
+	await vi.waitFor(() => {
+		expect(connected).toBe(2);
+	});
 
-			expect(magnus.active).toBe(true);
-			expect(connected).toBe(2);
-		}, 100);
+	expect(magnus.active).toBe(true);
 
-		setTimeout(() => {
-			magnus.remove('magnus-test');
-			magnus.remove('not-exists');
+	magnus.remove('magnus-test');
+	magnus.remove('not-exists');
 
-			magnus.stop();
-		}, 125);
+	magnus.stop();
+	magnus.stop();
 
-		setTimeout(() => {
-			magnus.stop();
+	document.body.innerHTML = '<div :magnus-test>3</div>';
 
-			document.body.innerHTML = '<div :magnus-test>3</div>';
-		}, 150);
+	expect(magnus.active).toBe(false);
+	expect(connected).toBe(2);
 
-		setTimeout(() => {
-			expect(magnus.active).toBe(false);
-			expect(connected).toBe(2);
+	magnus.add('magnus-test', TestController);
 
-			magnus.add('magnus-test', TestController);
-		}, 175);
+	magnus.start();
+	magnus.start();
 
-		setTimeout(() => {
-			magnus.start();
-		}, 200);
-
-		setTimeout(() => {
-			magnus.start();
-
-			expect(magnus.active).toBe(true);
-			expect(connected).toBe(2);
-
-			done();
-		}, 225);
-	}));
+	// re-registering while stopped doesn't retroactively (synchronously) reconnect existing elements
+	expect(magnus.active).toBe(true);
+	expect(connected).toBe(2);
+});

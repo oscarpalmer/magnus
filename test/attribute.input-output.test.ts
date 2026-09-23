@@ -1,9 +1,5 @@
-import {afterAll, expect, test} from 'vitest';
+import {afterAll, expect, test, vi} from 'vitest';
 import {Controller, magnus} from '../src';
-
-type Data<Value> = Record<Key, Value>;
-
-type Key = 'first' | 'fourth' | 'second' | 'third';
 
 type Values = {
 	boolean: boolean;
@@ -25,132 +21,11 @@ class InputOutputController extends Controller<Values> {
 	} as never;
 
 	connect(): void {
-		let checkbox: HTMLInputElement;
-		let number: HTMLInputElement;
-		let outputs: HTMLLIElement[];
-		let pre: HTMLPreElement;
-		let select: HTMLSelectElement;
-		let text: HTMLInputElement;
-		let textareas: HTMLTextAreaElement[];
-
-		setTimeout(() => {
-			checkbox = this.targets.find<HTMLInputElement>('input[type="checkbox"]')!;
-
-			number = this.targets.find<HTMLInputElement>('input[type="number"]')!;
-
-			outputs = this.targets.findAll<HTMLLIElement>('li');
-			pre = this.targets.find<HTMLPreElement>('pre')!;
-			select = this.targets.find<HTMLSelectElement>('select')!;
-			text = this.targets.find<HTMLInputElement>('input[type="text"]')!;
-			textareas = this.targets.findAll<HTMLTextAreaElement>('textarea');
-		}, 125);
-
-		setTimeout(() => {
-			setValues('first', this, outputs, pre, select);
-
-			this.data.boolean = false;
-			this.data.nested = {value: 'foo'};
-			this.data.number = 99;
-			this.data.select = 1;
-			this.data.text = 'foo bar';
-			this.data.textarea = 'foo baz';
-		}, 250);
-
-		setTimeout(() => {
-			setValues('second', this, outputs, pre, select);
-
-			if (checkbox != null) {
-				checkbox.checked = true;
-			}
-
-			if (number != null) {
-				number.value = '123';
-			}
-
-			if (select != null) {
-				select.value = '3';
-			}
-
-			if (text != null) {
-				text.value = 'Magnus!';
-			}
-
-			textareas[0].focus();
-
-			textareas[0].value = '!sungaM';
-			textareas[3].value = '{"value": "bar"}';
-
-			checkbox.dispatchEvent(new Event('change', {bubbles: true}));
-			number.dispatchEvent(new Event('input', {bubbles: true}));
-			select.dispatchEvent(new Event('change', {bubbles: true}));
-			text.dispatchEvent(new Event('input', {bubbles: true}));
-			textareas[0].dispatchEvent(new Event('input', {bubbles: true}));
-			textareas[3].dispatchEvent(new Event('input', {bubbles: true}));
-		}, 375);
-
-		setTimeout(() => {
-			setValues('third', this, outputs, pre, select);
-
-			textareas[2].value = `{
-	"boolean": false,
-	"nested": {
-		"value": "foo bar"
-	},
-	"number": 99,
-	"select": 1,
-	"text": "Hello, world!",
-	"textarea": "Hello, universe!"
-}`;
-
-			textareas[2].dispatchEvent(new Event('input', {bubbles: true}));
-		}, 500);
-
-		setTimeout(() => {
-			setValues('fourth', this, outputs, pre, select);
-		}, 625);
+		controller = this;
 	}
 }
 
-function setValues(
-	key: Key,
-	controller: InputOutputController,
-	outputs: HTMLLIElement[],
-	pre: HTMLPreElement,
-	select: HTMLSelectElement,
-): void {
-	input[key] = {...controller.data};
-	json[key] = pre.textContent;
-	option[key] = select.options[select.selectedIndex].textContent;
-	output[key] = outputs.map(output => output.textContent).join('; ');
-}
-
-const input: Data<Values> = {
-	first: null as never,
-	second: null as never,
-	third: null as never,
-	fourth: null as never,
-};
-
-const json: Data<string> = {
-	first: '',
-	second: '',
-	third: '',
-	fourth: '',
-};
-
-const option: Data<string> = {
-	first: '',
-	second: '',
-	third: '',
-	fourth: '',
-};
-
-const output: Data<string> = {
-	first: '',
-	second: '',
-	third: '',
-	fourth: '',
-};
+let controller: InputOutputController;
 
 document.body.innerHTML = `<div
 	:io-test
@@ -198,72 +73,117 @@ afterAll(() => {
 	document.body.innerHTML = '';
 });
 
-test('input/output attribute', () =>
-	new Promise<void>(done => {
-		setTimeout(() => {
-			expect(input.first).toEqual({
-				boolean: true,
-				nested: {value: ''},
-				number: 42,
-				select: 2,
-				text: 'Hello, world!',
-				textarea: 'Hello, universe!',
-			});
+test('input/output attribute', async () => {
+	await vi.waitFor(() => {
+		expect(controller).toBeInstanceOf(InputOutputController);
+	});
 
-			expect(input.second).toEqual({
-				boolean: false,
-				nested: {value: 'foo'},
-				number: 99,
-				select: 1,
-				text: 'foo bar',
-				textarea: 'foo baz',
-			});
+	const checkbox = controller.targets.find<HTMLInputElement>('input[type="checkbox"]')!;
+	const number = controller.targets.find<HTMLInputElement>('input[type="number"]')!;
+	const outputs = controller.targets.findAll<HTMLLIElement>('li');
+	const pre = controller.targets.find<HTMLPreElement>('pre')!;
+	const select = controller.targets.find<HTMLSelectElement>('select')!;
+	const text = controller.targets.find<HTMLInputElement>('input[type="text"]')!;
+	const textareas = controller.targets.findAll<HTMLTextAreaElement>('textarea');
 
-			expect(input.third).toEqual({
-				boolean: true,
-				nested: {value: 'bar'},
-				number: 123,
-				select: 3,
-				text: 'Magnus!',
-				textarea: '!sungaM',
-			});
+	function snapshot(): string {
+		return `${outputs.map(output => output.textContent).join('; ')}\n${select.options[select.selectedIndex].textContent}\n${pre.textContent}`;
+	}
 
-			expect(input.fourth).toEqual({
-				boolean: false,
-				nested: {value: 'foo bar'},
-				number: 99,
-				select: 1,
-				text: 'Hello, world!',
-				textarea: 'Hello, universe!',
-			});
+	await vi.waitFor(() => {
+		expect(controller.data).toEqual({
+			boolean: true,
+			nested: {value: ''},
+			number: 42,
+			select: 2,
+			text: 'Hello, world!',
+			textarea: 'Hello, universe!',
+		});
 
-			expect(json.first).toBe(
-				'{"boolean":true,"nested":{"value":""},"number":42,"select":2,"text":"Hello, world!","textarea":"Hello, universe!"}',
-			);
+		expect(snapshot()).toBe(
+			'true; 42; 2; Hello, world!; Hello, universe!\nB\n{"boolean":true,"nested":{"value":""},"number":42,"select":2,"text":"Hello, world!","textarea":"Hello, universe!"}',
+		);
+	});
 
-			expect(json.second).toBe(
-				'{"boolean":false,"nested":{"value":"foo"},"number":99,"select":1,"text":"foo bar","textarea":"foo baz"}',
-			);
+	controller.data.boolean = false;
+	controller.data.nested = {value: 'foo'};
+	controller.data.number = 99;
+	controller.data.select = 1;
+	controller.data.text = 'foo bar';
+	controller.data.textarea = 'foo baz';
 
-			expect(json.third).toBe(
-				'{"boolean":true,"nested":{"value":"bar"},"number":123,"select":3,"text":"Magnus!","textarea":"!sungaM"}',
-			);
+	await vi.waitFor(() => {
+		expect(controller.data).toEqual({
+			boolean: false,
+			nested: {value: 'foo'},
+			number: 99,
+			select: 1,
+			text: 'foo bar',
+			textarea: 'foo baz',
+		});
 
-			expect(json.fourth).toBe(
-				'{"boolean":false,"nested":{"value":"foo bar"},"number":99,"select":1,"text":"Hello, world!","textarea":"Hello, universe!"}',
-			);
+		expect(snapshot()).toBe(
+			'false; 99; 1; foo bar; foo baz\nA\n{"boolean":false,"nested":{"value":"foo"},"number":99,"select":1,"text":"foo bar","textarea":"foo baz"}',
+		);
+	});
 
-			expect(option.first).toBe('B');
-			expect(option.second).toBe('A');
-			expect(option.third).toBe('C');
-			expect(option.fourth).toBe('A');
+	checkbox.checked = true;
+	number.value = '123';
+	select.value = '3';
+	text.value = 'Magnus!';
 
-			expect(output.first).toBe('true; 42; 2; Hello, world!; Hello, universe!');
-			expect(output.second).toBe('false; 99; 1; foo bar; foo baz');
-			expect(output.third).toBe('true; 123; 3; Magnus!; !sungaM');
+	textareas[0].focus();
 
-			expect(output.fourth).toBe('false; 99; 1; Hello, world!; Hello, universe!');
+	textareas[0].value = '!sungaM';
+	textareas[3].value = '{"value": "bar"}';
 
-			done();
-		}, 1000);
-	}));
+	checkbox.dispatchEvent(new Event('change', {bubbles: true}));
+	number.dispatchEvent(new Event('input', {bubbles: true}));
+	select.dispatchEvent(new Event('change', {bubbles: true}));
+	text.dispatchEvent(new Event('input', {bubbles: true}));
+	textareas[0].dispatchEvent(new Event('input', {bubbles: true}));
+	textareas[3].dispatchEvent(new Event('input', {bubbles: true}));
+
+	await vi.waitFor(() => {
+		expect(controller.data).toEqual({
+			boolean: true,
+			nested: {value: 'bar'},
+			number: 123,
+			select: 3,
+			text: 'Magnus!',
+			textarea: '!sungaM',
+		});
+
+		expect(snapshot()).toBe(
+			'true; 123; 3; Magnus!; !sungaM\nC\n{"boolean":true,"nested":{"value":"bar"},"number":123,"select":3,"text":"Magnus!","textarea":"!sungaM"}',
+		);
+	});
+
+	textareas[2].value = `{
+	"boolean": false,
+	"nested": {
+		"value": "foo bar"
+	},
+	"number": 99,
+	"select": 1,
+	"text": "Hello, world!",
+	"textarea": "Hello, universe!"
+}`;
+
+	textareas[2].dispatchEvent(new Event('input', {bubbles: true}));
+
+	await vi.waitFor(() => {
+		expect(controller.data).toEqual({
+			boolean: false,
+			nested: {value: 'foo bar'},
+			number: 99,
+			select: 1,
+			text: 'Hello, world!',
+			textarea: 'Hello, universe!',
+		});
+
+		expect(snapshot()).toBe(
+			'false; 99; 1; Hello, world!; Hello, universe!\nA\n{"boolean":false,"nested":{"value":"foo bar"},"number":99,"select":1,"text":"Hello, world!","textarea":"Hello, universe!"}',
+		);
+	});
+});

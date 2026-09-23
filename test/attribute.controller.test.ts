@@ -1,4 +1,4 @@
-import {afterAll, expect, test} from 'vitest';
+import {afterAll, expect, test, vi} from 'vitest';
 import {Controller, magnus, removeController} from '../src';
 
 class OneController extends Controller {
@@ -37,34 +37,31 @@ afterAll(() => {
 	document.body.innerHTML = '';
 });
 
-test('controller attribute', () =>
-	new Promise<void>(done => {
-		magnus.add('controller-one', OneController);
-		magnus.add('controller-two', TwoController);
+test('controller attribute', async () => {
+	magnus.add('controller-one', OneController);
+	magnus.add('controller-two', TwoController);
 
-		setTimeout(() => {
-			expect(one).toBeInstanceOf(OneController);
-			expect(two).toBeInstanceOf(TwoController);
+	await vi.waitFor(() => {
+		expect(one).toBeInstanceOf(OneController);
+		expect(two).toBeInstanceOf(TwoController);
+	});
 
-			if (one != null) {
-				removeController(one.element, 'controller-one');
-				removeController(one.element, 'not-real');
-			}
-		}, 25);
+	if (one != null) {
+		removeController(one.element, 'controller-one');
+		removeController(one.element, 'not-real');
+	}
 
-		setTimeout(() => {
-			expect(one).toBeUndefined();
-			expect(two).toBeInstanceOf(TwoController);
+	await vi.waitFor(() => {
+		expect(one).toBeUndefined();
+		expect(two).toBeInstanceOf(TwoController);
+	});
 
-			if (two != null) {
-				removeController(two.element, 'controller-two');
-			}
-		}, 50);
+	if (two != null) {
+		removeController(two.element, 'controller-two');
+	}
 
-		setTimeout(() => {
-			expect(one).toBeUndefined();
-			expect(two).toBeUndefined();
-
-			done();
-		}, 75);
-	}));
+	await vi.waitFor(() => {
+		expect(one).toBeUndefined();
+		expect(two).toBeUndefined();
+	});
+});

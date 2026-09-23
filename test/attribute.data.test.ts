@@ -1,4 +1,4 @@
-import {afterAll, expect, test} from 'vitest';
+import {afterAll, expect, test, vi} from 'vitest';
 import {Controller, magnus} from '../src';
 
 type Data = {
@@ -91,212 +91,209 @@ afterAll(() => {
 	document.body.innerHTML = '';
 });
 
-test('data attribute', () =>
-	new Promise<void>(done => {
-		setTimeout(() => {
-			expect(controller.data).toEqual({
-				array: [1, 2, 3],
-				check: true,
-				date: '1992-01-02',
-				datetime: '1992-01-02T12:34',
-				number: 123,
-				object: {key: 'value'},
-				radio: 'alpha',
-				select: 1,
-				text: 'Hello, world!',
-				time: '12:34:56',
-			});
+test('data attribute', async () => {
+	await vi.waitFor(() => {
+		expect(controller.data).toEqual({
+			array: [1, 2, 3],
+			check: true,
+			date: '1992-01-02',
+			datetime: '1992-01-02T12:34',
+			number: 123,
+			object: {key: 'value'},
+			radio: 'alpha',
+			select: 1,
+			text: 'Hello, world!',
+			time: '12:34:56',
+		});
 
-			expect(numberOutput[0]?.textContent).toBe('123');
-			expect(numberOutput[1]?.textContent).toBe('123');
-			expect(numberOutput[2]?.textContent).toBe('123');
+		expect(numberOutput[0]?.textContent).toBe('123');
+		expect(numberOutput[1]?.textContent).toBe('123');
+		expect(numberOutput[2]?.textContent).toBe('123');
 
-			expect(allOutput[0]?.textContent).toBe(JSON.stringify(controller.data));
-			expect(allOutput[1]?.textContent).toBe(prettyJson(controller.data));
+		expect(allOutput[0]?.textContent).toBe(JSON.stringify(controller.data));
+		expect(allOutput[1]?.textContent).toBe(prettyJson(controller.data));
+	});
 
-			controller.data.array = [4, 5, 6];
-			controller.data.check = false;
-			controller.data.date = '2000-01-01';
-			controller.data.datetime = '2000-01-01T00:00';
-			controller.data.number = 123;
-			controller.data.object = {key: 'new value'};
-			controller.data.radio = 'omega';
-			controller.data.select = 2;
-			controller.data.text = 'Goodbye, world!';
-			controller.data.time = '23:59:59';
-		}, 125);
+	controller.data.array = [4, 5, 6];
+	controller.data.check = false;
+	controller.data.date = '2000-01-01';
+	controller.data.datetime = '2000-01-01T00:00';
+	controller.data.number = 123;
+	controller.data.object = {key: 'new value'};
+	controller.data.radio = 'omega';
+	controller.data.select = 2;
+	controller.data.text = 'Goodbye, world!';
+	controller.data.time = '23:59:59';
 
-		setTimeout(() => {
-			expect(controller.data).toEqual({
-				array: [4, 5, 6],
-				check: false,
-				date: '2000-01-01',
-				datetime: '2000-01-01T00:00',
-				number: 123,
-				object: {key: 'new value'},
-				radio: 'omega',
-				select: 2,
-				text: 'Goodbye, world!',
-				time: '23:59:59',
-			});
+	await vi.waitFor(() => {
+		expect(controller.data).toEqual({
+			array: [4, 5, 6],
+			check: false,
+			date: '2000-01-01',
+			datetime: '2000-01-01T00:00',
+			number: 123,
+			object: {key: 'new value'},
+			radio: 'omega',
+			select: 2,
+			text: 'Goodbye, world!',
+			time: '23:59:59',
+		});
 
-			expect(numberOutput[0]?.textContent).toBe('123');
-			expect(numberOutput[1]?.textContent).toBe('123');
-			expect(numberOutput[2]?.textContent).toBe('123');
+		expect(numberOutput[0]?.textContent).toBe('123');
+		expect(numberOutput[1]?.textContent).toBe('123');
+		expect(numberOutput[2]?.textContent).toBe('123');
 
-			expect(allOutput[0]?.textContent).toBe(JSON.stringify(controller.data));
-			expect(allOutput[1]?.textContent).toBe(prettyJson(controller.data));
+		expect(allOutput[0]?.textContent).toBe(JSON.stringify(controller.data));
+		expect(allOutput[1]?.textContent).toBe(prettyJson(controller.data));
+	});
 
-			controller.data = {
-				array: [7, 8, 9],
-				check: true,
-				date: '1900-01-01',
-				datetime: '1900-01-01T09:15',
-				number: 456,
-				object: {key: 'another value'},
-				radio: 'alpha',
-				select: 0,
-				text: 'Hello, world!',
-				time: '09:15:00',
-			};
-		}, 250);
+	controller.data = {
+		array: [7, 8, 9],
+		check: true,
+		date: '1900-01-01',
+		datetime: '1900-01-01T09:15',
+		number: 456,
+		object: {key: 'another value'},
+		radio: 'alpha',
+		select: 0,
+		text: 'Hello, world!',
+		time: '09:15:00',
+	};
 
-		setTimeout(() => {
-			expect(controller.data).toEqual({
-				array: [7, 8, 9],
-				check: true,
-				date: '1900-01-01',
-				datetime: '1900-01-01T09:15',
-				number: 456,
-				object: {key: 'another value'},
-				radio: 'alpha',
-				select: 0,
-				text: 'Hello, world!',
-				time: '09:15:00',
-			});
+	await vi.waitFor(() => {
+		expect(controller.data).toEqual({
+			array: [7, 8, 9],
+			check: true,
+			date: '1900-01-01',
+			datetime: '1900-01-01T09:15',
+			number: 456,
+			object: {key: 'another value'},
+			radio: 'alpha',
+			select: 0,
+			text: 'Hello, world!',
+			time: '09:15:00',
+		});
 
-			expect(numberOutput[0]?.textContent).toBe('456');
-			expect(numberOutput[1]?.textContent).toBe('456');
-			expect(numberOutput[2]?.textContent).toBe('456');
+		expect(numberOutput[0]?.textContent).toBe('456');
+		expect(numberOutput[1]?.textContent).toBe('456');
+		expect(numberOutput[2]?.textContent).toBe('456');
 
-			expect(allOutput[0]?.textContent).toBe(JSON.stringify(controller.data));
-			expect(allOutput[1]?.textContent).toBe(prettyJson(controller.data));
+		expect(allOutput[0]?.textContent).toBe(JSON.stringify(controller.data));
+		expect(allOutput[1]?.textContent).toBe(prettyJson(controller.data));
+	});
 
-			controller.data = {
-				check: 123,
-				date: {},
-				ignored: null,
-				number: 789,
-				state: 0,
-				text: 'Spring cleaning :)',
-			} as never;
+	controller.data = {
+		check: 123,
+		date: {},
+		ignored: null,
+		number: 789,
+		state: 0,
+		text: 'Spring cleaning :)',
+	} as never;
 
-			controller.element.setAttribute('d-array', '123');
-			controller.element.setAttribute('d-object', 'true');
-		}, 375);
+	controller.element.setAttribute('d-array', '123');
+	controller.element.setAttribute('d-object', 'true');
 
-		setTimeout(() => {
-			expect(controller.data).toEqual({
-				array: [],
-				check: false,
-				number: 789,
-				object: {},
-				select: 0,
-				state: 0,
-				text: 'Spring cleaning :)',
-			});
+	await vi.waitFor(() => {
+		expect(controller.data).toEqual({
+			array: [],
+			check: false,
+			number: 789,
+			object: {},
+			select: 0,
+			state: 0,
+			text: 'Spring cleaning :)',
+		});
 
-			expect(numberOutput[0]?.textContent).toBe('789');
-			expect(numberOutput[1]?.textContent).toBe('789');
-			expect(numberOutput[2]?.textContent).toBe('789');
+		expect(numberOutput[0]?.textContent).toBe('789');
+		expect(numberOutput[1]?.textContent).toBe('789');
+		expect(numberOutput[2]?.textContent).toBe('789');
 
-			expect(allOutput[0]?.textContent).toBe(JSON.stringify(controller.data));
-			expect(allOutput[1]?.textContent).toBe(prettyJson(controller.data));
+		expect(allOutput[0]?.textContent).toBe(JSON.stringify(controller.data));
+		expect(allOutput[1]?.textContent).toBe(prettyJson(controller.data));
+	});
 
-			controller.data.number = undefined as never;
+	controller.data.number = undefined as never;
 
-			controller.element.setAttribute('d-array', 'hello');
-			controller.element.setAttribute('d-object', 'world');
-		}, 500);
+	controller.element.setAttribute('d-array', 'hello');
+	controller.element.setAttribute('d-object', 'world');
 
-		setTimeout(() => {
-			expect(controller.data).toEqual({
-				array: [],
-				check: false,
-				object: {},
-				select: 0,
-				state: 0,
-				text: 'Spring cleaning :)',
-			});
+	await vi.waitFor(() => {
+		expect(controller.data).toEqual({
+			array: [],
+			check: false,
+			object: {},
+			select: 0,
+			state: 0,
+			text: 'Spring cleaning :)',
+		});
 
-			expect(numberOutput[0]?.textContent).toBe('');
-			expect(numberOutput[1]?.textContent).toBe('');
-			expect(numberOutput[2]?.textContent).toBe('');
+		expect(numberOutput[0]?.textContent).toBe('');
+		expect(numberOutput[1]?.textContent).toBe('');
+		expect(numberOutput[2]?.textContent).toBe('');
 
-			expect(allOutput[0]?.textContent).toBe(JSON.stringify(controller.data));
-			expect(allOutput[1]?.textContent).toBe(prettyJson(controller.data));
+		expect(allOutput[0]?.textContent).toBe(JSON.stringify(controller.data));
+		expect(allOutput[1]?.textContent).toBe(prettyJson(controller.data));
+	});
 
-			controller.data.array = undefined as never;
-			controller.data.object = undefined as never;
+	controller.data.array = undefined as never;
+	controller.data.object = undefined as never;
 
-			controller.element.setAttribute('d-check', 'true');
-			controller.element.setAttribute('d-text', 'Hello, again!');
-		}, 1125);
+	controller.element.setAttribute('d-check', 'true');
+	controller.element.setAttribute('d-text', 'Hello, again!');
 
-		setTimeout(() => {
-			expect(controller.data).toEqual({
-				array: [],
-				check: true,
-				object: {},
-				select: 0,
-				state: 0,
-				text: 'Hello, again!',
-			});
+	await vi.waitFor(() => {
+		expect(controller.data).toEqual({
+			array: [],
+			check: true,
+			object: {},
+			select: 0,
+			state: 0,
+			text: 'Hello, again!',
+		});
 
-			expect(numberOutput[0]?.textContent).toBe('');
-			expect(numberOutput[1]?.textContent).toBe('');
-			expect(numberOutput[2]?.textContent).toBe('');
+		expect(numberOutput[0]?.textContent).toBe('');
+		expect(numberOutput[1]?.textContent).toBe('');
+		expect(numberOutput[2]?.textContent).toBe('');
 
-			expect(allOutput[0]?.textContent).toBe(JSON.stringify(controller.data));
-			expect(allOutput[1]?.textContent).toBe(prettyJson(controller.data));
+		expect(allOutput[0]?.textContent).toBe(JSON.stringify(controller.data));
+		expect(allOutput[1]?.textContent).toBe(prettyJson(controller.data));
+	});
 
-			controller.element.setAttribute('d-check', '');
-			controller.element.setAttribute('d-text', 'Hello, again!');
-		}, 1250);
+	controller.element.setAttribute('d-check', '');
+	controller.element.setAttribute('d-text', 'Hello, again!');
 
-		setTimeout(() => {
-			expect(controller.data).toEqual({
-				array: [],
-				check: false,
-				object: {},
-				select: 0,
-				state: 0,
-				text: 'Hello, again!',
-			});
+	await vi.waitFor(() => {
+		expect(controller.data).toEqual({
+			array: [],
+			check: false,
+			object: {},
+			select: 0,
+			state: 0,
+			text: 'Hello, again!',
+		});
 
-			expect(numberOutput[0]?.textContent).toBe('');
-			expect(numberOutput[1]?.textContent).toBe('');
-			expect(numberOutput[2]?.textContent).toBe('');
+		expect(numberOutput[0]?.textContent).toBe('');
+		expect(numberOutput[1]?.textContent).toBe('');
+		expect(numberOutput[2]?.textContent).toBe('');
 
-			expect(allOutput[0]?.textContent).toBe(JSON.stringify(controller.data));
-			expect(allOutput[1]?.textContent).toBe(prettyJson(controller.data));
+		expect(allOutput[0]?.textContent).toBe(JSON.stringify(controller.data));
+		expect(allOutput[1]?.textContent).toBe(prettyJson(controller.data));
+	});
 
-			controller.data = null;
-		}, 1375);
+	controller.data = null;
 
-		setTimeout(() => {
-			expect(controller.data).toEqual({
-				check: false,
-				select: 0,
-			});
+	await vi.waitFor(() => {
+		expect(controller.data).toEqual({
+			check: false,
+			select: 0,
+		});
 
-			expect(numberOutput[0]?.textContent).toBe('');
-			expect(numberOutput[1]?.textContent).toBe('');
-			expect(numberOutput[2]?.textContent).toBe('');
+		expect(numberOutput[0]?.textContent).toBe('');
+		expect(numberOutput[1]?.textContent).toBe('');
+		expect(numberOutput[2]?.textContent).toBe('');
 
-			expect(allOutput[0]?.textContent).toBe(JSON.stringify(controller.data));
-			expect(allOutput[1]?.textContent).toBe(prettyJson(controller.data));
-
-			done();
-		}, 1500);
-	}));
+		expect(allOutput[0]?.textContent).toBe(JSON.stringify(controller.data));
+		expect(allOutput[1]?.textContent).toBe(prettyJson(controller.data));
+	});
+});

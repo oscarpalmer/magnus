@@ -1,5 +1,10 @@
-import {afterAll, expect, test} from 'vitest';
+import {afterAll, expect, test, vi} from 'vitest';
 import {Controller, magnus, removeTarget} from '../src';
+
+// `target:not-real.item` never resolves, so its lookup retries for up to 10 animation frames before giving up
+async function nextFrame(): Promise<void> {
+	return new Promise(resolve => requestAnimationFrame(() => resolve()));
+}
 
 class TargetController extends Controller {
 	connect(): void {
@@ -30,50 +35,50 @@ afterAll(() => {
 	document.body.innerHTML = '';
 });
 
-test('target attribute', () =>
-	new Promise<void>(done => {
-		setTimeout(() => {
-			expect(controller.targets.find('li')).not.toBeNull();
-			expect(controller.targets.findAll('li')).toHaveLength(4);
-			expect(controller.targets.get('item')).not.toBeUndefined();
-			expect(controller.targets.getAll('item')).toHaveLength(3);
-			expect(controller.targets.has('item')).toBe(true);
-			expect(controller.targets.has('not-item')).toBe(false);
+test('target attribute', async () => {
+	await vi.waitFor(() => {
+		expect(controller.targets.getAll('item')).toHaveLength(3);
+	});
 
-			const item = controller.targets.get('item');
+	expect(controller.targets.find('li')).not.toBeNull();
+	expect(controller.targets.findAll('li')).toHaveLength(4);
+	expect(controller.targets.get('item')).not.toBeUndefined();
+	expect(controller.targets.has('item')).toBe(true);
+	expect(controller.targets.has('not-item')).toBe(false);
 
-			if (item != null) {
-				removeTarget(item, 'target-test', 'item');
-			}
-		}, 25);
+	for (let index = 0; index < 12; index += 1) {
+		await nextFrame();
+	}
 
-		setTimeout(() => {
-			expect(controller.targets.find('li')).not.toBeNull();
-			expect(controller.targets.findAll('li')).toHaveLength(4);
-			expect(controller.targets.get('item')).not.toBeUndefined();
-			expect(controller.targets.getAll('item')).toHaveLength(2);
-			expect(controller.targets.has('item')).toBe(true);
-		}, 50);
+	const item = controller.targets.get('item');
 
-		setTimeout(() => {
-			controller.targets.get('item')?.remove();
-		}, 75);
+	if (item != null) {
+		removeTarget(item, 'target-test', 'item');
+	}
 
-		setTimeout(() => {
-			expect(controller.targets.find('li')).not.toBeNull();
-			expect(controller.targets.findAll('li')).toHaveLength(3);
-			expect(controller.targets.get('item')).not.toBeUndefined();
-			expect(controller.targets.getAll('item')).toHaveLength(1);
-			expect(controller.targets.has('item')).toBe(true);
+	await vi.waitFor(() => {
+		expect(controller.targets.getAll('item')).toHaveLength(2);
+	});
 
-			magnus.remove('target-test');
-		}, 100);
+	expect(controller.targets.find('li')).not.toBeNull();
+	expect(controller.targets.findAll('li')).toHaveLength(4);
+	expect(controller.targets.get('item')).not.toBeUndefined();
+	expect(controller.targets.has('item')).toBe(true);
 
-		setTimeout(() => {
-			expect(controller.targets.get('item')).toBeUndefined();
-			expect(controller.targets.getAll('item')).toHaveLength(0);
-			expect(controller.targets.has('item')).toBe(false);
-		}, 125);
+	controller.targets.get('item')?.remove();
 
-		setTimeout(done, 150);
-	}));
+	await vi.waitFor(() => {
+		expect(controller.targets.getAll('item')).toHaveLength(1);
+	});
+
+	expect(controller.targets.find('li')).not.toBeNull();
+	expect(controller.targets.findAll('li')).toHaveLength(3);
+	expect(controller.targets.get('item')).not.toBeUndefined();
+	expect(controller.targets.has('item')).toBe(true);
+
+	magnus.remove('target-test');
+
+	expect(controller.targets.get('item')).toBeUndefined();
+	expect(controller.targets.getAll('item')).toHaveLength(0);
+	expect(controller.targets.has('item')).toBe(false);
+});

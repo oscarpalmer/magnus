@@ -5,22 +5,19 @@ import {createStoredController} from '../src/store/controller.store';
 
 class TestController extends Controller {}
 
-test('controller', () =>
-	new Promise<void>(done => {
-		const element = document.createElement('div');
-		const context = createContext('test', element, createStoredController(TestController));
-		const {controller} = context;
+test('controller', () => {
+	const element = document.createElement('div');
+	const context = createContext('test', element, createStoredController(TestController));
+	const {controller} = context;
 
-		expect(controller.element).toBe(element);
-		expect(controller.name).toBe('test');
+	expect(controller.element).toBe(element);
+	expect(controller.name).toBe('test');
 
-		expect(controller.data).toBeInstanceOf(Object);
-		expect(controller.events).toBeInstanceOf(Object);
-		expect(controller.targets).toBeInstanceOf(Object);
+	expect(controller.data).toBeInstanceOf(Object);
+	expect(controller.events).toBeInstanceOf(Object);
+	expect(controller.targets).toBeInstanceOf(Object);
 
-		controller.data = {test: true};
+	controller.data = {test: true};
 
-		expect(controller.data).toEqual({test: true});
-
-		done();
-	}));
+	expect(controller.data).toEqual({test: true});
+});

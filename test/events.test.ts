@@ -1,53 +1,51 @@
 import {noop} from '@oscarpalmer/atoms/function';
-import {afterAll, expect, test} from 'vitest';
+import {afterAll, expect, test, vi} from 'vitest';
 import {Controller, magnus} from '../src';
 
 class EventsController extends Controller {
 	connect(): void {
-		setTimeout(() => {
-			const onMultiple = (): void => {
-				multiple += 1;
+		const onMultiple = (): void => {
+			multiple += 1;
 
-				if (multiple === 10) {
-					this.events.off('click', onMultiple, 'button');
-				}
-			};
+			if (multiple === 10) {
+				this.events.off('click', onMultiple, 'button');
+			}
+		};
 
-			this.events.on('click', onMultiple, 'button');
+		this.events.on('click', onMultiple, 'button');
 
-			this.events.on(
-				'click',
-				() => {
-					this.events.dispatch('global', {
-						detail: 'Hello, world!',
-					});
+		this.events.on(
+			'click',
+			() => {
+				this.events.dispatch('global', {
+					detail: 'Hello, world!',
+				});
 
-					this.events.dispatch(
-						'global',
-						{
-							detail: true,
-						},
-						'invalid',
-					);
+				this.events.dispatch(
+					'global',
+					{
+						detail: true,
+					},
+					'invalid',
+				);
 
-					this.events.dispatch('global', 'invalid');
+				this.events.dispatch('global', 'invalid');
 
-					once += 1;
-				},
-				{
-					once: true,
-				},
-				'button',
-			);
+				once += 1;
+			},
+			{
+				once: true,
+			},
+			'button',
+		);
 
-			listener = this.events.on(
-				'click',
-				() => {
-					invalidOn = true;
-				},
-				'invalid',
-			);
-		}, 25);
+		listener = this.events.on(
+			'click',
+			() => {
+				invalidOn = true;
+			},
+			'invalid',
+		);
 	}
 
 	onGlobal(event: CustomEvent): void {
@@ -75,23 +73,20 @@ afterAll(() => {
 	document.body.innerHTML = '';
 });
 
-test('events', () =>
-	new Promise<void>(done => {
-		setTimeout(() => {
-			const button = document.querySelector('button');
+test('events', async () => {
+	await vi.waitFor(() => {
+		expect(listener).toBe(noop);
+	});
 
-			for (let index = 0; index < 100; index += 1) {
-				button?.click();
-			}
-		}, 50);
+	const button = document.querySelector('button');
 
-		setTimeout(() => {
-			expect(global).toBe('Hello, world!');
-			expect(invalidOn).toBe(false);
-			expect(listener).toBe(noop);
-			expect(multiple).toBe(10);
-			expect(once).toBe(1);
+	for (let index = 0; index < 100; index += 1) {
+		button?.click();
+	}
 
-			done();
-		}, 75);
-	}));
+	expect(global).toBe('Hello, world!');
+	expect(invalidOn).toBe(false);
+	expect(listener).toBe(noop);
+	expect(multiple).toBe(10);
+	expect(once).toBe(1);
+});
