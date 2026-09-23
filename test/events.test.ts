@@ -57,7 +57,7 @@ class EventsController extends Controller {
 
 document.body.innerHTML = `<div
 	:events-test
-	_global="events-test.onGlobal"
+	on:global="events-test.onGlobal"
 >
 	<button events-test:button></button>
 </div>`;

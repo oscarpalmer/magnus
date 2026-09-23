@@ -1,11 +1,6 @@
 import {parse} from '@oscarpalmer/atoms/string';
 import {camelCase} from '@oscarpalmer/atoms/string/case';
-import {
-	EVENT_CHANGE,
-	EVENT_IGNORED,
-	EXPRESSION_IO_ATTRIBUTE_PREFIX,
-	EXPRESSION_JSON_SUFFIX,
-} from '../../constants';
+import {EVENT_CHANGE, EVENT_IGNORED, EXPRESSION_IO_ATTRIBUTE, TYPE_INPUT} from '../../constants';
 import {getDataValue, replaceData} from '../../helpers/data.helper';
 import type {Attribute, Context} from '../../models';
 import {handleActionAttribute} from './action.attribute';
@@ -31,9 +26,9 @@ function handleDataValue(
 	context: Context,
 	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
 	name: string,
-	json: boolean,
+	format?: string,
 ): void {
-	if (!json) {
+	if (format == null) {
 		setDataValue(context, element, name);
 
 		return;
@@ -51,30 +46,32 @@ function handleInputAttribute(
 	context: Context,
 	element: Element,
 	attribute: Attribute,
+	matches: RegExpExecArray,
 	added: boolean,
 ): void {
-	const unprefixed = attribute.name.replace(EXPRESSION_IO_ATTRIBUTE_PREFIX, '');
-	const isJson = EXPRESSION_JSON_SUFFIX.test(unprefixed);
-	const property = camelCase(unprefixed.replace(EXPRESSION_JSON_SUFFIX, ''));
+	const [, type, , , property, format] = matches;
+
+	const full = `${property}${format == null ? '' : `:${format}`}`;
+	const camelCased = camelCase(property);
 
 	handleActionAttribute(
 		context,
 		element,
 		{
-			name: `input:${event}.${unprefixed}`,
-			type: 'io',
+			name: `${type}:${event}.${full}`,
+			type: TYPE_INPUT,
 			value: '',
 		},
 		added,
 		{
 			event,
 			callback: (event: Event) => {
-				handleDataValue(context, event.target as never, property, isJson);
+				handleDataValue(context, event.target as never, camelCased, format);
 			},
 		},
 	);
 
-	handleTargetAttribute(context, element, attribute, added, `input.${unprefixed}`);
+	handleTargetAttribute(context, element, attribute, added, `${type}.${full}`);
 }
 
 export function handleInputOutputAttribute(
@@ -83,6 +80,9 @@ export function handleInputOutputAttribute(
 	attribute: Attribute,
 	added: boolean,
 ): void {
+	const matches = EXPRESSION_IO_ATTRIBUTE.exec(attribute.name) as RegExpExecArray;
+	const [, type, , , property, format] = matches;
+
 	const event = getEventType(element);
 
 	if (event == null) {
@@ -91,10 +91,10 @@ export function handleInputOutputAttribute(
 			element,
 			attribute,
 			added,
-			`output.${attribute.name.replace(EXPRESSION_IO_ATTRIBUTE_PREFIX, '')}`,
+			`${type}.${property}${format == null ? '' : `:${format}`}`,
 		);
 	} else {
-		handleInputAttribute(event, context, element, attribute, added);
+		handleInputAttribute(event, context, element, attribute, matches, added);
 	}
 }
 

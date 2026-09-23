@@ -1,5 +1,5 @@
 import {afterAll, expect, test} from 'vitest';
-import {Controller, magnus} from '../src';
+import {Controller, magnus, removeController} from '../src';
 
 class OneController extends Controller {
 	connect(): void {
@@ -46,15 +46,19 @@ test('controller attribute', () =>
 			expect(one).toBeInstanceOf(OneController);
 			expect(two).toBeInstanceOf(TwoController);
 
-			one?.element.removeAttribute(':controller-one');
-			one?.element.removeAttribute(':not-real');
+			if (one != null) {
+				removeController(one.element, 'controller-one');
+				removeController(one.element, 'not-real');
+			}
 		}, 25);
 
 		setTimeout(() => {
 			expect(one).toBeUndefined();
 			expect(two).toBeInstanceOf(TwoController);
 
-			two?.element.removeAttribute(':controller-two');
+			if (two != null) {
+				removeController(two.element, 'controller-two');
+			}
 		}, 50);
 
 		setTimeout(() => {

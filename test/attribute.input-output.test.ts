@@ -161,35 +161,35 @@ document.body.innerHTML = `<div
 	io-test-text="Hello, world!"
 	io-test-textarea="Hello, universe!"
 >
-	<input type="checkbox" io-test.boolean />
-	<input type="number" io-test.number />
-	<input type="text" io-test.text />
-	<input type="submit" io-test.text />
+	<input type="checkbox" input:io-test.boolean />
+	<input type="number" input:io-test.number />
+	<input type="text" input:io-test.text />
+	<input type="submit" input:io-test.text />
 
-	<select io-test.select>
+	<select input:io-test.select>
 		<option value="1">A</option>
 		<option value="2">B</option>
 		<option value="3">C</option>
 	</select>
 
-	<textarea io-test.textarea></textarea>
-	<textarea io-test.textarea></textarea>
+	<textarea output:io-test.textarea></textarea>
+	<textarea output:io-test.textarea></textarea>
 
-	<div io-test.ignored"></div>
-	<div io-test.invalid!></div>
+	<div output:io-test.ignored"></div>
+	<div output:io-test.invalid!></div>
 
 	<ul>
-		<li io-test.boolean></li>
-		<li io-test.number></li>
-		<li io-test.select></li>
-		<li io-test.text></li>
-		<li io-test.textarea></li>
+		<li output:io-test.boolean></li>
+		<li output:io-test.number></li>
+		<li output:io-test.select></li>
+		<li output:io-test.text></li>
+		<li output:io-test.textarea></li>
 	</ul>
 
-	<textarea io-test.:json></textarea>
-	<textarea io-test.nested:json></textarea>
+	<textarea output:io-test.:raw></textarea>
+	<textarea output:io-test.nested:raw></textarea>
 
-	<pre io-test.:json></pre>
+	<pre output:io-test.:raw></pre>
 </div>`;
 
 magnus.add('io-test', InputOutputController);

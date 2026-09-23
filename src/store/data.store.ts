@@ -2,7 +2,7 @@ import type {PlainObject} from '@oscarpalmer/atoms/models';
 import {getString} from '@oscarpalmer/atoms/string';
 import {camelCase} from '@oscarpalmer/atoms/string/case';
 import {dispatch} from '@oscarpalmer/toretto/event';
-import {EVENT_CHANGE} from '../constants';
+import {EVENT_CHANGE, FORMAT_PRETTY, FORMAT_RAW, TYPE_INPUT, TYPE_OUTPUT} from '../constants';
 import {getDataValue} from '../helpers/data.helper';
 import type {Context, Data, DataTypes, DataUpdateParameters, DataValue} from '../models';
 
@@ -63,36 +63,28 @@ export function createData(context: Context, types: DataTypes): Data {
 	return new Data(context, types);
 }
 
+function setElementContent(
+	element: Element,
+	value: string,
+	emit: boolean,
+	focused: boolean,
+): void {
+	if (emit && element === document.activeElement && !focused) {
+		return;
+	}
+
+	const event = updateContent(element, value);
+
+	if (emit && event != null) {
+		dispatch(element, event);
+	}
+}
+
 function setElementContents(elements: Element[], value: string): void {
 	const {length} = elements;
 
 	for (let index = 0; index < length; index += 1) {
-		elements[index].textContent = value;
-	}
-}
-
-function setElementValue(element: Element, value: string, focused: boolean): void {
-	let event: string | undefined;
-
-	switch (true) {
-		case element === document.activeElement && !focused:
-			return;
-
-		case element instanceof HTMLInputElement && EVENT_CHANGE.has(element.type):
-			event = updateToggle(element, value);
-			break;
-
-		case element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement:
-			event = updateInput(element, value);
-			break;
-
-		case element instanceof HTMLSelectElement:
-			event = updateSelect(element, value);
-			break;
-	}
-
-	if (event != null) {
-		dispatch(element, event);
+		setElementContent(elements[index], value, false, false);
 	}
 }
 
@@ -102,7 +94,7 @@ function setElementValues(elements: Element[], attribute: string, value: string)
 	const {length} = elements;
 
 	for (let index = 0; index < length; index += 1) {
-		setElementValue(elements[index], value, updatedFocused);
+		setElementContent(elements[index], value, true, updatedFocused);
 	}
 }
 
@@ -114,17 +106,28 @@ function setJson(context: Context, property: string, value: DataValue, attribute
 		const property = properties[index];
 		const value = values[index];
 
-		const inputs = context.targets.getAll(`input.${property}:json`);
-		const outputs = context.targets.getAll(`output.${property}:json`);
+		const prettyInputs = context.targets.getAll(`${TYPE_INPUT}.${property}:${FORMAT_PRETTY}`);
+		const prettyOutputs = context.targets.getAll(`${TYPE_OUTPUT}.${property}:${FORMAT_PRETTY}`);
 
-		if (inputs.length === 0 && outputs.length === 0) {
-			continue;
+		const rawInputs = context.targets.getAll(`${TYPE_INPUT}.${property}:${FORMAT_RAW}`);
+		const rawOutputs = context.targets.getAll(`${TYPE_OUTPUT}.${property}:${FORMAT_RAW}`);
+
+		if (prettyInputs.length > 0 || prettyOutputs.length > 0) {
+			const pretty =
+				value == null
+					? ''
+					: JSON.stringify(value, null, +getComputedStyle(context.state.element).tabSize);
+
+			setElementContents(prettyOutputs, pretty);
+			setElementValues(prettyInputs, attribute, pretty);
 		}
 
-		const json = value == null ? '' : JSON.stringify(value, null, 0);
+		if (rawInputs.length > 0 || rawOutputs.length > 0) {
+			const raw = value == null ? '' : JSON.stringify(value, null, 0);
 
-		setElementContents(outputs, json);
-		setElementValues(inputs, attribute, json);
+			setElementContents(rawOutputs, raw);
+			setElementValues(rawInputs, attribute, raw);
+		}
 	}
 }
 
@@ -137,8 +140,13 @@ function setValue(context: Context, property: string, value: DataValue): void {
 		context.state.element.removeAttribute(attribute);
 	}
 
-	setElementContents(context.targets.getAll(`output.${property}`), value.stringified);
-	setElementValues(context.targets.getAll(`input.${property}`), attribute, value.stringified);
+	setElementContents(context.targets.getAll(`${TYPE_OUTPUT}.${property}`), value.stringified);
+
+	setElementValues(
+		context.targets.getAll(`${TYPE_INPUT}.${property}`),
+		attribute,
+		value.stringified,
+	);
 
 	setJson(context, property, value, attribute);
 
@@ -157,6 +165,26 @@ export function setValueFromAttribute(context: Context, name: string, value: str
 	focused.add(attribute);
 
 	context.data.value[name] = value;
+}
+
+function updateContent(element: Element, value: string): string | undefined {
+	switch (true) {
+		case element instanceof HTMLInputElement && EVENT_CHANGE.has(element.type):
+			return updateToggle(element, value);
+
+		case element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement:
+			return updateInput(element, value);
+
+		case element instanceof HTMLSelectElement:
+			return updateSelect(element, value);
+
+		case true:
+			break;
+	}
+
+	element.textContent = value;
+
+	return undefined;
 }
 
 function updateInput(

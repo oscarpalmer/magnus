@@ -1,4 +1,9 @@
-import {TYPE_ACTION, TYPE_CONTROLLER, EXPRESSION_WHITESPACE} from '../../constants';
+import {
+	TYPE_ACTION,
+	TYPE_CONTROLLER,
+	EXPRESSION_WHITESPACE,
+	EXPRESSION_ACTION_ATTRIBUTE_VALUE,
+} from '../../constants';
 import type {AttributeType} from '../../models';
 import {handleContextualAttribute, handleControllerAttribute} from './index';
 
@@ -62,15 +67,19 @@ function handleActionAttributes(
 		const added = changesIndex === 1;
 
 		for (let changedIndex = 0; changedIndex < changedLength; changedIndex += 1) {
-			handleContextualAttribute(
-				element,
-				{
-					name,
-					type: TYPE_ACTION,
-					value: changed[changedIndex],
-				},
-				added,
-			);
+			const value = changed[changedIndex];
+
+			if (EXPRESSION_ACTION_ATTRIBUTE_VALUE.test(value)) {
+				handleContextualAttribute(
+					element,
+					{
+						name,
+						value,
+						type: TYPE_ACTION,
+					},
+					added,
+				);
+			}
 		}
 	}
 

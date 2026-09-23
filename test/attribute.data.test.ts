@@ -31,10 +31,13 @@ class DataController extends Controller<Data> {
 	connect(): void {
 		controller = this;
 
-		allOutput = this.targets.find('div');
-		numberJsonOutput = this.targets.find('var');
-		numberRawOutput = this.targets.find('span');
+		allOutput = this.targets.findAll('div');
+		numberOutput = this.targets.findAll('var');
 	}
+}
+
+function prettyJson(data: unknown): string {
+	return JSON.stringify(data, null, 4);
 }
 
 document.body.innerHTML = `<div
@@ -50,37 +53,39 @@ document.body.innerHTML = `<div
 	d-text="Hello, world!"
 	d-time="12:34:56.789"
 >
-	<input d.check type="checkbox" />
-	<input d.date type="date" />
-	<input d.datetime type="datetime-local" />
-	<input d.number type="number" />
-	<input d.time type="time" />
+	<input input:d.check type="checkbox" />
+	<input input:d.date type="date" />
+	<input input:d.datetime type="datetime-local" />
+	<input input:d.number type="number" />
+	<input input:d.time type="time" />
 
 	<fieldset>
 		<legend>Radio</legend>
-		<input d.radio name="radio" type="radio" value="alpha" />
-		<input d.radio name="radio" type="radio" value="omega" />
+		<input input:d.radio name="radio" type="radio" value="alpha" />
+		<input input:d.radio name="radio" type="radio" value="omega" />
 	</fieldset>
 
-	<select d.select>
+	<select input:d.select>
 		<option value="0">Zero</option>
 		<option value="1">One</option>
 		<option value="2">Two</option>
 	</select>
 
-	<textarea d.text></textarea>
+	<textarea output:d.text></textarea>
 
-	<p><span d.number></span>, <var d.number:json></var></p>
+	<p><var output:d.number></var>, <var output:d.number:raw></var>, <var output:d.number:pretty></var></p>
 
-	<div d.:json></div>
+	<div output:d.:raw></div>
+	<div output:d.:pretty></div>
 </div>`;
+
+document.body.style.tabSize = '4';
 
 magnus.add('d', DataController);
 
-let allOutput: HTMLDivElement | null;
+let allOutput: HTMLDivElement[];
 let controller: DataController;
-let numberJsonOutput: HTMLElement | null;
-let numberRawOutput: HTMLSpanElement | null;
+let numberOutput: HTMLElement[];
 
 afterAll(() => {
 	document.body.innerHTML = '';
@@ -102,9 +107,12 @@ test('data attribute', () =>
 				time: '12:34:56',
 			});
 
-			expect(numberJsonOutput?.textContent).toBe('123');
-			expect(numberRawOutput?.textContent).toBe('123');
-			expect(allOutput?.textContent).toBe(JSON.stringify(controller.data));
+			expect(numberOutput[0]?.textContent).toBe('123');
+			expect(numberOutput[1]?.textContent).toBe('123');
+			expect(numberOutput[2]?.textContent).toBe('123');
+
+			expect(allOutput[0]?.textContent).toBe(JSON.stringify(controller.data));
+			expect(allOutput[1]?.textContent).toBe(prettyJson(controller.data));
 
 			controller.data.array = [4, 5, 6];
 			controller.data.check = false;
@@ -132,9 +140,12 @@ test('data attribute', () =>
 				time: '23:59:59',
 			});
 
-			expect(numberJsonOutput?.textContent).toBe('123');
-			expect(numberRawOutput?.textContent).toBe('123');
-			expect(allOutput?.textContent).toBe(JSON.stringify(controller.data));
+			expect(numberOutput[0]?.textContent).toBe('123');
+			expect(numberOutput[1]?.textContent).toBe('123');
+			expect(numberOutput[2]?.textContent).toBe('123');
+
+			expect(allOutput[0]?.textContent).toBe(JSON.stringify(controller.data));
+			expect(allOutput[1]?.textContent).toBe(prettyJson(controller.data));
 
 			controller.data = {
 				array: [7, 8, 9],
@@ -164,9 +175,12 @@ test('data attribute', () =>
 				time: '09:15:00',
 			});
 
-			expect(numberJsonOutput?.textContent).toBe('456');
-			expect(numberRawOutput?.textContent).toBe('456');
-			expect(allOutput?.textContent).toBe(JSON.stringify(controller.data));
+			expect(numberOutput[0]?.textContent).toBe('456');
+			expect(numberOutput[1]?.textContent).toBe('456');
+			expect(numberOutput[2]?.textContent).toBe('456');
+
+			expect(allOutput[0]?.textContent).toBe(JSON.stringify(controller.data));
+			expect(allOutput[1]?.textContent).toBe(prettyJson(controller.data));
 
 			controller.data = {
 				check: 123,
@@ -192,9 +206,12 @@ test('data attribute', () =>
 				text: 'Spring cleaning :)',
 			});
 
-			expect(numberJsonOutput?.textContent).toBe('789');
-			expect(numberRawOutput?.textContent).toBe('789');
-			expect(allOutput?.textContent).toBe(JSON.stringify(controller.data));
+			expect(numberOutput[0]?.textContent).toBe('789');
+			expect(numberOutput[1]?.textContent).toBe('789');
+			expect(numberOutput[2]?.textContent).toBe('789');
+
+			expect(allOutput[0]?.textContent).toBe(JSON.stringify(controller.data));
+			expect(allOutput[1]?.textContent).toBe(prettyJson(controller.data));
 
 			controller.data.number = undefined as never;
 
@@ -212,9 +229,12 @@ test('data attribute', () =>
 				text: 'Spring cleaning :)',
 			});
 
-			expect(numberJsonOutput?.textContent).toBe('');
-			expect(numberRawOutput?.textContent).toBe('');
-			expect(allOutput?.textContent).toBe(JSON.stringify(controller.data));
+			expect(numberOutput[0]?.textContent).toBe('');
+			expect(numberOutput[1]?.textContent).toBe('');
+			expect(numberOutput[2]?.textContent).toBe('');
+
+			expect(allOutput[0]?.textContent).toBe(JSON.stringify(controller.data));
+			expect(allOutput[1]?.textContent).toBe(prettyJson(controller.data));
 
 			controller.data.array = undefined as never;
 			controller.data.object = undefined as never;
@@ -233,9 +253,12 @@ test('data attribute', () =>
 				text: 'Hello, again!',
 			});
 
-			expect(numberJsonOutput?.textContent).toBe('');
-			expect(numberRawOutput?.textContent).toBe('');
-			expect(allOutput?.textContent).toBe(JSON.stringify(controller.data));
+			expect(numberOutput[0]?.textContent).toBe('');
+			expect(numberOutput[1]?.textContent).toBe('');
+			expect(numberOutput[2]?.textContent).toBe('');
+
+			expect(allOutput[0]?.textContent).toBe(JSON.stringify(controller.data));
+			expect(allOutput[1]?.textContent).toBe(prettyJson(controller.data));
 
 			controller.element.setAttribute('d-check', '');
 			controller.element.setAttribute('d-text', 'Hello, again!');
@@ -251,9 +274,12 @@ test('data attribute', () =>
 				text: 'Hello, again!',
 			});
 
-			expect(numberJsonOutput?.textContent).toBe('');
-			expect(numberRawOutput?.textContent).toBe('');
-			expect(allOutput?.textContent).toBe(JSON.stringify(controller.data));
+			expect(numberOutput[0]?.textContent).toBe('');
+			expect(numberOutput[1]?.textContent).toBe('');
+			expect(numberOutput[2]?.textContent).toBe('');
+
+			expect(allOutput[0]?.textContent).toBe(JSON.stringify(controller.data));
+			expect(allOutput[1]?.textContent).toBe(prettyJson(controller.data));
 
 			controller.data = null;
 		}, 1375);
@@ -262,12 +288,14 @@ test('data attribute', () =>
 			expect(controller.data).toEqual({
 				check: false,
 				select: 0,
-				text: '',
 			});
 
-			expect(numberJsonOutput?.textContent).toBe('');
-			expect(numberRawOutput?.textContent).toBe('');
-			expect(allOutput?.textContent).toBe(JSON.stringify(controller.data));
+			expect(numberOutput[0]?.textContent).toBe('');
+			expect(numberOutput[1]?.textContent).toBe('');
+			expect(numberOutput[2]?.textContent).toBe('');
+
+			expect(allOutput[0]?.textContent).toBe(JSON.stringify(controller.data));
+			expect(allOutput[1]?.textContent).toBe(prettyJson(controller.data));
 
 			done();
 		}, 1500);

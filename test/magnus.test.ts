@@ -1,6 +1,6 @@
 import {afterAll, expect, test} from 'vitest';
 import {Controller} from '../src/controller';
-import {magnus} from '../src/magnus';
+import {magnus, setController} from '../src';
 
 class TestController extends Controller {
 	connect(): void {
@@ -38,7 +38,7 @@ test('controller', () =>
 
 			second.textContent = '2';
 
-			second.setAttribute(':magnus-test', '');
+			setController(second, 'magnus-test');
 
 			document.body.append(second);
 		}, 50);

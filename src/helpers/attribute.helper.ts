@@ -1,11 +1,12 @@
 import {
-	ATTRIBUTES,
+	EXPRESSIONS,
 	EXPRESSION_ACTION_ATTRIBUTE_NAME,
 	EXPRESSION_ACTION_ATTRIBUTE_VALUE,
-	EXPRESSION_IO_ATTRIBUTE_FULL,
+	EXPRESSION_IO_ATTRIBUTE,
 	EXPRESSION_TARGET_ATTRIBUTE_FULL,
 	TYPE_ACTION,
-	TYPE_IO,
+	TYPE_INPUT,
+	TYPE_OUTPUT,
 	TYPES_ATTRIBUTE,
 } from '../constants';
 import type {Attribute, AttributeParsed, AttributeType} from '../models';
@@ -13,8 +14,8 @@ import type {Attribute, AttributeParsed, AttributeType} from '../models';
 // #region Functions
 
 export function getAttributeType(name: string): AttributeType | undefined {
-	for (let index = 0; index < 5; index += 1) {
-		if (ATTRIBUTES[index].test(name)) {
+	for (let index = 0; index < 6; index += 1) {
+		if (EXPRESSIONS[index].test(name)) {
 			return TYPES_ATTRIBUTE[index];
 		}
 	}
@@ -22,7 +23,9 @@ export function getAttributeType(name: string): AttributeType | undefined {
 	return undefined;
 }
 
-export function parseAttribute(attribute: Attribute): AttributeParsed | undefined {
+export function parseAttribute(attribute: Attribute): AttributeParsed {
+	let offset = 0;
+
 	let matches: RegExpExecArray;
 
 	switch (attribute.type) {
@@ -34,8 +37,10 @@ export function parseAttribute(attribute: Attribute): AttributeParsed | undefine
 			) as RegExpExecArray;
 			break;
 
-		case TYPE_IO:
-			matches = EXPRESSION_IO_ATTRIBUTE_FULL.exec(attribute.name) as RegExpExecArray;
+		case TYPE_INPUT:
+		case TYPE_OUTPUT:
+			matches = EXPRESSION_IO_ATTRIBUTE.exec(attribute.name) as RegExpExecArray;
+			offset = 1;
 			break;
 
 		default:
@@ -44,8 +49,8 @@ export function parseAttribute(attribute: Attribute): AttributeParsed | undefine
 	}
 
 	return {
-		identifier: matches[2],
-		name: matches[1],
+		identifier: matches[2 + offset],
+		name: matches[1 + offset],
 	};
 }
 

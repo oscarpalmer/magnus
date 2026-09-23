@@ -43,7 +43,7 @@ export type AttributeParsed = {
 	name: string;
 };
 
-export type AttributeType = 'action' | 'controller' | 'data' | 'io' | 'target';
+export type AttributeType = 'action' | 'controller' | 'data' | 'input' | 'output' | 'target';
 
 // #endregion
 

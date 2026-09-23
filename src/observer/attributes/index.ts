@@ -88,7 +88,8 @@ const callbacks: Partial<
 	>
 > = {
 	action: handleActionAttribute,
-	io: handleInputOutputAttribute,
+	input: handleInputOutputAttribute,
+	output: handleInputOutputAttribute,
 	target: handleTargetAttribute,
 };
 

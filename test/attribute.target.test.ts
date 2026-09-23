@@ -1,5 +1,5 @@
 import {afterAll, expect, test} from 'vitest';
-import {Controller, magnus} from '../src';
+import {Controller, magnus, removeTarget} from '../src';
 
 class TargetController extends Controller {
 	connect(): void {
@@ -14,10 +14,10 @@ document.body.innerHTML = `<ul>
 	<li></li>
 	<li>
 		<ul :target-test>
-			<li target-test:item></li>
-			<li target-test:item></li>
-			<li target-test:item></li>
-			<li not-real:item></li>
+			<li target:target-test.item></li>
+			<li target:target-test.item></li>
+			<li target:target-test.item></li>
+			<li target:not-real.item></li>
 		</ul>
 	</li>
 	<li></li>
@@ -40,7 +40,11 @@ test('target attribute', () =>
 			expect(controller.targets.has('item')).toBe(true);
 			expect(controller.targets.has('not-item')).toBe(false);
 
-			controller.targets.get('item')?.removeAttribute('target-test:item');
+			const item = controller.targets.get('item');
+
+			if (item != null) {
+				removeTarget(item, 'target-test', 'item');
+			}
 		}, 25);
 
 		setTimeout(() => {

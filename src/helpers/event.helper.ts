@@ -65,7 +65,7 @@ function getOptions(options: string): AddEventListenerOptions {
 
 function getType(element: Element): string | undefined {
 	if (element instanceof HTMLInputElement) {
-		return element.type === 'submit' ? 'submit' : 'input';
+		return element.type === 'submit' ? 'click' : 'input';
 	}
 
 	return EVENT_DEFAULTS[element.tagName];

@@ -16,5 +16,6 @@ export default defineConfig({
 		onlyBundle: false,
 	},
 	entry: './src/index.ts',
+	ignoreWatch: ['./dist/*'],
 	minify: 'dce-only',
 });
