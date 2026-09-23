@@ -46,7 +46,7 @@ Magnus isn't very opinionated, but does have some ideas on how HTML and JavaScri
 
 ### Lifecycles
 
-Magnus is built on top of mutation observers, which are objects that watch for changes in the DOM, allowing Magnus to connect specific element and attribute changes to event handlers within Magnus.
+Magnus is built on top of mutation observers &ndash; objects that watch for changes in the DOM &ndash; letting it connect specific element and attribute changes to its own event handlers.
 
 These event handlers are then able to:
 
@@ -57,9 +57,9 @@ These event handlers are then able to:
 
 #### Controller lifecycle events
 
-As controllers can be created and destroyed, they may also need to react to such events. When a controller is created, it will call the `connect`-method; when it's destroyed, it will call the `disconnect`-method.
+Controllers can react to being created and destroyed: `connect` is called on creation; `disconnect` on removal.
 
-Controllers may also implement `valueChanged`, which is called whenever a value in the controller's `data` changes, with the name and new value of the changed property.
+Controllers may also implement `valueChanged`, called whenever a value in `data` changes, with the property's name and new value.
 
 ### Startup
 
@@ -80,7 +80,7 @@ magnus.start();
 
 ### Controllers
 
-Magnus controllers should be regular JavaScript classes, while also extending the base class available in Magnus.
+Magnus controllers are regular JavaScript classes that extend the base class.
 
 ```typescript
 import {Controller} from '@oscarpalmer/magnus';
@@ -88,7 +88,7 @@ import {Controller} from '@oscarpalmer/magnus';
 export class Talin extends Controller {}
 ```
 
-To allow Magnus to create instances of a controller, it must also be added to Magnus with a name, which is used when evaluating the `:controller`-attribute for elements, e.g. `:talin`.
+To let Magnus create instances of a controller, add it with a name matching the `:controller`-attribute you'll use in HTML, e.g., `:talin`.
 
 ```typescript
 import {magnus} from '@oscarpalmer/magnus';
@@ -103,13 +103,13 @@ magnus.remove('talin');
 
 When a controller has been instantiated, it will call its `connect`-method.
 
-When a controller is removed, either by having its element removed from the DOM or by modifying the element's `:controller`-attribute, it will stop observing the element, as well as remove all actions and targets from itself, and finally call the `disconnect`-method.
+When a controller is removed &ndash; its element removed from the DOM, or its `:controller`-attribute changed &ndash; it stops observing the element, removes all its actions and targets, and calls `disconnect`.
 
-The same goes for other attributed elements, as well: e.g., modifying an element's `on:`-attribute _(or removing the element completely)_ will then remove the element and its relevant information from the controllers it has been connected to.
+The same goes for other attributed elements: modifying an `on:`-attribute _(or removing the element)_ removes it from whichever controllers it was connected to.
 
 #### Attaching elements to controllers programmatically
 
-Elements may also become controllers programmatically, using the helpers `setController` and `removeController`:
+Elements can also become controllers programmatically, with the helpers `setController` and `removeController`:
 
 ```typescript
 import {removeController, setController} from '@oscarpalmer/magnus';
@@ -120,11 +120,11 @@ removeController(element, 'talin'); // Same as removing the `:talin`-attribute
 
 ### Targets
 
-Targets are elements in your controller that are useful to have quick and easy access to. Targets are defined by the attribute `target:controller.name`, where `controller` is a controller name, `name` is the target's name, and `identifier` _(see below)_ is an optional, unique identifier.
+Targets are elements you want quick, easy access to in your controller, defined with the attribute `target:controller.name`.
 
-To map the target to your controller, you may use `target:talin.output`, where `talin` is the name of your controller and `output` is the name of the target group, and Magnus will attempt to find the controller closest to your element.
+`target:talin.output` maps to the nearest `talin` controller's `output` target group.
 
-If you wish to map the target to a specific controller instance, you may use `target:talin.id.output`, where `talin` and `output` remain the same as above, but `id` should match the `id`-attribute of the element with the controller.
+To target a specific controller instance instead, add its `id`: `target:talin.id.output`.
 
 #### Target example
 
@@ -158,7 +158,7 @@ export class Talin extends Controller {
 }
 ```
 
-The methods above _(except `has`)_ also accept an optional type for easier management of whatever is found and returned, e.g., `this.targets.find<HTMLButtonElement>('button')` for retrieving a properly typed button-element.
+All of these _(except `has`)_ also accept an optional type, e.g., `this.targets.find<HTMLButtonElement>('button')`, for a properly typed result.
 
 #### Attaching targets to controllers programmatically
 
@@ -180,7 +180,7 @@ Actions come in two shapes:
 - `on:controller.method` _(or `on:controller.id.method`)_, an attribute _without_ a value, where Magnus will use a default event based on the element _(e.g., `click` for buttons, `input` for text fields, `change` for selects, and so on)_
 - `on:event="controller.method"` _(or `on:controller.id.method`)_, an attribute _with_ a value, where `event` is whichever event you'd like to listen to
 
-Either form may include options, and the attribute's value may contain multiple space-separated `controller.method`-pairs, allowing several controllers _(or methods)_ to react to the very same event.
+Either form can include options, and the value may hold several space-separated `controller.method`-pairs, so multiple controllers _(or methods)_ can react to the same event.
 
 #### Action parameters
 
@@ -214,13 +214,13 @@ export class Talin extends Controller {
 
 #### External targets
 
-Sometimes, you'll want to react to events that don't happen on the controller's own element. By prefixing the event with an external target, you may listen to events on `window`, `document`, another controller, or an element with a specific `id`:
+Sometimes you need to react to events elsewhere. Prefix the event with an external target to listen on `window`, `document`, another controller, or an element with a specific `id`:
 
 ```html
 <div :talin on:window.resize="talin.onResize"></div>
 ```
 
-An external controller may also be given an identifier, the same way as for targets, e.g. `on:other.id.event="talin.method"`, to listen to a specific controller instance rather than the closest match.
+An external controller can also take an identifier, just like targets, e.g., `on:other.id.event="talin.method"`, to target a specific instance instead of the closest match.
 
 #### Dispatching events
 
@@ -252,17 +252,17 @@ export class Talin extends Controller {
 
 ### Input & output
 
-Inputs and outputs are built-in targets that allow for reactivity in a controller, by listening to change events on input-targets &ndash; using the attribute `input:` &ndash; and outputting values into output-targets, using the attribute `output:`.
+Inputs and outputs are built-in targets for reactivity: `input:` listens for changes; `output:` displays them.
 
-To map such a target to your controller, you may use `input:talin.message` _(or `output:talin.message`)_, where `talin` is the name of your controller and `message` is the key in the controller's data, and Magnus will attempt to find the controller closest to your element. Just like targets, you may map to a specific controller instance using `input:talin.id.message`.
+`input:talin.message` _(or `output:talin.message`)_ maps to the `message` key in the nearest `talin` controller's data &ndash; or a specific instance with `input:talin.id.message`, just like targets.
 
-Whenever the value for an input-target changes, the new value will be stored in the controller's data, update the contents of output-targets _(using the same key)_, as well as update the values of other input-targets _(using the same key)_.
+Whenever an input's value changes, it's stored in the controller's data and pushed out to every output _(and input)_ sharing that key.
 
 Outputs are, as the name implies, output only: editing an output-target's value will never update the controller's data. Inputs stay fully reactive &ndash; typing into one always updates the data _(and every other input- and output-target sharing that key)_ &ndash; but Magnus skips writing a new value into whichever input is currently focused, so it doesn't fight you while you're actively editing it.
 
 #### Inputting & outputting JSON
 
-If you have any kind of object you wish to edit or display, either the complete data for a controller or a key-based value in the controller's data, you may do so with the `:raw`- or `:pretty`-suffix in the attribute value, e.g., `input:talin.object:raw` or `output:talin.:pretty`, and Magnus will do its best to handle whatever JSON-y data you're working with.
+To edit or display a whole object &ndash; the controller's complete data, or just one key &ndash; add a `:raw` or `:pretty` suffix, e.g., `input:talin.object:raw` or `output:talin.:pretty`, and Magnus handles the JSON for you.
 
 - `:raw` outputs _(and expects)_ compact JSON
 - `:pretty` outputs indented JSON, matching the element's computed `tab-size`
@@ -281,7 +281,7 @@ If you have any kind of object you wish to edit or display, either the complete 
 
 #### Attaching inputs & outputs to controllers programmatically
 
-Elements may also become inputs and outputs programmatically, using the helpers `setInput`, `setOutput`, `removeInput`, and `removeInput`:
+Elements can also become inputs and outputs programmatically, with the helpers `setInput`, `setOutput`, `removeInput`, and `removeOutput`:
 
 ```typescript
 import {removeInput, removeOutput, setInput, setOutput} from '@oscarpalmer/magnus';
@@ -293,30 +293,29 @@ removeInput(element, 'talin', 'message');  // Same as removing the `input:talin.
 removeOutput(element, 'talin', 'message'); // Same as removing the `output:talin.message`-attribute
 ```
 
-When setting and removing inputs and outputs in this way, you can also set their formatting using the fourth and optional parameter for the above helpers. Note however that when removing an input like this, it must match all parameters: e.g., if an input was added with `pretty` formatting, it must be removed with the same formatting.
+All four helpers take an optional fourth parameter for formatting. When removing, though, the parameters must match what was set: e.g., an input added with `pretty` formatting needs `pretty` to remove it.
 
 ### Data
 
-Magnus is also able to handle simple, mostly-flat data structures, as well as respond to changes when needed.
+Magnus also handles simple, mostly-flat data structures, and can react to changes.
 
-Data can be initialized for a controller using attributes on your controller element, e.g. `talin-name`, where `name` is the key for the value to store, and its value is the actual data value. If the name contains dashes or underscores, it will be converted to its camel-cased variant in the controller, i.e., `talin-my-property` &rarr; `myProperty`.
+Data is initialized with attributes on the controller element, e.g., `talin-name`, where `name` is the key and the attribute's value is the data. Dashes and underscores get camel-cased, i.e., `talin-my-property` &rarr; `myProperty`.
 
-To access the data structure for retrieving and storing information, the controller has the property `data` which returns [a Proxy-object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy), so be mindful of how you retrieve and store nested objects.
+The controller's `data`-property returns [a Proxy-object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy), so be mindful of how you retrieve and store nested objects.
 
-When storing values, Magnus will first: update the attribute as set in the HTML; and second: update input- and output-targets and set their contents and values respectively.
+When storing a value, Magnus updates the HTML attribute first, then any input- and output-targets.
 
 #### Typed data
 
-By default, all data values are stored as-is, but a controller may declare a static `types`-property to have Magnus parse values into a specific shape, e.g. `array`, `boolean`, `color`, `date`, `datetime`, `number`, `object`, `string`, or `time`:
+By default, data values are stored as-is. Declare a static `types`-property to have Magnus parse them into a specific shape instead: `array`, `boolean`, `color`, `date`, `datetime`, `number`, `object`, `string`, or `time`.
 
 ```typescript
 import {Controller} from '@oscarpalmer/magnus';
-import type {DataTypes} from '@oscarpalmer/magnus';
 
 export class Talin extends Controller {
-  static readonly types: DataTypes = {
+  static readonly types = {
     myCoolProperty: 'string',
-  };
+  } as const;
 }
 ```
 
@@ -339,7 +338,7 @@ export class Talin extends Controller {
 
 #### Custom data models
 
-Magnus also lets you set a custom type for your data model to allow for nicer management of your controller's data. This can be done by extending the base controller with your type, e.g. `class Talin extends Controller<MyCustomDataModel>` where `MyCustomDataModel` is your nicely structured interface.
+You can also give your data model a custom type for nicer management, by extending the base controller with it, e.g., `class Talin extends Controller<MyCustomDataModel>` where `MyCustomDataModel` is your nicely structured interface.
 
 ## The name
 
