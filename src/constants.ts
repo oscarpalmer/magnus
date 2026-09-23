@@ -1,6 +1,6 @@
 // #region Variables
 
-import type {AttributeType, DataType} from './models';
+import type {AttributeType, DataFormat, DataType} from './models';
 
 export const EVENT_CHANGE = new Set(['checkbox', 'radio']);
 
@@ -56,7 +56,8 @@ export const EXPRESSION_FALSE = /^(0|false)$/i;
  * - `(in|out)put:controller(.identifier).property(:pretty|raw)`
  * - `[, type, name, id?, property, json?]`
  */
-export const EXPRESSION_IO_ATTRIBUTE = /^((?:in|out)put):([\w-]+)(?:\.([\w-]+))?\.([\w-]*)(?::(pretty|raw))?$/;
+export const EXPRESSION_IO_ATTRIBUTE =
+	/^((?:in|out)put):([\w-]+)(?:\.([\w-]+))?\.([\w-]*)(?::(pretty|raw))?$/;
 
 export const EXPRESSION_INVALID_METHOD = /(^__|^(connect|constructor|disconnect)$)/i;
 
@@ -81,6 +82,10 @@ export const FORMAT_PRETTY = 'pretty';
 export const FORMAT_RAW = 'raw';
 
 export const PREFIX_CONTROLLER = ':';
+
+export const PREFIX_INPUT = 'input:';
+
+export const PREFIX_OUTPUT = 'output:';
 
 export const PREFIX_TARGET = 'target:';
 
@@ -127,5 +132,7 @@ export const TYPES_DATA = new Set<DataType>([
 	'string',
 	'time',
 ]);
+
+export const TYPES_FORMAT = new Set<DataFormat>([FORMAT_PRETTY, FORMAT_RAW]);
 
 // #endregion

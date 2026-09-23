@@ -63,12 +63,7 @@ export function createData(context: Context, types: DataTypes): Data {
 	return new Data(context, types);
 }
 
-function setElementContent(
-	element: Element,
-	value: string,
-	emit: boolean,
-	focused: boolean,
-): void {
+function setElementContent(element: Element, value: string, emit: boolean, focused: boolean): void {
 	if (emit && element === document.activeElement && !focused) {
 		return;
 	}

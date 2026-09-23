@@ -104,6 +104,8 @@ export type Data = {
 	readonly value: PlainObject;
 };
 
+export type DataFormat = 'pretty' | 'raw';
+
 export type DataType =
 	| 'array'
 	| 'boolean'
