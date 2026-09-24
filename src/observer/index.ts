@@ -1,6 +1,6 @@
 import {debounce} from '@oscarpalmer/atoms/function/limit';
 import {TYPE_DATA} from '../constants';
-import {getAttributeType} from '../helpers/attribute.helper';
+import {parseAttribute} from '../helpers/attribute.helper';
 import type {Observer} from '../models';
 import {contexts} from '../store/context.store';
 import {handleDataAttribute} from './attributes';
@@ -51,19 +51,17 @@ function handleAttribute(
 	value: string | null,
 	removed: boolean,
 ): void {
-	const type = getAttributeType(name);
+	const parsed = parseAttribute(name, element.getAttribute(name));
 
-	if (type === TYPE_DATA) {
-		handleDataAttribute(element, name);
-	} else if (type != null) {
-		handleAttributeChanges(type, element, name, value!, removed);
+	if (parsed?.type === TYPE_DATA) {
+		handleDataAttribute(element, parsed);
+	} else if (parsed != null) {
+		handleAttributeChanges(element, parsed, value, removed);
 	}
 }
 
 function handleElement(element: Element, removed: boolean): void {
-	const names = element
-		.getAttributeNames()
-		.filter((name, index, array) => array.indexOf(name) === index);
+	const names = element.getAttributeNames();
 
 	const {length} = names;
 

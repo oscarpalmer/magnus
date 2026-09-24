@@ -1,10 +1,10 @@
 import {
+	EXPRESSION_ACTION_ATTRIBUTE_VALUE,
+	EXPRESSION_WHITESPACE,
 	TYPE_ACTION,
 	TYPE_CONTROLLER,
-	EXPRESSION_WHITESPACE,
-	EXPRESSION_ACTION_ATTRIBUTE_VALUE,
 } from '../../constants';
-import type {AttributeType} from '../../models';
+import type {ParsedAttribute} from '../../models';
 import {handleContextualAttribute, handleControllerAttribute} from './index';
 
 // #region Functions
@@ -48,6 +48,7 @@ function handleActionAttributes(
 	name: string,
 	from: string,
 	to: string,
+	nameMatches: string[],
 	removed: boolean,
 ): void {
 	if (from === to && !removed) {
@@ -69,12 +70,21 @@ function handleActionAttributes(
 		for (let changedIndex = 0; changedIndex < changedLength; changedIndex += 1) {
 			const value = changed[changedIndex];
 
-			if (EXPRESSION_ACTION_ATTRIBUTE_VALUE.test(value)) {
+			const valueMatches = EXPRESSION_ACTION_ATTRIBUTE_VALUE.exec(value);
+
+			if (valueMatches != null) {
 				handleContextualAttribute(
 					element,
 					{
-						name,
-						value,
+						data: {
+							identifier: valueMatches[2],
+							name: valueMatches[1],
+						},
+						matches: [nameMatches, valueMatches],
+						original: {
+							name,
+							value,
+						},
 						type: TYPE_ACTION,
 					},
 					added,
@@ -87,20 +97,26 @@ function handleActionAttributes(
 }
 
 export function handleAttributeChanges(
-	type: AttributeType,
 	element: Element,
-	name: string,
-	value: string,
+	attribute: ParsedAttribute,
+	value: string | null,
 	removed: boolean,
 ): void {
-	const previous = getAttribute(element, name);
-	const current = element.getAttribute(name);
+	const previous = getAttribute(element, attribute.original.name);
+	const current = attribute.original.value;
 
 	if (
-		type === TYPE_ACTION &&
+		attribute.type === TYPE_ACTION &&
 		(value == null ? previous != null : (current ?? value).trim().length > 0)
 	) {
-		handleActionAttributes(element, name, previous ?? value, current ?? '', removed);
+		handleActionAttributes(
+			element,
+			attribute.original.name,
+			previous ?? value ?? '',
+			current ?? '',
+			attribute.matches[0],
+			removed,
+		);
 
 		if (removed) {
 			attributes.delete(element);
@@ -111,18 +127,10 @@ export function handleAttributeChanges(
 
 	const added = !removed && current != null && value != null;
 
-	if (type === TYPE_CONTROLLER) {
-		handleControllerAttribute(element, name, added);
+	if (attribute.type === TYPE_CONTROLLER) {
+		handleControllerAttribute(element, attribute.original.name, added);
 	} else {
-		handleContextualAttribute(
-			element,
-			{
-				name,
-				type,
-				value: current ?? '',
-			},
-			added,
-		);
+		handleContextualAttribute(element, attribute, added);
 	}
 }
 

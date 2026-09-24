@@ -1,36 +1,30 @@
 import {camelCase} from '@oscarpalmer/atoms/string/case';
 import {
 	EVENT_DEFAULTS,
-	EXPRESSION_ACTION_ATTRIBUTE_NAME,
-	EXPRESSION_ACTION_ATTRIBUTE_VALUE,
 	EXPRESSION_EVENT_ACTIVE,
 	EXPRESSION_EVENT_CAPTURE,
 	EXPRESSION_EVENT_ONCE,
 	EXPRESSION_INVALID_METHOD,
 } from '../constants';
-import type {EventAttributeParameters} from '../models';
+import type {EventAttributeParameters, ParsedAttribute} from '../models';
 
 // #region Functions
 
 export function getEventParameters(
 	element: Element,
-	name: string,
-	value: string,
+	attribute: ParsedAttribute,
 ): EventAttributeParameters | undefined {
-	const nameMatches = EXPRESSION_ACTION_ATTRIBUTE_NAME.exec(name) as RegExpExecArray;
-	const valueMatches = EXPRESSION_ACTION_ATTRIBUTE_VALUE.exec(value);
-
 	let external: string | undefined;
 	let identifier: string | undefined;
 	let method: string | undefined;
 	let options: string | undefined;
 	let type: string | undefined;
 
-	if (valueMatches == null) {
-		[, , , method, options] = nameMatches;
+	if (attribute.matches[1] == null) {
+		[, , , method, options] = attribute.matches[0];
 	} else {
-		[, external, identifier, type] = nameMatches;
-		[, , , method, options] = valueMatches;
+		[, external, identifier, type] = attribute.matches[0];
+		[, , , method, options] = attribute.matches[1];
 	}
 
 	type = type ?? getType(element);

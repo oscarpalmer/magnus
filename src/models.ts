@@ -32,18 +32,24 @@ export type Actions = {
 
 // #region Attribute
 
-export type Attribute = {
-	name: string;
-	value: string;
-	type: AttributeType;
+export type ParsedAttribute = {
+	data: ParsedAttributeData;
+	matches: [string[], string[] | null | undefined];
+	original: ParsedAttributeOriginal;
+	type: ParsedAttributeType;
 };
 
-export type AttributeParsed = {
+export type ParsedAttributeData = {
 	identifier?: string;
 	name: string;
 };
 
-export type AttributeType = 'action' | 'controller' | 'data' | 'input' | 'output' | 'target';
+type ParsedAttributeOriginal = {
+	name: string;
+	value: string | null;
+};
+
+export type ParsedAttributeType = 'action' | 'controller' | 'data' | 'input' | 'output' | 'target';
 
 // #endregion
 

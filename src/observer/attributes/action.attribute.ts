@@ -2,7 +2,7 @@ import type {GenericCallback} from '@oscarpalmer/atoms/models';
 import {camelCase} from '@oscarpalmer/atoms/string/case';
 import {getEventParameters} from '../../helpers/event.helper';
 import {findTarget} from '../../helpers/misc.helper';
-import type {Attribute, Context, EventAttributeParameters} from '../../models';
+import type {Context, EventAttributeParameters, ParsedAttribute} from '../../models';
 
 // #region Types
 
@@ -13,16 +13,11 @@ type CustomAction = {
 
 export type HandleParameters = {
 	added: boolean;
+	attribute: ParsedAttribute;
 	callback: GenericCallback;
 	context: Context;
 	event: EventAttributeParameters;
-	properties: HandleParametersProperties;
 	target: EventTarget;
-};
-
-type HandleParametersProperties = {
-	name: string;
-	value: string;
 };
 
 type Step = {
@@ -36,9 +31,10 @@ type Step = {
 // #region Functions
 
 function handleAction(parameters: HandleParameters): void {
-	const {context, event, properties, target} = parameters;
+	const {attribute, context, event, target} = parameters;
+	const {name, value} = attribute.original;
 
-	const action = `${properties.name}${properties.value.length === 0 ? '' : `/${properties.value}`}`;
+	const action = `${name}${value == null || value.length === 0 ? '' : `/${value}`}`;
 
 	if (!parameters.added) {
 		context.actions.remove(action, target);
@@ -64,7 +60,7 @@ function handleAction(parameters: HandleParameters): void {
 export function handleActionAttribute(
 	context: Context,
 	element: Element,
-	attribute: Attribute,
+	attribute: ParsedAttribute,
 	added: boolean,
 	custom: CustomAction,
 ): void;
@@ -72,20 +68,20 @@ export function handleActionAttribute(
 export function handleActionAttribute(
 	context: Context,
 	element: Element,
-	attribute: Attribute,
+	attribute: ParsedAttribute,
 	added: boolean,
 ): void;
 
 export function handleActionAttribute(
 	context: Context,
 	element: Element,
-	attribute: Attribute,
+	attribute: ParsedAttribute,
 	added: boolean,
 	custom?: CustomAction,
 ): void {
 	const event =
 		custom?.callback == null || custom?.event == null
-			? getEventParameters(element, attribute.name, attribute.value)
+			? getEventParameters(element, attribute)
 			: {
 					callback: '',
 					options: {
@@ -104,7 +100,7 @@ export function handleActionAttribute(
 function stepper(
 	context: Context,
 	element: Element,
-	attribute: Attribute,
+	attribute: ParsedAttribute,
 	added: boolean,
 	step: Step,
 ): void {
@@ -133,11 +129,11 @@ function stepper(
 	} else {
 		handleAction({
 			added,
+			attribute,
 			callback,
 			context,
 			event,
 			target,
-			properties: attribute,
 		});
 	}
 }

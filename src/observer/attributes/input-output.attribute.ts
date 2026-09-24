@@ -1,14 +1,8 @@
 import {parse} from '@oscarpalmer/atoms/string';
 import {camelCase} from '@oscarpalmer/atoms/string/case';
-import {
-	EVENT_CHANGE,
-	EVENT_IGNORED,
-	EXPRESSION_IO_ATTRIBUTE,
-	TYPE_INPUT,
-	TYPE_OUTPUT,
-} from '../../constants';
+import {EVENT_CHANGE, EVENT_IGNORED, TYPE_INPUT, TYPE_OUTPUT} from '../../constants';
 import {getDataValue, replaceData} from '../../helpers/data.helper';
-import type {Attribute, Context} from '../../models';
+import type {Context, ParsedAttribute} from '../../models';
 import {handleActionAttribute} from './action.attribute';
 import {handleTargetAttribute} from './target.attribute';
 
@@ -51,11 +45,10 @@ function handleInputAttribute(
 	event: string,
 	context: Context,
 	element: Element,
-	attribute: Attribute,
-	matches: RegExpExecArray,
+	attribute: ParsedAttribute,
 	added: boolean,
 ): void {
-	const [, type, , , property, format] = matches;
+	const [, , , property, format] = attribute.matches[0];
 
 	const full = `${property}${format == null ? '' : `:${format}`}`;
 	const camelCased = camelCase(property);
@@ -64,9 +57,11 @@ function handleInputAttribute(
 		context,
 		element,
 		{
-			name: `${type}:${event}.${full}`,
-			type: TYPE_INPUT,
-			value: '',
+			...attribute,
+			original: {
+				name: `${attribute.type}:${event}.${full}`,
+				value: '',
+			},
 		},
 		added,
 		{
@@ -77,30 +72,29 @@ function handleInputAttribute(
 		},
 	);
 
-	handleTargetAttribute(context, element, attribute, added, `${type}.${full}`);
+	handleTargetAttribute(context, element, attribute, added, `${attribute.type}.${full}`);
 }
 
 export function handleInputOutputAttribute(
 	context: Context,
 	element: Element,
-	attribute: Attribute,
+	attribute: ParsedAttribute,
 	added: boolean,
 ): void {
-	const matches = EXPRESSION_IO_ATTRIBUTE.exec(attribute.name) as RegExpExecArray;
-	const [, type, , , property, format] = matches;
-
 	const event = getEventType(element);
 
-	if (event == null || type === TYPE_OUTPUT) {
+	if (event == null || attribute.type === TYPE_OUTPUT) {
+		const [, , , property, format] = attribute.matches[0];
+
 		handleTargetAttribute(
 			context,
 			element,
 			attribute,
 			added,
-			`${type}.${property}${format == null ? '' : `:${format}`}`,
+			`${attribute.type}.${property}${format == null ? '' : `:${format}`}`,
 		);
 	} else {
-		handleInputAttribute(event, context, element, attribute, matches, added);
+		handleInputAttribute(event, context, element, attribute, added);
 	}
 }
 

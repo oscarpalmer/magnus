@@ -1,6 +1,6 @@
 // #region Variables
 
-import type {AttributeType, DataFormat, DataType} from './models';
+import type {ParsedAttributeType, DataFormat, DataType} from './models';
 
 export const EVENT_CHANGE = new Set(['checkbox', 'radio']);
 
@@ -53,21 +53,26 @@ export const EXPRESSION_EVENT_ONCE = /^o(nce)$/i;
 export const EXPRESSION_FALSE = /^(0|false)$/i;
 
 /**
- * - `(in|out)put:controller(.identifier).property(:pretty|raw)`
- * - `[, type, name, id?, property, json?]`
+ * - `input:controller(.identifier).property(:pretty|raw)`
+ * - `[, name, id?, property, json?]`
  */
-export const EXPRESSION_IO_ATTRIBUTE =
-	/^((?:in|out)put):([\w-]+)(?:\.([\w-]+))?\.([\w-]*)(?::(pretty|raw))?$/;
+export const EXPRESSION_INPUT_ATTRIBUTE =
+	/^input:([\w-]+)(?:\.([\w-]+))?\.([\w-]*)(?::(pretty|raw))?$/;
 
 export const EXPRESSION_INVALID_METHOD = /(^__|^(connect|constructor|disconnect)$)/i;
+
+/**
+ * - `output:controller(.identifier).property(:pretty|raw)`
+ * - `[, name, id?, property, json?]`
+ */
+export const EXPRESSION_OUTPUT_ATTRIBUTE =
+	/^output:([\w-]+)(?:\.([\w-]+))?\.([\w-]*)(?::(pretty|raw))?$/;
 
 /**
  * - `controller(.identifier):target`
  * - `[, name, id?, value]`
  */
 export const EXPRESSION_TARGET_ATTRIBUTE_FULL = /^target:([\w-]+)(?:\.([\w-]+))?\.([\w-]+)$/;
-
-export const EXPRESSION_TARGET_ATTRIBUTE_PREFIX = /^target:[\w-]+(?:\.[\w-]+)?\./;
 
 export const EXPRESSION_TIME = /^([01]?\d|2[0-3])(?::([0-5]?\d)(?::([0-5]?\d)(?:\.\d{1,3})?)?)?$/;
 
@@ -103,16 +108,18 @@ export const TYPE_OUTPUT = 'output';
 
 export const TYPE_TARGET = 'target';
 
-export const EXPRESSIONS = [
-	EXPRESSION_ACTION_ATTRIBUTE_NAME,
-	EXPRESSION_CONTROLLER_ATTRIBUTE_FULL,
-	EXPRESSION_DATA_ATTRIBUTE,
-	EXPRESSION_IO_ATTRIBUTE,
-	EXPRESSION_IO_ATTRIBUTE,
-	EXPRESSION_TARGET_ATTRIBUTE_FULL,
-];
+export const EXPRESSION_ATTRIBUTES = [
+	[EXPRESSION_ACTION_ATTRIBUTE_NAME, EXPRESSION_ACTION_ATTRIBUTE_VALUE],
+	[EXPRESSION_CONTROLLER_ATTRIBUTE_FULL],
+	[EXPRESSION_DATA_ATTRIBUTE],
+	[EXPRESSION_INPUT_ATTRIBUTE],
+	[EXPRESSION_OUTPUT_ATTRIBUTE],
+	[EXPRESSION_TARGET_ATTRIBUTE_FULL],
+] as const;
 
-export const TYPES_ATTRIBUTE: AttributeType[] = [
+export const EXPRESSION_ATTRIBUTES_LENGTH = EXPRESSION_ATTRIBUTES.length;
+
+export const TYPES_ATTRIBUTE: ParsedAttributeType[] = [
 	TYPE_ACTION,
 	TYPE_CONTROLLER,
 	TYPE_DATA,

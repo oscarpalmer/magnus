@@ -1,12 +1,11 @@
-import {EXPRESSION_TARGET_ATTRIBUTE_PREFIX} from '../../constants';
-import type {Attribute, Context} from '../../models';
+import type {Context, ParsedAttribute} from '../../models';
 
 // #region Functions
 
 export function handleTargetAttribute(
 	context: Context,
 	element: Element,
-	attribute: Attribute,
+	attribute: ParsedAttribute,
 	added: boolean,
 	name: string,
 ): void;
@@ -14,18 +13,18 @@ export function handleTargetAttribute(
 export function handleTargetAttribute(
 	context: Context,
 	element: Element,
-	attribute: Attribute,
+	attribute: ParsedAttribute,
 	added: boolean,
 ): void;
 
 export function handleTargetAttribute(
 	context: Context,
 	element: Element,
-	attribute: Attribute,
+	attribute: ParsedAttribute,
 	added: boolean,
 	name?: string,
 ): void {
-	const normalized = name ?? attribute.name.replace(EXPRESSION_TARGET_ATTRIBUTE_PREFIX, '');
+	const normalized = name ?? attribute.matches[0][3];
 
 	if (added) {
 		context.targets.add(normalized, element);
