@@ -25,7 +25,7 @@ export function findTarget(origin: Element, name: string, id?: string): EventTar
 		default:
 			return (
 				controllers.find(origin, name, id)?.state.element ??
-				(noId ? (document.querySelector(`#${name}`) as EventTarget) : undefined)
+				(noId ? (document.getElementById(name) as EventTarget) : undefined)
 			);
 	}
 }

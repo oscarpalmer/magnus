@@ -9,18 +9,38 @@ import {handleContextualAttribute, handleControllerAttribute} from './index';
 
 // #region Functions
 
+function createActionAttribute(
+	name: string,
+	value: string,
+	nameMatches: string[],
+	valueMatches: string[] | null,
+): ParsedAttribute {
+	const matches = valueMatches ?? nameMatches;
+
+	return {
+		data: {
+			identifier: matches[2],
+			name: matches[1],
+		},
+		matches: [nameMatches, valueMatches],
+		original: {
+			name,
+			value,
+		},
+		type: TYPE_ACTION,
+	};
+}
+
 function getAttribute(element: Element, name: string): string | undefined {
 	return attributes.get(element)?.get(name);
 }
 
-function getChanges(from: string, to: string): string[][] {
-	const fromValues = getParts(from);
-	const toValues = getParts(to);
+function getChanges(from: string[], to: string[]): string[][] {
 	const attributes: string[][] = [[], []];
 
 	for (let outer = 0; outer < 2; outer += 1) {
-		const values = outer === 0 ? fromValues : toValues;
-		const other = outer === 0 ? toValues : fromValues;
+		const values = outer === 0 ? from : to;
+		const other = outer === 0 ? to : from;
 
 		const {length} = values;
 
@@ -43,89 +63,72 @@ function getParts(value: string): string[] {
 		.filter(part => part.length > 0);
 }
 
+function getTokens(value: string | null | undefined, nameMatches: string[]): string[] {
+	if (value == null) {
+		return [];
+	}
+
+	const parts = getParts(value);
+
+	// An empty value is a name-only action (`on:controller.action`), represented by an empty token
+	if (parts.length === 0 && nameMatches[1] != null) {
+		parts.push('');
+	}
+
+	return parts;
+}
+
 function handleActionAttributes(
 	element: Element,
-	name: string,
-	from: string,
-	to: string,
-	nameMatches: string[],
+	attribute: ParsedAttribute,
 	removed: boolean,
 ): void {
-	if (from === to && !removed) {
-		return;
-	}
+	const {name} = attribute.original;
+	const [nameMatches] = attribute.matches;
 
-	const changes = getChanges(from, to);
-	const changesLength = changes.length;
+	const next = removed ? null : attribute.original.value;
 
-	if (removed) {
-		changes[0].push(to);
-	}
+	const changes = getChanges(
+		getTokens(getAttribute(element, name), nameMatches),
+		getTokens(next, nameMatches),
+	);
 
-	for (let changesIndex = 0; changesIndex < changesLength; changesIndex += 1) {
+	for (let changesIndex = 0; changesIndex < 2; changesIndex += 1) {
 		const changed = changes[changesIndex];
 		const changedLength = changed.length;
 		const added = changesIndex === 1;
 
 		for (let changedIndex = 0; changedIndex < changedLength; changedIndex += 1) {
-			const value = changed[changedIndex];
+			const token = changed[changedIndex];
 
-			const valueMatches = EXPRESSION_ACTION_ATTRIBUTE_VALUE.exec(value);
+			const valueMatches =
+				token.length === 0 ? null : EXPRESSION_ACTION_ATTRIBUTE_VALUE.exec(token);
 
-			if (valueMatches != null) {
+			if (token.length === 0 || valueMatches != null) {
 				handleContextualAttribute(
 					element,
-					{
-						data: {
-							identifier: valueMatches[2],
-							name: valueMatches[1],
-						},
-						matches: [nameMatches, valueMatches],
-						original: {
-							name,
-							value,
-						},
-						type: TYPE_ACTION,
-					},
+					createActionAttribute(name, token, nameMatches, valueMatches),
 					added,
 				);
 			}
 		}
 	}
 
-	updateAttributes(element, name, to);
+	updateAttributes(element, name, next);
 }
 
 export function handleAttributeChanges(
 	element: Element,
 	attribute: ParsedAttribute,
-	value: string | null,
 	removed: boolean,
 ): void {
-	const previous = getAttribute(element, attribute.original.name);
-	const current = attribute.original.value;
-
-	if (
-		attribute.type === TYPE_ACTION &&
-		(value == null ? previous != null : (current ?? value).trim().length > 0)
-	) {
-		handleActionAttributes(
-			element,
-			attribute.original.name,
-			previous ?? value ?? '',
-			current ?? '',
-			attribute.matches[0],
-			removed,
-		);
-
-		if (removed) {
-			attributes.delete(element);
-		}
+	if (attribute.type === TYPE_ACTION) {
+		handleActionAttributes(element, attribute, removed);
 
 		return;
 	}
 
-	const added = !removed && current != null && value != null;
+	const added = !removed && attribute.original.value != null;
 
 	if (attribute.type === TYPE_CONTROLLER) {
 		handleControllerAttribute(element, attribute.original.name, added);
@@ -134,19 +137,22 @@ export function handleAttributeChanges(
 	}
 }
 
-function updateAttributes(element: Element, name: string, value: string): void {
+function updateAttributes(element: Element, name: string, value: string | null): void {
 	let elementAttributes = attributes.get(element);
+
+	if (value == null) {
+		elementAttributes?.delete(name);
+
+		return;
+	}
 
 	if (elementAttributes == null) {
 		elementAttributes = new Map();
+
 		attributes.set(element, elementAttributes);
 	}
 
-	if (value.length === 0) {
-		elementAttributes.delete(name);
-	} else {
-		elementAttributes.set(name, value);
-	}
+	elementAttributes.set(name, value);
 }
 
 // #endregion

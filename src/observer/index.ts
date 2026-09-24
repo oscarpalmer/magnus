@@ -16,12 +16,7 @@ function Observer(this: any) {
 			const entry = entries[index];
 
 			if (entry.type === 'attributes') {
-				handleAttribute(
-					entry.target as Element,
-					entry.attributeName as string,
-					entry.oldValue,
-					false,
-				);
+				handleAttribute(entry.target as Element, entry.attributeName as string, false);
 			} else {
 				handleNodes(entry.addedNodes, false);
 				handleNodes(entry.removedNodes, true);
@@ -45,18 +40,13 @@ function createObserver(): Observer {
 	return new Observer() as Observer;
 }
 
-function handleAttribute(
-	element: Element,
-	name: string,
-	value: string | null,
-	removed: boolean,
-): void {
+function handleAttribute(element: Element, name: string, removed: boolean): void {
 	const parsed = parseAttribute(name, element.getAttribute(name));
 
 	if (parsed?.type === TYPE_DATA) {
 		handleDataAttribute(element, parsed);
 	} else if (parsed != null) {
-		handleAttributeChanges(element, parsed, value, removed);
+		handleAttributeChanges(element, parsed, removed);
 	}
 }
 
@@ -66,7 +56,7 @@ function handleElement(element: Element, removed: boolean): void {
 	const {length} = names;
 
 	for (let index = 0; index < length; index += 1) {
-		handleAttribute(element, names[index], '', removed);
+		handleAttribute(element, names[index], removed);
 	}
 
 	if (removed) {
@@ -112,7 +102,6 @@ const debouncer = debounce(() => {
 }, 25);
 
 const options: MutationObserverInit = {
-	attributeOldValue: true,
 	attributes: true,
 	childList: true,
 	subtree: true,

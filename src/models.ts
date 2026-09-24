@@ -87,11 +87,12 @@ export type ControllerConstructor = new (context: Context) => Controller;
 
 export type Controllers = {
 	readonly store: Map<string, StoredController>;
-	add(name: string, element: Element): void;
+	attach(name: string, element: Element): void;
 	create(name: string, ctor: ControllerConstructor): void;
+	detach(name: string, element: Element): void;
 	find(origin: Element, name: string, id?: string): Context | undefined;
 	has(name: string): boolean;
-	remove(name: string, element?: Element): void;
+	remove(name: string): void;
 };
 
 export type StoredController = {
@@ -105,7 +106,9 @@ export type StoredController = {
 // #region Data
 
 export type Data = {
+	readonly focused: Set<string>;
 	readonly frames: Record<string, number | undefined>;
+	readonly ignored: Set<string>;
 	readonly types: DataTypes;
 	readonly value: PlainObject;
 };

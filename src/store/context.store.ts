@@ -43,23 +43,10 @@ function disconnectContext(this: Contexts, element: Element, name?: string): voi
 		return;
 	}
 
-	const names = Object.keys(connection);
-	const {length} = names;
+	delete connection[name];
 
-	const updated: Record<string, Context> = {};
-
-	for (let index = 0; index < length; index += 1) {
-		const key = names[index];
-
-		if (key !== name) {
-			updated[key] = connection[key];
-		}
-	}
-
-	if (length === 1) {
+	if (Object.keys(connection).length === 0) {
 		this.store.delete(element);
-	} else {
-		this.store.set(element, updated);
 	}
 }
 

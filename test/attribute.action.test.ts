@@ -169,7 +169,7 @@ test('action attribute', async () => {
 		expect(b).toBe(30);
 		expect(connected).toBe(1);
 		expect(fromTwo).toBe(2);
-		expect(multiple).toBe(10);
+		expect(multiple).toBe(20);
 		expect(once).toBe(1);
 	});
 
@@ -188,6 +188,6 @@ test('action attribute', async () => {
 	expect(b).toBe(30);
 	expect(connected).toBe(1);
 	expect(fromTwo).toBe(2);
-	expect(multiple).toBe(10);
+	expect(multiple).toBe(30);
 	expect(once).toBe(1);
 });

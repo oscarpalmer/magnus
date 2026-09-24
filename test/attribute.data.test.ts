@@ -37,7 +37,7 @@ class DataController extends Controller<Data> {
 }
 
 function prettyJson(data: unknown): string {
-	return JSON.stringify(data, null, 4);
+	return JSON.stringify(data, null, '\t');
 }
 
 document.body.innerHTML = `<div

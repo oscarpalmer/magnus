@@ -13,20 +13,14 @@ type AttributeData = {
 
 // #region Functions
 
-function getAttributeData(name: string, value: string | null): AttributeData | undefined {
+function getAttributeData(name: string): AttributeData | undefined {
 	for (let index = 0; index < EXPRESSION_ATTRIBUTES_LENGTH; index += 1) {
-		const [firstExpression, secondExpression] = EXPRESSION_ATTRIBUTES[index];
+		const matches = EXPRESSION_ATTRIBUTES[index].exec(name);
 
-		const firstMatches = firstExpression.exec(name);
-
-		if (firstMatches == null) {
+		if (matches == null) {
 			continue;
 		}
 
-		const secondMatches =
-			value == null || value.length === 0 ? undefined : secondExpression?.exec(value);
-
-		const matches = secondMatches ?? firstMatches;
 		const type = TYPES_ATTRIBUTE[index];
 
 		return {
@@ -35,7 +29,7 @@ function getAttributeData(name: string, value: string | null): AttributeData | u
 				identifier: matches[2],
 				name: matches[1],
 			},
-			matches: [firstMatches, secondMatches],
+			matches: [matches, undefined],
 		};
 	}
 
@@ -43,7 +37,7 @@ function getAttributeData(name: string, value: string | null): AttributeData | u
 }
 
 export function parseAttribute(name: string, value: string | null): ParsedAttribute | undefined {
-	const data = getAttributeData(name, value);
+	const data = getAttributeData(name);
 
 	return data == null
 		? undefined

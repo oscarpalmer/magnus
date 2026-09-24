@@ -10,8 +10,9 @@ function Controllers(this: any) {
 	this.store = new Map<string, StoredController>();
 }
 
-Controllers.prototype.add = addController;
+Controllers.prototype.attach = attachController;
 Controllers.prototype.create = createController;
+Controllers.prototype.detach = detachController;
 Controllers.prototype.find = findController;
 Controllers.prototype.has = hasController;
 Controllers.prototype.remove = removeController;
@@ -26,7 +27,7 @@ function StoredController(this: any, ctor: ControllerConstructor) {
 
 // #region Functions
 
-function addController(this: Controllers, name: string, element: Element): void {
+function attachController(this: Controllers, name: string, element: Element): void {
 	const controller = this.store.get(name);
 
 	if (controller != null && !controller.instances.has(element)) {
@@ -43,6 +44,14 @@ export function createStoredController(ctor: ControllerConstructor): StoredContr
 	return new StoredController(ctor);
 }
 
+function detachController(this: Controllers, name: string, element: Element): void {
+	const controller = this.store.get(name);
+
+	if (controller != null && controller.instances.has(element)) {
+		removeInstance(controller, controller.instances.get(element)!);
+	}
+}
+
 function findController(
 	this: Controllers,
 	origin: Element,
@@ -54,7 +63,7 @@ function findController(
 	if (id == null) {
 		found = origin.hasAttribute(`:${name}`) ? origin : findRelatives(origin, `[\\:${name}]`)[0];
 	} else {
-		found = origin.ownerDocument.querySelector(`#${id}`);
+		found = origin.ownerDocument.getElementById(id);
 	}
 
 	return found == null ? undefined : this.store.get(name)?.instances.get(found);

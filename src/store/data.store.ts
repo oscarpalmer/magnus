@@ -9,7 +9,9 @@ import type {Context, Data, DataTypes, DataUpdateParameters, DataValue} from '..
 // #region Instances
 
 function Data(this: any, context: Context, types: DataTypes) {
+	this.focused = new Set();
 	this.frames = {};
+	this.ignored = new Set();
 	this.types = types;
 
 	this.value = new Proxy(
@@ -83,8 +85,13 @@ function setElementContents(elements: Element[], value: string): void {
 	}
 }
 
-function setElementValues(elements: Element[], attribute: string, value: string): void {
-	const updatedFocused = focused.delete(attribute);
+function setElementValues(
+	context: Context,
+	elements: Element[],
+	attribute: string,
+	value: string,
+): void {
+	const updatedFocused = context.data.focused.delete(attribute);
 
 	const {length} = elements;
 
@@ -108,20 +115,17 @@ function setJson(context: Context, property: string, value: DataValue, attribute
 		const rawOutputs = context.targets.getAll(`${TYPE_OUTPUT}.${property}:${FORMAT_RAW}`);
 
 		if (prettyInputs.length > 0 || prettyOutputs.length > 0) {
-			const pretty =
-				value == null
-					? ''
-					: JSON.stringify(value, null, +getComputedStyle(context.state.element).tabSize);
+			const pretty = value == null ? '' : JSON.stringify(value, null, '\t');
 
 			setElementContents(prettyOutputs, pretty);
-			setElementValues(prettyInputs, attribute, pretty);
+			setElementValues(context, prettyInputs, attribute, pretty);
 		}
 
 		if (rawInputs.length > 0 || rawOutputs.length > 0) {
 			const raw = value == null ? '' : JSON.stringify(value, null, 0);
 
 			setElementContents(rawOutputs, raw);
-			setElementValues(rawInputs, attribute, raw);
+			setElementValues(context, rawInputs, attribute, raw);
 		}
 	}
 }
@@ -130,7 +134,7 @@ function setValue(context: Context, property: string, value: DataValue): void {
 	const attribute = `${context.state.name}-${property}`;
 
 	if (context.state.element.hasAttribute(attribute)) {
-		ignored.add(attribute);
+		context.data.ignored.add(attribute);
 
 		context.state.element.removeAttribute(attribute);
 	}
@@ -138,6 +142,7 @@ function setValue(context: Context, property: string, value: DataValue): void {
 	setElementContents(context.targets.getAll(`${TYPE_OUTPUT}.${property}`), value.stringified);
 
 	setElementValues(
+		context,
 		context.targets.getAll(`${TYPE_INPUT}.${property}`),
 		attribute,
 		value.stringified,
@@ -151,13 +156,13 @@ function setValue(context: Context, property: string, value: DataValue): void {
 export function setValueFromAttribute(context: Context, name: string, value: string): void {
 	const attribute = `${context.state.name}-${name}`;
 
-	if (ignored.has(attribute)) {
-		ignored.delete(attribute);
+	if (context.data.ignored.has(attribute)) {
+		context.data.ignored.delete(attribute);
 
 		return;
 	}
 
-	focused.add(attribute);
+	context.data.focused.add(attribute);
 
 	context.data.value[name] = value;
 }
@@ -237,13 +242,5 @@ function updateToggle(element: HTMLInputElement, value: string): string | undefi
 
 	return 'change';
 }
-
-// #endregion
-
-// #region Variables
-
-const focused = new Set<string>();
-
-const ignored = new Set<string>();
 
 // #endregion

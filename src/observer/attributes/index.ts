@@ -59,9 +59,9 @@ export function handleControllerAttribute(element: Element, name: string, added:
 
 	if (controllers.has(normalized)) {
 		if (added) {
-			controllers.add(normalized, element);
+			controllers.attach(normalized, element);
 		} else {
-			controllers.remove(normalized, element);
+			controllers.detach(normalized, element);
 		}
 	}
 }
