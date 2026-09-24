@@ -6,10 +6,20 @@ import type {Controller} from './controller';
 // #region Action
 
 export type Action = {
+	readonly actions: Actions;
 	readonly callback: (event: Event) => void;
 	readonly options: AddEventListenerOptions;
-	readonly targets: Set<EventTarget>;
+	readonly listeners: Map<EventTarget, ActionListeners>;
+	readonly name: string;
 	readonly type: string;
+	add(target: EventTarget, origin: EventTarget): void;
+	clear(): void;
+	remove(origin: EventTarget): void;
+};
+
+export type ActionListeners = {
+	origins: Set<EventTarget>;
+	remove: RemovableEventListener;
 };
 
 export type ActionParameters = {
@@ -21,11 +31,11 @@ export type ActionParameters = {
 
 export type Actions = {
 	readonly store: Map<string, Action>;
-	add(name: string, target: EventTarget): void;
+	add(name: string, target: EventTarget, origin: EventTarget): void;
 	clear(): void;
-	create(parameters: ActionParameters, target: EventTarget): void;
+	create(parameters: ActionParameters, target: EventTarget, origin: EventTarget): void;
 	has(name: string): boolean;
-	remove(name: string, target: EventTarget): void;
+	remove(name: string, origin: EventTarget): void;
 };
 
 // #endregion

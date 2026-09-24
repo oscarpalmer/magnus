@@ -16,6 +16,7 @@ export type HandleParameters = {
 	attribute: ParsedAttribute;
 	callback: GenericCallback;
 	context: Context;
+	element: Element;
 	event: EventAttributeParameters;
 	target: EventTarget;
 };
@@ -31,19 +32,19 @@ type Step = {
 // #region Functions
 
 function handleAction(parameters: HandleParameters): void {
-	const {attribute, context, event, target} = parameters;
+	const {attribute, context, element, event, target} = parameters;
 	const {name, value} = attribute.original;
 
 	const action = `${name}${value == null || value.length === 0 ? '' : `/${value}`}`;
 
 	if (!parameters.added) {
-		context.actions.remove(action, target);
+		context.actions.remove(action, element);
 
 		return;
 	}
 
 	if (context.actions.has(action)) {
-		context.actions.add(action, target);
+		context.actions.add(action, target, element);
 	} else {
 		context.actions.create(
 			{
@@ -53,6 +54,7 @@ function handleAction(parameters: HandleParameters): void {
 				type: event.type,
 			},
 			target,
+			element,
 		);
 	}
 }
@@ -131,6 +133,7 @@ function stepper(
 			added,
 			attribute,
 			callback,
+			element,
 			context,
 			event,
 			target,

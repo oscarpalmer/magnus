@@ -9,7 +9,7 @@ test('action store', () => {
 
 	expect(store.has('test')).toBe(false);
 
-	store.add('test', one);
+	store.add('test', one, one);
 
 	expect(store.has('test')).toBe(false);
 
@@ -20,6 +20,7 @@ test('action store', () => {
 			options: {},
 			type: 'test',
 		},
+		one,
 		one,
 	);
 
@@ -33,9 +34,10 @@ test('action store', () => {
 			type: 'test',
 		},
 		two,
+		two,
 	);
 
-	store.add('test', two);
+	store.add('test', two, two);
 
 	store.remove('test', one);
 
@@ -56,6 +58,7 @@ test('action store', () => {
 			options: {},
 			type: 'test',
 		},
+		one,
 		one,
 	);
 
