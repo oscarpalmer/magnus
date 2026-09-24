@@ -191,3 +191,135 @@ test('action attribute', async () => {
 	expect(multiple).toBe(30);
 	expect(once).toBe(1);
 });
+
+test('action attribute: shared external binding', async () => {
+	let pinged = 0;
+
+	magnus.add('shared-source', class extends Controller {});
+
+	magnus.add(
+		'shared-listener',
+		class extends Controller {
+			onPing(): void {
+				pinged += 1;
+			}
+		},
+	);
+
+	const container = document.createElement('div');
+
+	container.innerHTML = `<div :shared-source id="shared-source"></div>
+<div :shared-listener>
+	<span id="shared-one" on:shared-source.ping="shared-listener.onPing"></span>
+	<span id="shared-two" on:shared-source.ping="shared-listener.onPing"></span>
+</div>`;
+
+	document.body.append(container);
+
+	for (let index = 0; index < 3; index += 1) {
+		await nextFrame();
+	}
+
+	const source = container.querySelector('#shared-source') as Element;
+
+	source.dispatchEvent(new Event('ping'));
+
+	// both origins share a single listener on the external target
+	expect(pinged).toBe(1);
+
+	container.querySelector('#shared-one')?.removeAttribute('on:shared-source.ping');
+
+	await nextFrame();
+
+	source.dispatchEvent(new Event('ping'));
+
+	expect(pinged).toBe(2);
+
+	container.querySelector('#shared-two')?.removeAttribute('on:shared-source.ping');
+
+	await nextFrame();
+
+	source.dispatchEvent(new Event('ping'));
+
+	expect(pinged).toBe(2);
+
+	container.remove();
+});
+
+test('action attribute: removal after external target is gone', async () => {
+	let pinged = 0;
+
+	magnus.add('gone-source', class extends Controller {});
+
+	magnus.add(
+		'gone-listener',
+		class extends Controller {
+			onPing(): void {
+				pinged += 1;
+			}
+		},
+	);
+
+	const container = document.createElement('div');
+
+	container.innerHTML = `<div :gone-source id="gone-source"></div>
+<div :gone-listener>
+	<span on:gone-source.ping="gone-listener.onPing"></span>
+</div>`;
+
+	document.body.append(container);
+
+	for (let index = 0; index < 3; index += 1) {
+		await nextFrame();
+	}
+
+	const source = container.querySelector('#gone-source') as Element;
+
+	source.dispatchEvent(new Event('ping'));
+
+	expect(pinged).toBe(1);
+
+	source.remove();
+
+	await nextFrame();
+
+	container.querySelector('span')?.removeAttribute('on:gone-source.ping');
+
+	await nextFrame();
+
+	// removal must not depend on resolving the (now detached) external target again
+	source.dispatchEvent(new Event('ping'));
+
+	expect(pinged).toBe(1);
+
+	container.remove();
+});
+
+test('action attribute: removal does not retry', async () => {
+	magnus.add('no-retry', class extends Controller {});
+
+	const container = document.createElement('div');
+
+	container.innerHTML = `<div :no-retry>
+	<button on:no-retry.does-not-exist></button>
+</div>`;
+
+	document.body.append(container);
+
+	// let the add-side retries for the missing method run out
+	for (let index = 0; index < 12; index += 1) {
+		await nextFrame();
+	}
+
+	const spy = vi.spyOn(globalThis, 'requestAnimationFrame');
+
+	container.querySelector('button')?.removeAttribute('on:no-retry.does-not-exist');
+
+	await new Promise(resolve => setTimeout(resolve, 0));
+
+	expect(spy).not.toHaveBeenCalled();
+
+	spy.mockRestore();
+
+	container.remove();
+});
