@@ -72,7 +72,9 @@ export abstract class Controller<Data extends PlainObject = PlainObject> {
 	 * Called when a data value has changed
 	 */
 	// eslint-disable-next-line no-unused-vars
-	valueChanged(name: string, value: unknown): void {}
+	valueChanged(name: string, value: unknown): void {
+		//
+	}
 }
 
 // #endregion

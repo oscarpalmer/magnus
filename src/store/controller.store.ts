@@ -6,7 +6,7 @@ import {contexts} from './context.store';
 
 // #region Instances
 
-function Controllers(this: any) {
+function Controllers(this: any): void {
 	this.store = new Map<string, StoredController>();
 }
 
@@ -17,7 +17,7 @@ Controllers.prototype.find = findController;
 Controllers.prototype.has = hasController;
 Controllers.prototype.remove = removeController;
 
-function StoredController(this: any, ctor: ControllerConstructor) {
+function StoredController(this: any, ctor: ControllerConstructor): void {
 	this.ctor = ctor;
 	this.instances = new Map<Element, Context>();
 	this.types = getDataTypes((ctor as any).types);
@@ -47,7 +47,7 @@ export function createStoredController(ctor: ControllerConstructor): StoredContr
 function detachController(this: Controllers, name: string, element: Element): void {
 	const controller = this.store.get(name);
 
-	if (controller != null && controller.instances.has(element)) {
+	if (controller?.instances.has(element)) {
 		removeInstance(controller, controller.instances.get(element)!);
 	}
 }

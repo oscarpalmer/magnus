@@ -2,7 +2,7 @@ import {getNormalizedHex, isHexColor} from '@oscarpalmer/atoms/color';
 import {isArrayOrPlainObject, isPlainObject} from '@oscarpalmer/atoms/is';
 import type {ArrayOrPlainObject, GenericCallback, PlainObject} from '@oscarpalmer/atoms/models';
 import {getNumber} from '@oscarpalmer/atoms/number';
-import {parse} from '@oscarpalmer/atoms/string';
+import {getString, parse} from '@oscarpalmer/atoms/string';
 import {MINUTE} from '@oscarpalmer/datum/constants';
 import {getDate} from '@oscarpalmer/datum/get';
 import {EXPRESSION_FALSE, EXPRESSION_TIME, EXPRESSION_TRUE, TYPES_DATA} from '../constants';
@@ -42,7 +42,11 @@ function getBoolean(value: unknown): boolean | undefined {
 	}
 
 	if (typeof value === 'number') {
-		return value === 0 ? false : value === 1 ? true : undefined;
+		if (value === 0) {
+			return false;
+		}
+
+		return value === 1 ? true : undefined;
 	}
 
 	if (typeof value !== 'string') {
@@ -104,7 +108,7 @@ function getTime(value: unknown): string | undefined {
 }
 
 function pad(value?: number | string): string {
-	return String(value ?? '').padStart(2, '0');
+	return getString(value ?? '').padStart(2, '0');
 }
 
 function parseTime(value: unknown): string | undefined {

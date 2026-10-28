@@ -17,7 +17,7 @@ Action.prototype.add = addAction;
 Action.prototype.clear = clearAction;
 Action.prototype.remove = removeAction;
 
-function Actions(this: any) {
+function Actions(this: any): void {
 	this.store = new Map<string, Action>();
 }
 

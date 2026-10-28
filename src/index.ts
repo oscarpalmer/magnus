@@ -1,6 +1,4 @@
-import {Controller} from './controller/index';
-import {magnus} from './magnus';
-
+export {Controller} from './controller/index';
 export {
 	removeController,
 	removeInput,
@@ -11,5 +9,4 @@ export {
 	setOutput,
 	setTarget,
 } from './helpers/misc.helper';
-
-export {Controller, magnus};
+export {magnus} from './magnus';

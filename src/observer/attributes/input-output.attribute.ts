@@ -1,6 +1,6 @@
 import {parse} from '@oscarpalmer/atoms/string';
 import {camelCase} from '@oscarpalmer/atoms/string/case';
-import {EVENT_CHANGE, EVENT_IGNORED, TYPE_INPUT, TYPE_OUTPUT} from '../../constants';
+import {EVENT_CHANGE, EVENT_IGNORED, TYPE_OUTPUT} from '../../constants';
 import {getDataValue, replaceData} from '../../helpers/data.helper';
 import type {Context, ParsedAttribute} from '../../models';
 import {handleActionAttribute} from './action.attribute';
@@ -50,7 +50,8 @@ function handleInputAttribute(
 ): void {
 	const [, , , property, format] = attribute.matches[0];
 
-	const full = `${property}${format == null ? '' : `:${format}`}`;
+	const formatted = format == null ? '' : `:${format}`;
+	const full = `${property}${formatted}`;
 	const camelCased = camelCase(property);
 
 	handleActionAttribute(
@@ -86,12 +87,14 @@ export function handleInputOutputAttribute(
 	if (event == null || attribute.type === TYPE_OUTPUT) {
 		const [, , , property, format] = attribute.matches[0];
 
+		const formatted = format == null ? '' : `:${format}`;
+
 		handleTargetAttribute(
 			context,
 			element,
 			attribute,
 			added,
-			`${attribute.type}.${property}${format == null ? '' : `:${format}`}`,
+			`${attribute.type}.${property}${formatted}`,
 		);
 	} else {
 		handleInputAttribute(event, context, element, attribute, added);

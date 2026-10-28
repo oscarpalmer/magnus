@@ -2,7 +2,7 @@ import type {Context, Targets} from '../models';
 
 // #region Instances
 
-function Targets(this: any, context: Context) {
+function Targets(this: any, context: Context): void {
 	this.context = context;
 	this.store = new Map();
 }

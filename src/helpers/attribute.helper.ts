@@ -1,5 +1,5 @@
 import {EXPRESSION_ATTRIBUTES, EXPRESSION_ATTRIBUTES_LENGTH, TYPES_ATTRIBUTE} from '../constants';
-import type {ParsedAttributeType, ParsedAttribute, ParsedAttributeData} from '../models';
+import type {ParsedAttribute, ParsedAttributeData, ParsedAttributeType} from '../models';
 
 // #region Types
 

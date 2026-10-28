@@ -1,7 +1,7 @@
 import {join} from '@oscarpalmer/atoms/string';
 import {camelCase} from '@oscarpalmer/atoms/string/case';
 import {EXPRESSION_CONTROLLER_ATTRIBUTE_PREFIX} from '../../constants';
-import type {ParsedAttributeType, Context, ParsedAttribute} from '../../models';
+import type {Context, ParsedAttribute, ParsedAttributeType} from '../../models';
 import {contexts} from '../../store/context.store';
 import {controllers} from '../../store/controller.store';
 import {setValueFromAttribute} from '../../store/data.store';

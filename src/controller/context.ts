@@ -1,4 +1,4 @@
-import type {StoredController} from '../models';
+import type {Context, StoredController} from '../models';
 import {createActions} from '../store/action.store';
 import {contexts} from '../store/context.store';
 import {createData} from '../store/data.store';
@@ -7,7 +7,12 @@ import {createEvents} from './events';
 
 // #region Instances
 
-function Context(this: any, name: string, element: Element, controller: StoredController) {
+function Context(
+	this: any,
+	name: string,
+	element: Element,
+	controller: StoredController,
+): void {
 	this.state = {element, name};
 
 	this.actions = createActions();
@@ -26,7 +31,11 @@ function Context(this: any, name: string, element: Element, controller: StoredCo
 
 // #region Functions
 
-export function createContext(name: string, element: Element, controller: StoredController) {
+export function createContext(
+	name: string,
+	element: Element,
+	controller: StoredController,
+): Context {
 	// @ts-expect-error All good, no worries :-)
 	return new Context(name, element, controller);
 }

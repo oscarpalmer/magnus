@@ -2,7 +2,7 @@ import type {Context, Contexts} from '../models';
 
 // #region Instances
 
-function Contexts(this: any) {
+function Contexts(this: any): void {
 	this.store = new WeakMap<Element, Record<string, Context>>();
 }
 
@@ -39,7 +39,7 @@ function disconnectContext(this: Contexts, element: Element, name?: string): voi
 
 	const connection = this.store.get(element);
 
-	if (connection == null || connection[name] == null) {
+	if (connection?.[name] == null) {
 		return;
 	}
 

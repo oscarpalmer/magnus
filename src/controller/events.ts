@@ -15,7 +15,7 @@ import type {
 
 // #region Instances
 
-function Events(this: any, context: Context) {
+function Events(this: any, context: Context): void {
 	this[SYMBOL] = context;
 }
 

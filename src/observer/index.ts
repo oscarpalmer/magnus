@@ -8,7 +8,7 @@ import {handleAttributeChanges} from './attributes/changes.attribute';
 
 // #region Instances
 
-function Observer(this: any) {
+function Observer(this: any): void {
 	this.observer = new MutationObserver(entries => {
 		const {length} = entries;
 
@@ -34,11 +34,6 @@ Observer.prototype.update = updateObserver;
 // #endregion
 
 // #region Functions
-
-function createObserver(): Observer {
-	// @ts-expect-error All good, no worries :-)
-	return new Observer() as Observer;
-}
 
 function handleAttribute(element: Element, name: string, removed: boolean): void {
 	const parsed = parseAttribute(name, element.getAttribute(name));
@@ -107,6 +102,7 @@ const options: MutationObserverInit = {
 	subtree: true,
 };
 
-export const observer = createObserver();
+// @ts-expect-error All good, no worries :-)
+export const observer: Observer = new Observer();
 
 // #endregion

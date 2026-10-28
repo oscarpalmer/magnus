@@ -31,7 +31,7 @@ type Step = {
 // #region Functions
 
 function getActionName(name: string, value?: string | null): string {
-	return `${name}${value == null || value.length === 0 ? '' : `/${value}`}`;
+	return value == null || value.length === 0 ? name : `${name}/${value}`;
 }
 
 function handleAction(parameters: HandleParameters): void {

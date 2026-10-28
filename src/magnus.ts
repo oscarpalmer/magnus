@@ -4,7 +4,9 @@ import {controllers} from './store/controller.store';
 
 // #region Instances
 
-function Magnus(this: any) {}
+function Magnus(this: Magnus): void {
+	//
+}
 
 Magnus.prototype.add = addController;
 Magnus.prototype.remove = removeController;

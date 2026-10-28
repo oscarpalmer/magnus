@@ -43,8 +43,11 @@ function handleAttribute(
 		typeof first === 'string' &&
 		(second == null ? true : typeof second === 'string')
 	) {
+		const seconded = second ? `.${second}` : '';
+		const suffixed = suffix == null ? '' : `:${suffix}`;
+
 		element[add ? 'setAttribute' : 'removeAttribute'](
-			`${prefix}${first}${second ? `.${second}` : ''}${suffix == null ? '' : `:${suffix}`}`,
+			`${prefix}${first}${seconded}${suffixed}`,
 			'',
 		);
 	}
@@ -84,7 +87,7 @@ function removeAttribute(
  * @param element Element for controller
  * @param name Controller name
  */
-export function removeController(element: Element, name: string) {
+export function removeController(element: Element, name: string): void {
 	removeAttribute(PREFIX_CONTROLLER, element, name);
 }
 

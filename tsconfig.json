@@ -9,7 +9,7 @@
 		"esModuleInterop": true,
 		// "exactOptionalPropertyTypes": true,
 		"forceConsistentCasingInFileNames": true,
-		// "isolatedDeclarations": true,
+		"isolatedDeclarations": true,
 		"isolatedModules": true,
 		"jsx": "react-jsx",
 		"lib": ["DOM", "DOM.Iterable", "ESNext"],

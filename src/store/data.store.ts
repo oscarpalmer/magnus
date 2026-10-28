@@ -1,3 +1,4 @@
+import {indexOf} from '@oscarpalmer/atoms/array/index-of';
 import type {PlainObject} from '@oscarpalmer/atoms/models';
 import {getString} from '@oscarpalmer/atoms/string';
 import {camelCase} from '@oscarpalmer/atoms/string/case';
@@ -8,7 +9,7 @@ import type {Context, Data, DataTypes, DataUpdateParameters, DataValue} from '..
 
 // #region Instances
 
-function Data(this: any, context: Context, types: DataTypes) {
+function Data(this: any, context: Context, types: DataTypes): void {
 	this.focused = new Set();
 	this.frames = {};
 	this.ignored = new Set();
@@ -18,7 +19,7 @@ function Data(this: any, context: Context, types: DataTypes) {
 		{},
 		{
 			deleteProperty(target: PlainObject, property: PropertyKey): boolean {
-				const name = camelCase(String(property));
+				const name = getName(property);
 
 				return updateProperty({
 					context,
@@ -28,10 +29,10 @@ function Data(this: any, context: Context, types: DataTypes) {
 				});
 			},
 			get(target: PlainObject, property: PropertyKey): unknown {
-				return Reflect.get(target, camelCase(String(property)));
+				return Reflect.get(target, getName(property));
 			},
 			set(target: PlainObject, property: PropertyKey, value: unknown): boolean {
-				const name = camelCase(String(property));
+				const name = getName(property);
 				const type = types[name];
 
 				const previous = Reflect.get(target, name);
@@ -63,6 +64,10 @@ function Data(this: any, context: Context, types: DataTypes) {
 export function createData(context: Context, types: DataTypes): Data {
 	// @ts-expect-error All good, no worries :-)
 	return new Data(context, types);
+}
+
+function getName(value: unknown): string {
+	return camelCase(getString(value));
 }
 
 function setElementContent(element: Element, value: string, emit: boolean, focused: boolean): void {
@@ -101,18 +106,18 @@ function setElementValues(
 }
 
 function setJson(context: Context, property: string, value: DataValue, attribute: string): void {
-	const properties = [property, ''];
+	const names = [property, ''];
 	const values = [value.original, context.data.value];
 
 	for (let index = 0; index < 2; index += 1) {
-		const property = properties[index];
+		const name = names[index];
 		const value = values[index];
 
-		const prettyInputs = context.targets.getAll(`${TYPE_INPUT}.${property}:${FORMAT_PRETTY}`);
-		const prettyOutputs = context.targets.getAll(`${TYPE_OUTPUT}.${property}:${FORMAT_PRETTY}`);
+		const prettyInputs = context.targets.getAll(`${TYPE_INPUT}.${name}:${FORMAT_PRETTY}`);
+		const prettyOutputs = context.targets.getAll(`${TYPE_OUTPUT}.${name}:${FORMAT_PRETTY}`);
 
-		const rawInputs = context.targets.getAll(`${TYPE_INPUT}.${property}:${FORMAT_RAW}`);
-		const rawOutputs = context.targets.getAll(`${TYPE_OUTPUT}.${property}:${FORMAT_RAW}`);
+		const rawInputs = context.targets.getAll(`${TYPE_INPUT}.${name}:${FORMAT_RAW}`);
+		const rawOutputs = context.targets.getAll(`${TYPE_OUTPUT}.${name}:${FORMAT_RAW}`);
 
 		if (prettyInputs.length > 0 || prettyOutputs.length > 0) {
 			const pretty = value == null ? '' : JSON.stringify(value, null, '\t');
@@ -228,7 +233,7 @@ function updateProperty(parameters: DataUpdateParameters): boolean {
 }
 
 function updateSelect(element: HTMLSelectElement, value: string): string | undefined {
-	const index = [...element.options].findIndex(option => option.value === value);
+	const index = indexOf([...element.options], option => option.value === value);
 
 	if (index > -1) {
 		element.selectedIndex = index;
